@@ -134,6 +134,13 @@ PRAVILA
    - Prvi na vrhu zavihka Nastavitve: razdelek DOSTOP, kartica s ščitom, naslov "Super Admin", opis, desno Stikalo.
      Vklopljen: ikona v oranžnem prelivu, kartica z oranžno obrobo in sijem; v glavi osebe oznaka "Super Admin".
    - Brez računa (e-mail + geslo) je stikalo zaklenjeno in pod njim rumeno opozorilo, kaj najprej narediti.
+   - Seznam zaposlenih: Super Admin ima levo pred kvadratkom z začetnicami okroglo ikono ščita v oranžnem prelivu
+     (ostali imajo na tem mestu prazen prostor, da so stolpci poravnani).
+
+18. Dostopi zaposlenega - aplikacije (zavihek Dostopi, na vrhu)
+   - Razdelek APLIKACIJE: mreža stikal (Stikalo), ena aplikacija = eno stikalo z imenom in kratkim opisom pod njim.
+     Prva ploščica je FIN:OS Administracija - brez stikala, stanje pove Super Admin (ureja se v Nastavitvah).
+   - Spremembe gredo v spodnjo vrstico Shrani (kot ostala polja lista). Pod stikali opomba, da dostop velja za račun.
 
 16. Prikaz hierarhije (Hierarhija, /administracija/zaposleni/hierarhija; gumb "Prikaz hierarhije" bel na seznamu)
    - Lestvice (vrh = vodja brez vodje) so okna DRUG OB DRUGEM v eni vodoravni vrsti čez celo širino zaslona
@@ -201,3 +208,6 @@ DNEVNIK POPRAVKOV UPORABNIKA
              -> razdelek 16, Platno (višina po vsebini), Hierarhija (manjši razmik).
 2026-10-29 - V Nastavitvah zaposlenega na vrhu stikalo "Super Admin": z njim ima zaposleni z e-mailom / uporabniškim
              imenom in geslom dostop do FIN:OS (Administracije), brez njega ne. -> razdelek 17, ListZaposlenega, Seja, 005.
+2026-10-29 - Vse Super Admine označi v seznamu: ikona pred kvadratkom z začetnicami. -> razdelek 17, SeznamZaposlenih.
+2026-10-29 - Ponovno zaganjanje migracije za vsako novo tabelo ni sprejemljivo -> v Dostopih pri zaposlenem stikala za
+             aplikacije, nove tabele se zaščitijo same. -> razdelek 18, ListZaposlenega (Dostopi), 006_dostopi_aplikacije.

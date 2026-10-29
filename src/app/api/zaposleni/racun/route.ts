@@ -33,23 +33,35 @@ export async function POST(req: Request) {
   if (!superAdmin && z.super_admin && z.id_uporabnika === klicatelj.user.id && !zasilni)
     return napaka("Sebi ne moreš odvzeti Super Admina - to naj naredi drug Super Admin.");
 
-  const metapodatki = { app_metadata: { fos_vloga: "zaposleni", id_zaposlenega: z.id }, user_metadata: { ime: z.ime, priimek: z.priimek } };
+  // dostop do aplikacij ureja FIN:OS (006, zaposleni -> Dostopi); v računu je samo povezava z zaposlenim
+  const nov = { app_metadata: { id_zaposlenega: z.id }, user_metadata: { ime: z.ime, priimek: z.priimek } };
+  const obstojeci = async (id: string) => {
+    const { data } = await admin.auth.admin.getUserById(id);
+    return { app_metadata: { ...(data.user?.app_metadata ?? {}), id_zaposlenega: z.id } };
+  };
   let idUporabnika: string | null = z.id_uporabnika;
 
   if (idUporabnika) {
     if (!v.email) return napaka("Zaposleni že ima račun - e-mail ne sme biti prazen.");
-    const { error } = await admin.auth.admin.updateUserById(idUporabnika, { email: v.email, email_confirm: true, ...(v.geslo ? { password: v.geslo } : {}), ...metapodatki });
+    const { error } = await admin.auth.admin.updateUserById(idUporabnika, { email: v.email, email_confirm: true, ...(v.geslo ? { password: v.geslo } : {}), ...(await obstojeci(idUporabnika)) });
     if (error) return napaka(sporociloAuth(error.message));
   } else if (v.geslo || telo.super_admin) {
     if (!v.email) return napaka("Za račun vpiši e-mail.");
     // račun s tem e-mailom že obstaja (ista baza kot ostale Fines aplikacije) -> poveži ga z zaposlenim
     const obstojec = await najdiRacun(admin, v.email);
     if (obstojec) {
-      const { error } = await admin.auth.admin.updateUserById(obstojec, { ...(v.geslo ? { password: v.geslo } : {}), ...metapodatki });
+      const { error } = await admin.auth.admin.updateUserById(obstojec, { ...(v.geslo ? { password: v.geslo } : {}), ...(await obstojeci(obstojec)) });
       if (error) return napaka(sporociloAuth(error.message));
       idUporabnika = obstojec;
+      // obstoječi račun je do zdaj imel dostop do vseh aplikacij - po povezavi z zaposlenim ga obdrži
+      const [{ data: apl }, { data: imajo }] = await Promise.all([
+        admin.from("fos_aplikacije").select("id").eq("visible", true),
+        admin.from("ln_fos_zaposleni_aplikacije").select("id_aplikacije").eq("id_zaposlenega", z.id).eq("visible", true),
+      ]);
+      const manjka = (apl ?? []).filter((a) => !(imajo ?? []).some((i) => i.id_aplikacije === a.id));
+      if (manjka.length) await admin.from("ln_fos_zaposleni_aplikacije").insert(manjka.map((a) => ({ id_zaposlenega: z.id, id_aplikacije: a.id })));
     } else if (v.geslo) {
-      const { data, error } = await admin.auth.admin.createUser({ email: v.email, password: v.geslo, email_confirm: true, ...metapodatki });
+      const { data, error } = await admin.auth.admin.createUser({ email: v.email, password: v.geslo, email_confirm: true, ...nov });
       if (error || !data.user) return napaka(sporociloAuth(error?.message ?? ""));
       idUporabnika = data.user.id;
     }

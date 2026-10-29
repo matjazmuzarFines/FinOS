@@ -32,12 +32,17 @@ export type Zaposleni = ZaposleniVrstica & {
   id_vodja: number | null;
   vodja: ZaposleniVrstica | null;
   id_kot_vodja: number | null;
+  /** id-ji aplikacij z vklopljenim dostopom (ln_fos_zaposleni_aplikacije), urejeni. */
+  aplikacije: number[];
 };
+
+/** Aplikacija (fos_aplikacije), do katere ima zaposleni lahko dostop (zaposleni -> Dostopi). */
+export type Aplikacija = { id: number; koda: string; ime: string; opis: string | null };
 
 /** Vodja za izbirna polja (fos_vodje.id + oseba). */
 export type Vodja = { id: number; zaposleni: ZaposleniVrstica };
 
-export type ZaposleniPodatki = { zaposleni: Zaposleni[]; oddelki: Oddelek[]; vodje: Vodja[]; poId: Map<number, Zaposleni> };
+export type ZaposleniPodatki = { zaposleni: Zaposleni[]; oddelki: Oddelek[]; vodje: Vodja[]; aplikacije: Aplikacija[]; poId: Map<number, Zaposleni> };
 
 /** Vnosna polja zaposlenega (obrazec Dodaj in list zaposlenega). */
 export type ZaposleniVnos = {
@@ -52,6 +57,7 @@ export type ZaposleniVnos = {
   /** Novo geslo (prazno = brez spremembe); nikoli se ne prebere iz baze. */
   geslo: string;
   super_admin: boolean;
+  aplikacije: number[];
 };
 
 export const polnoIme = (z: Pick<ZaposleniVrstica, "ime" | "priimek">) => `${z.ime} ${z.priimek}`;
@@ -70,19 +76,26 @@ export const vnosIz = (z: Zaposleni): ZaposleniVnos => ({
   uporabnisko_ime: z.uporabnisko_ime ?? "",
   geslo: "",
   super_admin: z.super_admin,
+  aplikacije: z.aplikacije,
 });
-export const PRAZEN_VNOS: ZaposleniVnos = { ime: "", priimek: "", st_kartice: "", id_oddelek: null, id_vodja: null, je_vodja: false, email: "", uporabnisko_ime: "", geslo: "", super_admin: false };
+export const PRAZEN_VNOS: ZaposleniVnos = { ime: "", priimek: "", st_kartice: "", id_oddelek: null, id_vodja: null, je_vodja: false, email: "", uporabnisko_ime: "", geslo: "", super_admin: false, aplikacije: [] };
 
 async function nalozi(): Promise<ZaposleniPodatki> {
   const sb = getSupabase();
-  const [vrstice, oddelki, vodjeVrstice, povezave] = await Promise.all([
+  const [vrstice, oddelki, vodjeVrstice, povezave, aplikacije, dostopi] = await Promise.all([
     fetchAll<ZaposleniVrstica>((from, to) => sb.from("fos_zaposleni").select("id, ime, priimek, st_kartice, id_oddelek, email, uporabnisko_ime, id_uporabnika, super_admin").eq("visible", true).order("id").range(from, to)),
     fetchAll<Oddelek>((from, to) => sb.from("fos_oddelek").select("id, ime_oddelka").eq("visible", true).order("ime_oddelka").range(from, to)),
     fetchAll<{ id: number; id_zaposlenega: number }>((from, to) => sb.from("fos_vodje").select("id, id_zaposlenega").eq("visible", true).order("id").range(from, to)),
     fetchAll<{ id_zaposlenega: number; id_vodja: number }>((from, to) =>
       sb.from("ln_fos_zaposleni_vodja").select("id_zaposlenega, id_vodja").eq("visible", true).order("id").range(from, to),
     ),
+    fetchAll<Aplikacija>((from, to) => sb.from("fos_aplikacije").select("id, koda, ime, opis").eq("visible", true).order("vrstni_red").range(from, to)),
+    fetchAll<{ id_zaposlenega: number; id_aplikacije: number }>((from, to) =>
+      sb.from("ln_fos_zaposleni_aplikacije").select("id_zaposlenega, id_aplikacije").eq("visible", true).order("id").range(from, to),
+    ),
   ]);
+  const dostopPo = new Map<number, number[]>();
+  for (const d of dostopi) dostopPo.set(d.id_zaposlenega, [...(dostopPo.get(d.id_zaposlenega) ?? []), d.id_aplikacije]);
   const oddelekPoId = new Map(oddelki.map((o) => [o.id, o]));
   const vrsticaPoId = new Map(vrstice.map((v) => [v.id, v]));
   // samo vodje, ki so vidni zaposleni
@@ -102,9 +115,10 @@ async function nalozi(): Promise<ZaposleniPodatki> {
       id_vodja: idVodja,
       vodja: idVodja != null ? (vodjaPoId.get(idVodja)?.zaposleni ?? null) : null,
       id_kot_vodja: kotVodja.get(v.id) ?? null,
+      aplikacije: [...new Set(dostopPo.get(v.id) ?? [])].sort((a, b) => a - b),
     };
   });
-  return { zaposleni, oddelki, vodje, poId: new Map(zaposleni.map((z) => [z.id, z])) };
+  return { zaposleni, oddelki, vodje, aplikacije, poId: new Map(zaposleni.map((z) => [z.id, z])) };
 }
 
 // Skupen predpomnilnik: seznam -> list zaposlenega -> nazaj brez ponovnega nalaganja
@@ -201,6 +215,21 @@ async function shraniVodjo(id: number, v: ZaposleniVnos, prej?: ZaposleniVnos) {
   }
 }
 
+/** Dostop do aplikacij (ln_fos_zaposleni_aplikacije): dodani dobijo zapis, odvzeti se skrijejo (visible = false). */
+async function shraniAplikacije(id: number, nove: number[], stare: number[]) {
+  const sb = getSupabase();
+  const dodaj = nove.filter((a) => !stare.includes(a));
+  const odvzemi = stare.filter((a) => !nove.includes(a));
+  if (dodaj.length) {
+    const { error } = await sb.from("ln_fos_zaposleni_aplikacije").insert(dodaj.map((a) => ({ id_zaposlenega: id, id_aplikacije: a })));
+    if (error) throw napaka(error);
+  }
+  if (odvzemi.length) {
+    const { error } = await sb.from("ln_fos_zaposleni_aplikacije").update({ visible: false }).eq("id_zaposlenega", id).eq("visible", true).in("id_aplikacije", odvzemi);
+    if (error) throw napaka(error);
+  }
+}
+
 /** Doda zaposlenega (fos_zaposleni) in njegovega vodjo; vrne nov id. */
 export async function dodajZaposlenega(v: ZaposleniVnos): Promise<number> {
   const { data, error } = await getSupabase().from("fos_zaposleni").insert(vrstica(v)).select("id").single();
@@ -223,6 +252,7 @@ export async function shraniZaposlenega(id: number, v: ZaposleniVnos, prej: Zapo
     if (error) throw napaka(error, v);
   }
   await shraniVodjo(id, v, prej);
+  await shraniAplikacije(id, v.aplikacije, prej.aplikacije);
   try {
     if (prijavaSpremenjena(v, prej)) await shraniPrijavo(id, v);
   } finally {

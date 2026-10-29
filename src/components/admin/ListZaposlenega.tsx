@@ -15,7 +15,7 @@ import { obvesti } from "@/components/ui/Obvestila";
 import { Znak } from "@/components/Znak";
 import { PoljaOrganizacije, PoljaOsebe, PoljaPrijave } from "./ZaposleniObrazec";
 import { useLahkoUreja } from "@/lib/pravice";
-import { polnoIme, preveriVnos, shraniZaposlenega, useZaposleni, vnosIz, zacetnice, type Zaposleni, type ZaposleniPodatki, type ZaposleniVnos } from "@/lib/zaposleni";
+import { polnoIme, preveriVnos, type Aplikacija, shraniZaposlenega, useZaposleni, vnosIz, zacetnice, type Zaposleni, type ZaposleniPodatki, type ZaposleniVnos } from "@/lib/zaposleni";
 
 /** Razdelki lista zaposlenega - en vir (zavihki). Nov razdelek = nov vnos tukaj + komponenta. */
 const ZAVIHKI = [
@@ -77,7 +77,7 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
   const [vnos, setVnos] = useState<ZaposleniVnos>(prej);
   const [shranjujem, setShranjujem] = useState(false);
   const nastavi = (p: Partial<ZaposleniVnos>) => setVnos((v) => ({ ...v, ...p }));
-  const sprememb = (Object.keys(prej) as (keyof ZaposleniVnos)[]).filter((k) => prej[k] !== vnos[k]).length;
+  const sprememb = (Object.keys(prej) as (keyof ZaposleniVnos)[]).filter((k) => JSON.stringify(prej[k]) !== JSON.stringify(vnos[k])).length;
 
   const shrani = async () => {
     const n = preveriVnos(vnos);
@@ -184,7 +184,7 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
         <motion.div key={zavihek} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
           {zavihek === "podatki" && <Podatki z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} />}
           {zavihek === "organizacija" && <Organizacija z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} podrejeni={podrejeni} podatki={podatki} />}
-          {zavihek === "dostopi" && <Dostopi z={z} />}
+          {zavihek === "dostopi" && <Dostopi z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} aplikacije={podatki.aplikacije} />}
           {zavihek === "nastavitve" && <Nastavitve z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} />}
         </motion.div>
       </AnimatePresence>
@@ -294,9 +294,40 @@ function Nastavitve({ z, vnos, nastavi, ureja }: { z: Zaposleni } & UrejanjeProp
   );
 }
 
-function Dostopi({ z }: { z: Zaposleni }) {
+function Dostopi({ z, vnos, nastavi, ureja, aplikacije }: { z: Zaposleni; aplikacije: Aplikacija[] } & UrejanjeProps) {
+  const preklopi = (id: number, vklop: boolean) =>
+    nastavi({ aplikacije: (vklop ? [...vnos.aplikacije, id] : vnos.aplikacije.filter((a) => a !== id)).sort((a, b) => a - b) });
   return (
     <section className="flex flex-col gap-4">
+      <NaslovRazdelka desno={<span className="text-xs tabular-nums text-ink-400">{vnos.aplikacije.length + (vnos.super_admin ? 1 : 0)}</span>}>Aplikacije</NaslovRazdelka>
+      <div className="fos-glass flex flex-col gap-3 rounded-[18px] p-4 sm:p-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* FIN:OS: dostop samo prek Super Admina (Nastavitve) */}
+          <div
+            title="Dostop do FIN:OS Administracije ureja stikalo Super Admin v Nastavitvah"
+            className={`flex flex-col gap-1 rounded-[14px] border p-3 ${vnos.super_admin ? "border-fines-400/50 bg-fines-500/10" : "border-white/10 bg-white/[0.03]"}`}
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Znak pripona="OS" className="text-sm" /> Administracija
+            </span>
+            <span className="text-xs text-ink-400">{vnos.super_admin ? "Dostop: Super Admin" : "Brez dostopa - vklopi Super Admin v Nastavitvah"}</span>
+          </div>
+          {aplikacije.map((a) => (
+            <div key={a.id} className="flex flex-col gap-1.5">
+              <Stikalo vklop={vnos.aplikacije.includes(a.id)} onChange={(v) => preklopi(a.id, v)} hint={`Dostop zaposlenega do aplikacije ${a.ime}`} disabled={!ureja}>
+                {a.ime}
+              </Stikalo>
+              {a.opis && <span className="px-1 text-xs text-ink-500">{a.opis}</span>}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-ink-500">
+          {z.id_uporabnika
+            ? "Dostop velja za račun zaposlenega (prijava z e-mailom / uporabniškim imenom) in začne veljati takoj po shranjevanju."
+            : "Zaposleni še nima računa - dostopi začnejo veljati, ko mu v razdelku Podatki ustvariš prijavo."}
+        </p>
+      </div>
+
       <NaslovRazdelka>Kartica</NaslovRazdelka>
       <div className="fos-glass flex min-w-0 flex-col gap-1 rounded-[16px] p-4 sm:max-w-md">
         <span className="text-xs font-semibold text-ink-400">Številka kartice</span>

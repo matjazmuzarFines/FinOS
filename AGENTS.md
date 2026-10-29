@@ -25,6 +25,12 @@
     = kdo je vodja posameznemu zaposlenemu (en viden zapis na zaposlenega, ob menjavi se star skrije -> zgodovina).
     Piše se samo prek funkcij `fos_nastavi_vodjo` in `fos_nastavi_je_vodja` (aplikacija jih kliče ob shranjevanju).
     Stolpca `fos_zaposleni.id_vodja` ni več (002 ga prenese v ln tabelo in odstrani) - en vir podatka o vodji.
+  - `006_dostopi_aplikacije.sql`: `fos_aplikacije` (ime, `predpone` tabel, `kosare` za datoteke) + `ln_fos_zaposleni_aplikacije`
+    (zaposleni -> Dostopi, stikalo na aplikacijo). Na VSAKI tabeli v public in storage omejevalna politika `fos_dostop`
+    (`fos_ima_dostop(ime)`): račun, povezan z zaposlenim, sme samo v vklopljene aplikacije, v fos_ tabele samo kot Super Admin;
+    računi brez zaposlenega (npr. fines@fines.si) delajo kot prej. **Nove tabele dobijo politiko same** (dogodek `fos_nova_tabela`
+    ob CREATE TABLE) - migracije ni treba ponavljati. Nova aplikacija = nova vrstica v `fos_aplikacije`.
+    Ko FIN:OS poveže obstoječi račun (npr. vodja v Production), zaposleni dobi vklopljene vse aplikacije.
   - `005_super_admin.sql`: `fos_zaposleni.super_admin` (piše samo strežnik) + `fos_je_super_admin()` (za zaklep).
   - `004_hierarhija.sql`: `fos_nastavi_vodjo` zavrne krog v hierarhiji (vodja, ki je posredno podrejen zaposlenemu).
   - `003_zaposleni_prijava.sql`: `fos_zaposleni.email`, `uporabnisko_ime`, `id_uporabnika` (auth.users). GESLA NI v naših tabelah:
@@ -72,7 +78,6 @@
 - 2.03: FIN:OS brez prijave, Administracija samo fines@fines.si; prijava zaposlenih v FIN:ME (e-mail / uporabniško ime + geslo).
 - 2.08: Super Admin (stikalo v Nastavitvah) - dostop do Administracije z računom zaposlenega.
 - 2.04: Prikaz hierarhije (drevo vodij, dodajanje na prazna mesta, povleci in spusti).
-- ODPRTO (varnost): računi zaposlenih so v istem Supabase projektu kot ostale Fines aplikacije, kjer RLS dovoli vse vlogi
-  `authenticated`. Zaposleni s FIN:ME računom bi z javnim ključem lahko bral / pisal tudi te tabele. Pred prvim računom FIN:ME
-  zaostriti RLS (npr. izključiti `app_metadata.fos_vloga = 'zaposleni'`) v vseh Fines projektih in v fos_ tabelah.
+- 2.10: dostop do aplikacij po zaposlenem (Dostopi), samodejna zaščita novih tabel; oznaka Super Admina v seznamu.
+- FIN:ME: ko bo narejen, dodaj politike za lastne podatke zaposlenega (zdaj ima račun zaposlenega brez Super Admina dostop do ničesar).
 - Moj Fines še ne vodi nikamor.

@@ -3,6 +3,15 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "2.10",
+    datum: "29. 10. 2026",
+    spremembe: [
+      "Dostopi zaposlenega: stikala za aplikacije (Fines - Production, Kontrolne točke, Rabljena oprema), FIN:OS prek Super Admina.",
+      "Baza sama zaščiti vsako novo tabelo - ob novih tabelah ni treba ničesar ponavljati.",
+      "Seznam zaposlenih: Super Admini imajo ikono ščita pred kvadratkom z začetnicami.",
+    ],
+  },
+  {
     verzija: "2.08",
     datum: "29. 10. 2026",
     spremembe: [

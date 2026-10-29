@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, Network, ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, CreditCard, RefreshCw, RotateCcw, SearchX, UserRoundPlus } from "lucide-react";
+import { AlertTriangle, Network, ShieldCheck, ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, CreditCard, RefreshCw, RotateCcw, SearchX, UserRoundPlus } from "lucide-react";
 import { DodajZaposlenega } from "./ZaposleniObrazec";
 import { useLahkoUreja } from "@/lib/pravice";
 import { Button } from "@/components/ui/Button";
@@ -33,8 +33,8 @@ const primerjaj = (a: string | undefined, b: string | undefined) => {
   return a.localeCompare(b, "sl", { sensitivity: "base" });
 };
 
-// stolpci seznama od sm naprej: avatar | ime | priimek | oddelek | vodja | kartica | puščica
-const STOLPCI = "sm:grid sm:grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.2fr)_7.5rem_1.25rem] sm:items-center sm:gap-4";
+// stolpci seznama od sm naprej: Super Admin | avatar | ime | priimek | oddelek | vodja | kartica | puščica
+const STOLPCI = "sm:grid sm:grid-cols-[1.75rem_2.75rem_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.2fr)_7.5rem_1.25rem] sm:items-center sm:gap-4";
 
 /** Seznam zaposlenih: hitri filtri (iskanje, oddelki, vodja), razvrščanje po imenu / priimku / oddelku, klik odpre list. */
 export function SeznamZaposlenih() {
@@ -210,6 +210,7 @@ export function SeznamZaposlenih() {
           {/* glava seznama = razvrščanje (od sm naprej), lepljiva pod glavo aplikacije */}
           <div className={`sticky top-[68px] z-20 hidden rounded-[14px] border border-white/10 bg-ink-800/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-ink-300 shadow-[0_10px_30px_-18px_rgb(0_0_0/0.8)] backdrop-blur-xl ${STOLPCI}`}>
             <span />
+            <span />
             <SortGlava ime="Ime" po="imenu" aktiven={f.sort === "ime"} smer={f.smer} onClick={() => razvrsti("ime")} />
             <SortGlava ime="Priimek" po="priimku" aktiven={f.sort === "priimek"} smer={f.smer} onClick={() => razvrsti("priimek")} />
             <SortGlava ime="Oddelek" po="oddelku" aktiven={f.sort === "oddelek"} smer={f.smer} onClick={() => razvrsti("oddelek")} />
@@ -261,6 +262,7 @@ function Vrstica({ z, zamik }: { z: Zaposleni; zamik: number }) {
         className={`fos-glass group relative flex items-center gap-3 overflow-hidden rounded-[16px] px-3 py-2.5 outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-fines-400/40 hover:shadow-[0_16px_40px_-18px_rgb(202_80_16/0.7)] focus-visible:ring-2 focus-visible:ring-fines-400 sm:px-4 ${STOLPCI}`}
       >
         <span aria-hidden className="absolute inset-y-2 left-0 w-[3px] origin-center scale-y-0 rounded-full bg-[linear-gradient(180deg,#f19a66,#ca5010)] transition-transform duration-300 group-hover:scale-y-100" />
+        <SuperAdminZnak je={z.super_admin} />
         <Avatar besedilo={zacetnice(z)} />
 
         {/* telefon: ime + oddelek + vodja / kartica v dveh vrsticah */}
@@ -296,6 +298,20 @@ function Vrstica({ z, zamik }: { z: Zaposleni; zamik: number }) {
         <ChevronRight className="h-5 w-5 shrink-0 text-ink-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-fines-300" aria-hidden />
       </Link>
     </motion.li>
+  );
+}
+
+/** Ikona Super Admina pred avatarjem (prazen prostor, če ni - stolpci ostanejo poravnani). */
+function SuperAdminZnak({ je }: { je: boolean }) {
+  if (!je) return <span aria-hidden className="w-7 shrink-0" />;
+  return (
+    <span
+      title="Super Admin - ima dostop do FIN:OS Administracije"
+      aria-label="Super Admin"
+      className="fos-fines-fill grid h-7 w-7 shrink-0 place-items-center rounded-full text-snow"
+    >
+      <ShieldCheck className="h-4 w-4" aria-hidden />
+    </span>
   );
 }
 
