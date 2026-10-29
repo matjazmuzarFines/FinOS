@@ -3,6 +3,14 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "2.08",
+    datum: "29. 10. 2026",
+    spremembe: [
+      "Nastavitve zaposlenega: stikalo Super Admin - z njim ima zaposleni s svojim računom dostop do Administracije.",
+      "Zaposlenega z že obstoječim računom (ista prijava kot druge Fines aplikacije) se poveže z njegovim računom.",
+    ],
+  },
+  {
     verzija: "2.07",
     datum: "29. 10. 2026",
     spremembe: [

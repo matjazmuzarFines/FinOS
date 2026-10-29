@@ -130,6 +130,11 @@ PRAVILA
    - Dodajanje: okno (Modal) z istimi polji kot list (ena komponenta polj), Prekliči + Shrani v nogi,
      napaka rdeče pod polji; po shranjevanju se odpre list novega zapisa. Uspeh / napaka = obvestilo (Obvestila).
 
+17. Nastavitve zaposlenega - Super Admin
+   - Prvi na vrhu zavihka Nastavitve: razdelek DOSTOP, kartica s ščitom, naslov "Super Admin", opis, desno Stikalo.
+     Vklopljen: ikona v oranžnem prelivu, kartica z oranžno obrobo in sijem; v glavi osebe oznaka "Super Admin".
+   - Brez računa (e-mail + geslo) je stikalo zaklenjeno in pod njim rumeno opozorilo, kaj najprej narediti.
+
 16. Prikaz hierarhije (Hierarhija, /administracija/zaposleni/hierarhija; gumb "Prikaz hierarhije" bel na seznamu)
    - Lestvice (vrh = vodja brez vodje) so okna DRUG OB DRUGEM v eni vodoravni vrsti čez celo širino zaslona
      (vrsta se drsi), "Nova lestvica" je črtkano okno na koncu vrste.
@@ -194,3 +199,5 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-10-29 - Hierarhija: povečava / pomanjšava (kolešček), ker bo komponent veliko. -> razdelek 16, Platno.
 2026-10-29 - Okno hierarhije je previsoko, med njim in "Brez vodje" je preveč prostora (pri vlečenju je bilo treba drseti).
              -> razdelek 16, Platno (višina po vsebini), Hierarhija (manjši razmik).
+2026-10-29 - V Nastavitvah zaposlenega na vrhu stikalo "Super Admin": z njim ima zaposleni z e-mailom / uporabniškim
+             imenom in geslom dostop do FIN:OS (Administracije), brez njega ne. -> razdelek 17, ListZaposlenega, Seja, 005.

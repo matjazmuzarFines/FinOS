@@ -25,6 +25,7 @@
     = kdo je vodja posameznemu zaposlenemu (en viden zapis na zaposlenega, ob menjavi se star skrije -> zgodovina).
     Piše se samo prek funkcij `fos_nastavi_vodjo` in `fos_nastavi_je_vodja` (aplikacija jih kliče ob shranjevanju).
     Stolpca `fos_zaposleni.id_vodja` ni več (002 ga prenese v ln tabelo in odstrani) - en vir podatka o vodji.
+  - `005_super_admin.sql`: `fos_zaposleni.super_admin` (piše samo strežnik) + `fos_je_super_admin()` (za zaklep).
   - `004_hierarhija.sql`: `fos_nastavi_vodjo` zavrne krog v hierarhiji (vodja, ki je posredno podrejen zaposlenemu).
   - `003_zaposleni_prijava.sql`: `fos_zaposleni.email`, `uporabnisko_ime`, `id_uporabnika` (auth.users). GESLA NI v naših tabelah:
     hrani ga Supabase Auth (bcrypt). Račun ustvari / spremeni samo strežnik (`/api/zaposleni/racun`, ključ service_role);
@@ -36,8 +37,9 @@
   `SUPABASE_SERVICE_ROLE_KEY`) - nikoli v git; enake vpiši tudi na Vercelu. `SUPABASE_SERVICE_ROLE_KEY` je samo za strežnik
   (`src/lib/supabaseStreznik.ts`, API poti) - nikoli `NEXT_PUBLIC_`, nikoli v komponento za brskalnik.
 - Prijava: domača stran FIN:OS brez prijave; Administracija zaklenjena (`Zaklep` v `administracija/layout.tsx`).
-- Pravice (začasno, do tabele dostopov): v Administracijo smejo samo e-maili iz `NEXT_PUBLIC_FOS_UREDNIKI` (za zdaj fines@fines.si;
-  `src/lib/uredniki.ts`, `useLahkoUreja()`). To je zaklep v aplikaciji; v bazi RLS za zdaj dovoli pisanje vsem prijavljenim.
+- Pravice (do tabele dostopov): v Administracijo sme **Super Admin** (stikalo v Nastavitvah zaposlenega, `fos_zaposleni.super_admin`,
+  prijava z e-mailom / uporabniškim imenom + geslom). `NEXT_PUBLIC_FOS_UREDNIKI` je zasilni seznam (npr. fines@fines.si), da se ne
+  zaklenemo ven (`src/lib/uredniki.ts`, `useDostop()` / `useLahkoUreja()`). Super Admin sebi ne more odvzeti pravice. To je zaklep v aplikaciji; v bazi RLS za zdaj dovoli pisanje vsem prijavljenim.
 
 ## Tehnologija
 - Next.js 16 (App Router, `src/`), React 19, TypeScript, Tailwind CSS 4.
@@ -68,6 +70,7 @@
 - 2.01: prijava (Supabase Auth, cela aplikacija), svetla / temna tema, Administracija -> Zaposleni (seznam in list).
 - 2.02: dodajanje in urejanje zaposlenih v aplikaciji (vodje prek fos_vodje + ln_fos_zaposleni_vodja).
 - 2.03: FIN:OS brez prijave, Administracija samo fines@fines.si; prijava zaposlenih v FIN:ME (e-mail / uporabniško ime + geslo).
+- 2.08: Super Admin (stikalo v Nastavitvah) - dostop do Administracije z računom zaposlenega.
 - 2.04: Prikaz hierarhije (drevo vodij, dodajanje na prazna mesta, povleci in spusti).
 - ODPRTO (varnost): računi zaposlenih so v istem Supabase projektu kot ostale Fines aplikacije, kjer RLS dovoli vse vlogi
   `authenticated`. Zaposleni s FIN:ME računom bi z javnim ključem lahko bral / pisal tudi te tabele. Pred prvim računom FIN:ME

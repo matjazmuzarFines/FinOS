@@ -1,9 +1,8 @@
 "use client";
 
-import { useSeja } from "@/components/Seja";
-import { jeUrednik } from "./uredniki";
+import { useDostop } from "@/components/Seja";
 
-/** true = prijavljen uporabnik sme urejati podatke (glej uredniki.ts). */
+/** true = prijavljen uporabnik sme urejati podatke (Super Admin ali zasilni seznam, glej uredniki.ts). */
 export function useLahkoUreja(): boolean {
-  return jeUrednik(useSeja()?.user.email);
+  return useDostop();
 }

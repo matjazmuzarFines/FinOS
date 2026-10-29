@@ -4,12 +4,12 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, Building2, ChevronRight, CreditCard, DoorOpen, Eye, IdCard, Network, Settings2, UserRound, UserRoundX, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ShieldCheck, Building2, ChevronRight, CreditCard, DoorOpen, Eye, IdCard, Network, Settings2, UserRound, UserRoundX, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { GlavaStrani, NaslovRazdelka } from "@/components/ui/GlavaStrani";
 import { Avatar } from "@/components/ui/Avatar";
 import { PraznoStanje } from "@/components/ui/PraznoStanje";
-import { POLJE, PoljeNaslov } from "@/components/ui/Polje";
+import { POLJE, PoljeNaslov, Stikalo } from "@/components/ui/Polje";
 import { SaveBar } from "@/components/ui/SaveBar";
 import { obvesti } from "@/components/ui/Obvestila";
 import { Znak } from "@/components/Znak";
@@ -125,6 +125,11 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
               <Oznaka icon={CreditCard} hint="Številka kartice zaposlenega" mono>
                 {z.st_kartice ?? "Brez kartice"}
               </Oznaka>
+              {z.super_admin && (
+                <Oznaka icon={ShieldCheck} hint="Ima dostop do FIN:OS Administracije">
+                  Super Admin
+                </Oznaka>
+              )}
               {z.id_kot_vodja != null && (
                 <Oznaka icon={Network} hint="Zaposleni je vodja">
                   Vodja ({podrejeni.length})
@@ -180,7 +185,7 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
           {zavihek === "podatki" && <Podatki z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} />}
           {zavihek === "organizacija" && <Organizacija z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} podrejeni={podrejeni} podatki={podatki} />}
           {zavihek === "dostopi" && <Dostopi z={z} />}
-          {zavihek === "nastavitve" && <PraznoStanje icon={Settings2} naslov="Nastavitve - kmalu" opis="Tu bodo nastavitve zaposlenega (npr. delovni čas, pravice v FIN:OS)." />}
+          {zavihek === "nastavitve" && <Nastavitve z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} />}
         </motion.div>
       </AnimatePresence>
 
@@ -248,6 +253,43 @@ function Organizacija({ z, vnos, nastavi, ureja, podrejeni, podatki }: { z: Zapo
       ) : (
         <p className="px-1 text-sm text-ink-500">{polnoIme(z)} ni vodja nobenemu zaposlenemu.</p>
       )}
+    </section>
+  );
+}
+
+/** Nastavitve zaposlenega: na vrhu dostop (Super Admin), nato ostale nastavitve. */
+function Nastavitve({ z, vnos, nastavi, ureja }: { z: Zaposleni } & UrejanjeProps) {
+  const imaRacun = z.id_uporabnika != null || (vnos.email.trim() !== "" && vnos.geslo !== "");
+  return (
+    <section className="flex flex-col gap-4">
+      <NaslovRazdelka>Dostop</NaslovRazdelka>
+      <div className={`fos-glass flex flex-col gap-3 rounded-[18px] p-4 sm:p-5 ${vnos.super_admin ? "border-fines-400/50 shadow-[0_0_40px_-18px_rgb(238_122_58/0.8)]" : ""}`}>
+        <div className="flex flex-wrap items-center gap-4">
+          <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${vnos.super_admin ? "fos-fines-fill text-snow" : "bg-white/[0.06] text-ink-400"}`}>
+            <ShieldCheck className="h-5 w-5" aria-hidden />
+          </span>
+          <div className="flex min-w-[min(100%,16rem)] flex-1 flex-col">
+            <span className="font-display text-lg font-bold text-white">Super Admin</span>
+            <span className="text-sm text-ink-400">Dostop do FIN:OS Administracije z e-mailom ali uporabniškim imenom in geslom tega zaposlenega.</span>
+          </div>
+          <div className="w-full sm:w-56">
+            <Stikalo
+              vklop={vnos.super_admin}
+              onChange={(v) => nastavi({ super_admin: v })}
+              hint={vnos.super_admin ? "Odvzemi dostop do FIN:OS Administracije" : "Dovoli dostop do FIN:OS Administracije"}
+              disabled={!ureja || (!imaRacun && !vnos.super_admin)}
+            >
+              {vnos.super_admin ? "Vklopljen" : "Izklopljen"}
+            </Stikalo>
+          </div>
+        </div>
+        {!imaRacun && (
+          <p className="text-xs text-warn-500">Zaposleni še nima računa - najprej v razdelku Podatki vpiši e-mail in geslo (Prijava v FIN:ME).</p>
+        )}
+      </div>
+
+      <NaslovRazdelka>Ostale nastavitve</NaslovRazdelka>
+      <PraznoStanje icon={Settings2} naslov="Kmalu" opis="Tu bodo ostale nastavitve zaposlenega (npr. delovni čas)." />
     </section>
   );
 }

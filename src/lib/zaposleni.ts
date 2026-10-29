@@ -18,6 +18,8 @@ export type ZaposleniVrstica = {
   email: string | null;
   uporabnisko_ime: string | null;
   id_uporabnika: string | null;
+  /** Dostop do FIN:OS Administracije (nastavi samo strežnik). */
+  super_admin: boolean;
 };
 
 /**
@@ -49,6 +51,7 @@ export type ZaposleniVnos = {
   uporabnisko_ime: string;
   /** Novo geslo (prazno = brez spremembe); nikoli se ne prebere iz baze. */
   geslo: string;
+  super_admin: boolean;
 };
 
 export const polnoIme = (z: Pick<ZaposleniVrstica, "ime" | "priimek">) => `${z.ime} ${z.priimek}`;
@@ -66,13 +69,14 @@ export const vnosIz = (z: Zaposleni): ZaposleniVnos => ({
   email: z.email ?? "",
   uporabnisko_ime: z.uporabnisko_ime ?? "",
   geslo: "",
+  super_admin: z.super_admin,
 });
-export const PRAZEN_VNOS: ZaposleniVnos = { ime: "", priimek: "", st_kartice: "", id_oddelek: null, id_vodja: null, je_vodja: false, email: "", uporabnisko_ime: "", geslo: "" };
+export const PRAZEN_VNOS: ZaposleniVnos = { ime: "", priimek: "", st_kartice: "", id_oddelek: null, id_vodja: null, je_vodja: false, email: "", uporabnisko_ime: "", geslo: "", super_admin: false };
 
 async function nalozi(): Promise<ZaposleniPodatki> {
   const sb = getSupabase();
   const [vrstice, oddelki, vodjeVrstice, povezave] = await Promise.all([
-    fetchAll<ZaposleniVrstica>((from, to) => sb.from("fos_zaposleni").select("id, ime, priimek, st_kartice, id_oddelek, email, uporabnisko_ime, id_uporabnika").eq("visible", true).order("id").range(from, to)),
+    fetchAll<ZaposleniVrstica>((from, to) => sb.from("fos_zaposleni").select("id, ime, priimek, st_kartice, id_oddelek, email, uporabnisko_ime, id_uporabnika, super_admin").eq("visible", true).order("id").range(from, to)),
     fetchAll<Oddelek>((from, to) => sb.from("fos_oddelek").select("id, ime_oddelka").eq("visible", true).order("ime_oddelka").range(from, to)),
     fetchAll<{ id: number; id_zaposlenega: number }>((from, to) => sb.from("fos_vodje").select("id, id_zaposlenega").eq("visible", true).order("id").range(from, to)),
     fetchAll<{ id_zaposlenega: number; id_vodja: number }>((from, to) =>
@@ -171,7 +175,7 @@ export function preveriVnos(v: ZaposleniVnos): string | null {
 }
 
 const prijavaSpremenjena = (v: ZaposleniVnos, prej: ZaposleniVnos) =>
-  v.geslo !== "" || v.email.trim().toLowerCase() !== prej.email.trim().toLowerCase() || v.uporabnisko_ime.trim().toLowerCase() !== prej.uporabnisko_ime.trim().toLowerCase();
+  v.geslo !== "" || v.super_admin !== prej.super_admin || v.email.trim().toLowerCase() !== prej.email.trim().toLowerCase() || v.uporabnisko_ime.trim().toLowerCase() !== prej.uporabnisko_ime.trim().toLowerCase();
 
 /** E-mail, uporabniško ime in geslo shrani strežnik (/api/zaposleni/racun) - geslo gre samo v Supabase Auth. */
 async function shraniPrijavo(id: number, v: ZaposleniVnos) {
@@ -179,7 +183,7 @@ async function shraniPrijavo(id: number, v: ZaposleniVnos) {
   const odg = await fetch("/api/zaposleni/racun", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token ?? ""}` },
-    body: JSON.stringify({ id_zaposlenega: id, email: v.email, uporabnisko_ime: v.uporabnisko_ime, geslo: v.geslo || null }),
+    body: JSON.stringify({ id_zaposlenega: id, email: v.email, uporabnisko_ime: v.uporabnisko_ime, geslo: v.geslo || null, super_admin: v.super_admin }),
   });
   if (!odg.ok) throw new Error(((await odg.json().catch(() => null)) as { napaka?: string } | null)?.napaka ?? "Prijave ni bilo mogoče shraniti.");
 }
