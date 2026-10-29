@@ -1,0 +1,80 @@
+FIN:OS - NAVODILA ZA SLOG IN DNEVNIK POPRAVKOV
+================================================
+
+Namen: FIN:OS ni klasičen operativni program - je revolucionaren, najbolj moderen možen vmesnik.
+Barve in prepoznavnost so Fines (temno oranžna + temno siva / bela / črna), izvedba pa moderna:
+prelivi, sence, sij, steklo, animacije. Ta datoteka ima prednost pred "Standardne komponente"
+v ../FINES_Standardi/app_instructions.md. Pravila iz skupnih navodil, ki jih tu NE spremenimo,
+veljajo naprej (pomen barv gumbov, hover tekst na vsem, verzije "i", glava gre v 360 px ...).
+
+Pravilo usklajevanja: vsak popravek uporabnika se vpiše v DNEVNIK (spodaj) in v ustrezen
+razdelek PRAVIL, nato se uveljavi na VSEH mestih v projektu (komponenta naj obstaja enkrat).
+
+
+PRAVILA
+-------
+
+1. Splošno
+   - Temna osnova: ozadje ink-950 (#121214) z radialnim prelivom proti ink-800 na vrhu.
+   - Nič ni "ploskega": vsaka površina ima preliv, rahlo senco ali sij.
+   - Vse se ob prikazu pojavi z animacijo (vzmet / spring, zamik po vrsti - stagger), nič ne "skoči" na stran.
+   - Spoštuj prefers-reduced-motion (animacije se izklopijo).
+   - Na telefonu (360 px) mora vse delovati; animacije ne smejo raztegniti strani.
+
+2. Barve in prelivi (en vir: :root v globals.css)
+   - --fos-grad-fines: #f19a66 -> #ee7a3a -> #ca5010 -> #8f380b (135°) - glavni oranžni preliv.
+   - --fos-grad-text: bela -> ink-200 -> ink-400 (navpično) - veliki naslovi.
+   - Oranžno besedilo s prelivom: razred fos-text-fines. Sivo-belo: fos-text-grad.
+   - Oranžni elementi imajo sij (--fos-glow-fines).
+   - Funkcijske barve (zelena, rdeča, rumena, modra) imajo enak tip preliva v svoji barvi.
+
+3. Znak FIN:xx (komponenta Znak)
+   - "FIN" v belo-sivem prelivu, dvopičje = dve oranžni sijoči piki (kvadratka z zaobljenim robom),
+     pripona (OS, ME, DOOR) v oranžnem prelivu s sijem.
+   - Pisava Space Grotesk (font-display), krepko, tesen razmik (-0.04em).
+
+4. Uvodna animacija (Intro)
+   - Ob vsakem nalaganju: črke FIN:OS priletijo od vsepovsod (rotacija, zamegljenost, velikost) in se zložijo,
+     piki dvopičja padeta od zgoraj z odskokom, za njimi val krogov in oranžen sij.
+   - Pod znakom preleti oranžna črta, "Fines Operating System" se zbere iz širokega razmika,
+     slogan "People Bake for People" beseda za besedo ("Bake" oranžen).
+   - Trajanje ~3,4 s, spodaj trak napredka; klik ali tipka preskoči. Izhod: zavesa se dvigne.
+
+5. Ozadje (Ozadje)
+   - Trije plavajoči zamegljeni prelivi (oranžna, svetlejša oranžna, siva), mreža, ki pojenja proti robovom,
+     mreža delcev (canvas), ki se povezujejo med seboj in z miško, zrnatost (noise).
+
+6. Gumbi (Button, IconButton)
+   - Pomen barv ostane iz skupnih navodil. Izvedba: preliv v barvi gumba, senca v barvi gumba,
+     notranja svetla črta zgoraj (inset), ob hoverju dvig 2 px + močnejši sij + bleščica preleti gumb,
+     ob kliku rahlo stisne (scale 0.97). Ikona se ob hoverju poveča.
+   - Neutral (bel) na temni osnovi = steklen: prosojno belo ozadje, svetla obroba, blur.
+   - Višina 40 px (lg 48 px), zaobljeno 10 px (lg 12 px).
+   - IconButton ghost: steklen krog, ob hoverju oranžna ikona in oranžen sij.
+
+7. Kartice
+   - Steklo (fos-glass): prosojen preliv, svetla obroba 1 px, blur 18 px, globoka senca.
+   - Vstopne kartice: zaobljeno 28 px, 3D nagib za miško, žaromet (svetla oranžna pega) pod kazalcem,
+     ob hoverju vrteča oranžna obroba (fos-border-anim) in zunanji sij, ikona v oranžnem prelivu z bleščico.
+   - Ploščice modulov: steklo, rahlo lebdijo (animate-float), ob hoverju ikona dobi poln oranžen preliv.
+
+8. Glava
+   - Lepljiva, steklena (ink-950/55 + blur). Logo na beli ploščici (logo je siv, na temnem se sicer ne vidi).
+   - Spodaj 4 px oranžna črta s prelivom in bleščico, ki potuje po njej.
+
+9. Okna (Modal)
+   - Steklo na temnem, zaobljeno 20 px, pojavi se z vzmetjo (dvig + povečava), oranžna črta s prelivom pod naslovom.
+
+10. Naslovi razdelkov
+   - Oranžen (fines-400), 11 px, VELIKE ČRKE, širok razmik, desno tanka črta z oranžnim prelivom, ki pojenja.
+
+
+DNEVNIK POPRAVKOV UPORABNIKA
+----------------------------
+(datum - kaj je uporabnik zahteval - kje je uveljavljeno)
+
+2026-10-29 - Začetek projekta: vse mora biti najbolj moderno možno, gibljivi prikazi na uvodni strani,
+             moderne grafike; Fines barve in slog ostanejo. Gumbi s senčenjem in animacijami,
+             barve s prelivi, ne dolgočasne. -> razdelki 1-10, vse komponente.
+2026-10-29 - Ob nalaganju moderna animacija, ki zloži FIN:OS, slogan "People Bake for People". -> Intro, Znak.
+2026-10-29 - Navigacija: FIN:OS Admin = "Administracija", FIN:ME = "Moj Fines". Gumbi za zdaj ne klikajo. -> VstopKartica, Domov.

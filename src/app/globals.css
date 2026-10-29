@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+/* =====================================================================
+   FIN:OS - barvna paleta FINES d.o.o. (enaki žetoni kot vse Fines aplikacije)
+   + FinOS nadgradnja: prelivi, sij (glow), steklo (glass), animacije.
+   Pravila sloga: finos_stil.txt
+   ===================================================================== */
+@theme {
+  --color-fines-50: #fdf3ed;
+  --color-fines-100: #fae2d3;
+  --color-fines-200: #f3bf9f;
+  --color-fines-300: #f19a66;
+  --color-fines-400: #ee7a3a;
+  --color-fines-500: #ca5010;
+  --color-fines-600: #b0450d;
+  --color-fines-700: #8f380b;
+
+  --color-ink-50: #f7f7f8;
+  --color-ink-100: #eeeef0;
+  --color-ink-200: #dcdcdf;
+  --color-ink-300: #c2c2c7;
+  --color-ink-400: #9a9aa1;
+  --color-ink-500: #6b6b72;
+  --color-ink-600: #4d4d53;
+  --color-ink-700: #3a3a3f;
+  --color-ink-800: #2b2b2f;
+  --color-ink-900: #1c1c1f;
+  --color-ink-950: #121214;
+
+  --color-ok-50: #ecfdf3;
+  --color-ok-500: #16a34a;
+  --color-ok-600: #15803d;
+  --color-nok-50: #fef2f2;
+  --color-nok-500: #dc2626;
+  --color-nok-600: #b91c1c;
+  --color-warn-50: #fffbeb;
+  --color-warn-400: #fbbf24;
+  --color-warn-500: #f59e0b;
+  --color-warn-700: #b45309;
+  --color-sync-50: #eff6ff;
+  --color-sync-500: #2563eb;
+  --color-sync-600: #1d4ed8;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+
+  --animate-blob: fos-blob 22s ease-in-out infinite alternate;
+  --animate-shine: fos-shine 3.2s ease-in-out infinite;
+  --animate-float: fos-float 6s ease-in-out infinite;
+  --animate-spin-slow: spin 8s linear infinite;
+}
+
+/* FinOS prelivi - en vir za vse komponente */
+:root {
+  --fos-grad-fines: linear-gradient(135deg, #f19a66 0%, #ee7a3a 30%, #ca5010 70%, #8f380b 100%);
+  --fos-grad-fines-soft: linear-gradient(135deg, rgb(238 122 58 / 0.22), rgb(202 80 16 / 0.06));
+  --fos-grad-ink: linear-gradient(160deg, #2b2b2f 0%, #1c1c1f 55%, #121214 100%);
+  --fos-grad-text: linear-gradient(180deg, #ffffff 0%, #dcdcdf 55%, #9a9aa1 100%);
+  --fos-glow-fines: 0 0 0 1px rgb(238 122 58 / 0.35), 0 8px 30px -6px rgb(202 80 16 / 0.65), 0 0 60px -10px rgb(238 122 58 / 0.45);
+  --fos-shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 20px 50px -20px rgb(0 0 0 / 0.8);
+}
+
+/* Ozadje samo na html: body ostane prosojen, sicer prekrije gibljivo ozadje (Ozadje, -z-10) */
+html {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+}
+
+body {
+  background: transparent;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgb(238 122 58 / 0.4);
+  color: #fff;
+}
+
+/* Steklena površina (kartice, glava, okna) */
+.fos-glass {
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.02));
+  border: 1px solid rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--fos-shadow-card);
+}
+
+/* Besedilo s prelivom */
+.fos-text-grad {
+  background: var(--fos-grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.fos-text-fines {
+  background: var(--fos-grad-fines);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Oranžen sijoč gradnik (ikone modulov, primarni gumbi) */
+.fos-fines-fill {
+  background: var(--fos-grad-fines);
+  box-shadow: var(--fos-glow-fines);
+}
+
+/* Bleščica, ki preleti element (dodaj kot otrok z absolute inset-0) */
+.fos-shine {
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: var(--animate-shine);
+}
+
+/* Animirana obroba s prelivom (conic) - kartice ob hoverju */
+@property --fos-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.fos-border-anim {
+  --fos-angle: 0deg;
+  background: conic-gradient(from var(--fos-angle), transparent 0%, #ee7a3a 12%, #ca5010 22%, transparent 34%, transparent 60%, rgb(255 255 255 / 0.5) 70%, transparent 80%);
+  animation: fos-rotate 4s linear infinite;
+}
+
+/* Mreža v ozadju, ki pojenja proti robovom */
+.fos-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 75% 60% at 50% 40%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 60% at 50% 40%, #000 30%, transparent 100%);
+}
+
+/* Zrnatost (noise) čez ozadje - manj "plastičen" preliv */
+.fos-noise {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.55'/></svg>");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+}
+
+@keyframes fos-rotate {
+  to {
+    --fos-angle: 360deg;
+  }
+}
+@keyframes fos-blob {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6vw, -4vh, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(-5vw, 5vh, 0) scale(0.92);
+  }
+}
+@keyframes fos-shine {
+  0% {
+    background-position: 150% 0;
+  }
+  60%,
+  100% {
+    background-position: -100% 0;
+  }
+}
+@keyframes fos-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
