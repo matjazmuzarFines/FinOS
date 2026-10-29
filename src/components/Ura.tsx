@@ -26,7 +26,7 @@ export function Ura() {
       <div className="flex font-display text-3xl font-bold tabular-nums text-white sm:text-4xl" aria-label={cas}>
         {cas.split("").map((znak, i) =>
           znak === ":" ? (
-            <span key={i} className="fos-text-fines px-0.5 [animation:pulse_1s_ease-in-out_infinite]">
+            <span key={i} className="fos-deko fos-text-fines px-0.5 [animation:pulse_1s_ease-in-out_infinite]">
               :
             </span>
           ) : (

@@ -11,14 +11,14 @@ export type ButtonVariant = "primary" | "success" | "danger" | "warning" | "sync
 
 export const VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    "text-white bg-[linear-gradient(135deg,#f19a66,#ca5010_55%,#8f380b)] shadow-[0_8px_24px_-8px_rgb(202_80_16/0.8),inset_0_1px_0_rgb(255_255_255/0.3)] hover:shadow-[0_12px_32px_-8px_rgb(238_122_58/0.95),inset_0_1px_0_rgb(255_255_255/0.35)]",
+    "text-snow bg-[linear-gradient(135deg,#f19a66,#ca5010_55%,#8f380b)] shadow-[0_8px_24px_-8px_rgb(202_80_16/0.8),inset_0_1px_0_rgb(255_255_255/0.3)] hover:shadow-[0_12px_32px_-8px_rgb(238_122_58/0.95),inset_0_1px_0_rgb(255_255_255/0.35)]",
   success:
-    "text-white bg-[linear-gradient(135deg,#4ade80,#16a34a_55%,#15803d)] shadow-[0_8px_24px_-8px_rgb(22_163_74/0.8),inset_0_1px_0_rgb(255_255_255/0.3)]",
+    "text-snow bg-[linear-gradient(135deg,#4ade80,#16a34a_55%,#15803d)] shadow-[0_8px_24px_-8px_rgb(22_163_74/0.8),inset_0_1px_0_rgb(255_255_255/0.3)]",
   danger:
-    "text-white bg-[linear-gradient(135deg,#f87171,#dc2626_55%,#b91c1c)] shadow-[0_8px_24px_-8px_rgb(220_38_38/0.8),inset_0_1px_0_rgb(255_255_255/0.3)]",
+    "text-snow bg-[linear-gradient(135deg,#f87171,#dc2626_55%,#b91c1c)] shadow-[0_8px_24px_-8px_rgb(220_38_38/0.8),inset_0_1px_0_rgb(255_255_255/0.3)]",
   warning:
-    "text-ink-900 bg-[linear-gradient(135deg,#fde68a,#fbbf24_55%,#f59e0b)] shadow-[0_8px_24px_-8px_rgb(245_158_11/0.8),inset_0_1px_0_rgb(255_255_255/0.4)]",
-  sync: "text-white bg-[linear-gradient(135deg,#60a5fa,#2563eb_55%,#1d4ed8)] shadow-[0_8px_24px_-8px_rgb(37_99_235/0.8),inset_0_1px_0_rgb(255_255_255/0.3)]",
+    "text-coal bg-[linear-gradient(135deg,#fde68a,#fbbf24_55%,#f59e0b)] shadow-[0_8px_24px_-8px_rgb(245_158_11/0.8),inset_0_1px_0_rgb(255_255_255/0.4)]",
+  sync: "text-snow bg-[linear-gradient(135deg,#60a5fa,#2563eb_55%,#1d4ed8)] shadow-[0_8px_24px_-8px_rgb(37_99_235/0.8),inset_0_1px_0_rgb(255_255_255/0.3)]",
   neutral:
     "text-ink-100 border border-white/15 bg-white/[0.06] backdrop-blur-md shadow-[0_8px_24px_-12px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] hover:bg-white/[0.12] hover:border-white/25",
 };

@@ -6,22 +6,34 @@ import { ShieldCheck, UserRound } from "lucide-react";
 import { Intro, SLOGAN } from "./Intro";
 import { Ozadje } from "./Ozadje";
 import { Glava } from "./Glava";
-import { Znak } from "./Znak";
+import { ZnakPrizor } from "./finesek/ZnakPrizor";
 import { Ura } from "./Ura";
 import { VstopKartica } from "./VstopKartica";
 import { Moduli, Trak } from "./Moduli";
 import { APP_VERSION } from "@/lib/verzije";
+import { useAnimacije } from "@/lib/animacije";
+
+// uvod se pokaže ob nalaganju strani, ne ob vrnitvi z Administracije
+let uvodPrikazan = false;
 
 /** Začetna stran FIN:OS: uvodna animacija → glava, znak, slogan, ura, vstopni kartici, moduli. */
 export function Domov() {
-  const [pripravljeno, setPripravljeno] = useState(false);
+  const [pripravljeno, setPripravljeno] = useState(uvodPrikazan);
+  const animacije = useAnimacije();
+  // brez dodatnih animacij ni uvoda - stran se pokaže takoj
+  const prikazi = pripravljeno || !animacije;
 
   return (
     <>
       <Ozadje />
-      <Intro onKonec={() => setPripravljeno(true)} />
+      {!prikazi && <Intro
+          onKonec={() => {
+            uvodPrikazan = true;
+            setPripravljeno(true);
+          }}
+        />}
 
-      {pripravljeno && (
+      {prikazi && (
         <div className="flex min-h-dvh flex-col overflow-x-clip">
           <Glava />
 
@@ -34,13 +46,13 @@ export function Domov() {
                 transition={{ delay: 0.2 }}
               >
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fines-400 opacity-75" />
+                  <span className="fos-deko absolute inline-flex h-full w-full animate-ping rounded-full bg-fines-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-fines-400" />
                 </span>
                 Fines Operating System
               </motion.span>
 
-              <Znak zlozi zamik={0.1} className="text-[clamp(4rem,15vw,10rem)]" />
+              <ZnakPrizor className="text-[clamp(4rem,15vw,10rem)]" />
 
               <motion.p
                 className="mt-5 font-display text-2xl font-medium text-white sm:text-4xl"
@@ -73,7 +85,8 @@ export function Domov() {
                 naslov="Administracija"
                 pripona="OS"
                 opis="Upravljanje zaposlenih, evidenc, dostopov in kartic za vodje in kadrovsko službo."
-                hint="Odpri administracijo FIN:OS Admin (kmalu)"
+                hint="Odpri administracijo FIN:OS Admin"
+                href="/administracija"
                 icon={ShieldCheck}
                 funkcije={["Zaposleni", "Delovni čas", "Odsotnosti", "FIN:DOOR", "Kartice"]}
                 zamik={0.5}

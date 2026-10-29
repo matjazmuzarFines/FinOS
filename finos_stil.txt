@@ -68,6 +68,95 @@ PRAVILA
 10. Naslovi razdelkov
    - Oranžen (fines-400), 11 px, VELIKE ČRKE, širok razmik, desno tanka črta z oranžnim prelivom, ki pojenja.
 
+11. Finesek - maskota (src/components/finesek/)
+   - Finesek je Finesova pečica z obrazom, belimi rokavicami in kovinskimi nogami. V projekt ga vključujemo veliko.
+   - Sestavljen je iz delov (public/finesek/*.webp, izvor data/finesek_deli): telo-spredaj, telo-stran (gleda desno),
+     roka-leva, roka-desna, noga-leva, noga-desna. Deli se vrtijo okoli zgloba (ramena, kolka) - glej Finesek.tsx.
+   - Poze: tek (s strani), stoji, seze, vlece, veselje, maha (spredaj). Nova animacija = nova poza ali nov potek,
+     isti deli. Nove dele (npr. telo z drugim obrazom) dodaj v isto mapo in obdelaj enako (obrez, WebP, višina 520 / 300).
+   - Teče samo z leve na desno (pri zrcaljenju bi bil napis FINES na oknu zrcalen).
+   - Prizor na domači strani (ZnakPrizor): cikel 3 min (hitreje ni potrebno) - FIN:OS ugasnjen (siv, temen), Finesek priteče, potegne
+     stikalo levo ob znaku, FIN:OS utripne kot neon in zasveti, pod znakom preleti tok, iskre; Finesek poskoči,
+     se nasloni in pomaha, steče naprej čez zaslon; FIN:OS v ~10 s počasi ugasne in na koncu še pomežikne.
+   - Ob prefers-reduced-motion prizora ni, FIN:OS ostane prižgan.
+
+12. Stikalo "Animacije" (levo zgoraj v glavi, AnimacijeStikalo + src/lib/animacije.ts)
+   - Preklopnik: steza 44 × 24 (vklop = oranžen preliv s sijem, izklop = siva vdolbina), bel gumbek z ikono iskric,
+     na računalniku napis "Animacije". Stanje si zapomni brskalnik (localStorage), velja za vse strani in zavihke.
+   - IZKLOPI se (dodatne animacije, merilo je poraba CPU / GPU - vse, kar teče stalno in ni potrebno za delo):
+     uvodna animacija, Finesek in vsi njegovi prizori, gibanje delcev v ozadju (izrišejo se enkrat in mirujejo),
+     plavajoči prelivi v ozadju, trak besed, lebdenje ploščic, bleščice (fos-shine), utripanje pik in dvopičja ure.
+   - OSTANE: animacije gumbov (hover, klik), okna, prehodi in menjave strani, enkratni prikaz vsebine ob nalaganju,
+     odzivi na miško (nagib kartic, obroba ob hoverju), števke ure.
+   - Nova dodatna animacija: v CSS razred fos-deko (ustavi se sam) ali v komponenti useAnimacije() in
+     brez dodatnih animacij ne teče. Vsako novo animacijo razvrsti po tem pravilu.
+
+   - Barve, ki se s temo ne smejo zamenjati: text-snow / bg-snow (vedno bela: besedilo na oranžnem,
+     ploščica loga, gumbek stikala), text-coal (vedno temna: besedilo na rumenem).
+
+13. Svetla / temna tema (gumb s soncem / luno desno zgoraj v glavi, TemaStikalo + src/lib/tema.ts)
+   - Privzeto temna. Izbira se zapomni v brskalniku (localStorage), atribut <html data-tema="svetla">
+     nastavi že skripta v <head> (brez utripa).
+   - Svetla tema samo zamenja žetone v globals.css: sive (ink-50..950) se prezrcalijo, "white" postane temna,
+     oranžno besedilo (fines-200/300/400) je temnejše, steklo je belo prosojno, sence mehkejše.
+   - Komponente zato pišemo z žetoni (text-white, text-ink-xxx, bg-white/5, border-white/10, fos-glass,
+     fos-kartica, fos-ozadje), NE s fiksnimi temnimi barvami (#2b2b2f, rgb(43 43 47)). Prava bela = snow.
+   - Canvas (Ozadje) bere temo z useTema().
+
+14. Administracija - navigacija in strani
+   - Struktura (src/lib/nav.ts, en vir): Administracija -> mreža kvadratnih ploščic (moduli) -> seznam -> list zapisa.
+     Nad naslovom strani je vrstica: levo drobtine (FIN:OS > Administracija > ...), ob desnem robu gumb "Nazaj"
+     (bel, vodi vedno na nadrejeno stran). V glavi aplikacije gumba nazaj NI.
+   - Okvir podstrani (Okvir): ozadje, glava ostane, vsebina se ob menjavi strani pojavi z vzmetjo.
+   - Glava strani (GlavaStrani): drobtine, velik naslov s prelivom, opis, desno gumbi.
+   - Ploščice (Ploscice): kvadrat (aspect-square), steklo fos-kartica, ikona v oranžnem prelivu, desno zgoraj
+     število (npr. zaposlenih), spodaj naslov in kratek opis; hover dvig, vrteča obroba, sij in puščica, ki zdrsne
+     ob naslov (v isti vrsti - nikoli čez opis).
+     Mreža 2 / 3 / 4 / 5 v vrsti. Ploščice so združene pod naslovom razdelka (npr. LJUDJE).
+   - Seznam (npr. Zaposleni) - ni standardna tabela:
+     * desno zgoraj samo glavno dejanje (npr. "Dodaj zaposlenega", zelen) - gumba Osveži ni.
+     * hitri filtri v stekleni kartici: Iskanje (delno, vse besede), izbirni filter (Vodja), čipi (Oddelki) s
+       številom v oznaki; "Ponastavi" (bel) samo, ko je filter vklopljen. Filtri ostanejo ob vrnitvi s lista.
+     * glava seznama = razvrščanje (lepljiva pod glavo): klik naraščajoče, ponovni klik padajoče; prazne
+       vrednosti vedno na koncu. Na telefonu je razvrščanje vrsta čipov "Razvrsti".
+     * vrstice so steklene kartice (avatar z začetnicami, stolpci; na telefonu dve vrstici), ob razvrščanju
+       se animirano premaknejo (layout). Klik odpre list. Prazno stanje / napaka: PraznoStanje.
+   - List zapisa (npr. zaposleni): glava osebe (velik avatar, ime, oznake), zavihki razdelkov z drsečim oranžnim
+     poljem (izbran zavihek v naslovu ?zavihek=), vsebina razdelka v steklenih karticah "Podatek".
+     Razdelki, ki še niso narejeni, pokažejo "kmalu". Nov razdelek = nov vnos v ZAVIHKI.
+   - Urejanje: na listu so polja vedno vnosna polja (ID-ji samo za branje), spremembe se zbirajo v osnutku;
+     spodaj se pokaže lepljiva vrstica SaveBar (število sprememb, Prekliči bel, Shrani zelen, neprosojna).
+     Brez pravice do urejanja so polja zaklenjena, v glavi osebe piše "Samo ogled".
+   - Dodajanje: okno (Modal) z istimi polji kot list (ena komponenta polj), Prekliči + Shrani v nogi,
+     napaka rdeče pod polji; po shranjevanju se odpre list novega zapisa. Uspeh / napaka = obvestilo (Obvestila).
+
+16. Prikaz hierarhije (Hierarhija, /administracija/zaposleni/hierarhija; gumb "Prikaz hierarhije" bel na seznamu)
+   - Lestvice (vrh = vodja brez vodje) so okna DRUG OB DRUGEM v eni vodoravni vrsti čez celo širino zaslona
+     (vrsta se drsi), "Nova lestvica" je črtkano okno na koncu vrste.
+   - VSAK vodja ima svoje okno: glava = ime oddelka, ki ga vodi (oddelek vodje; oranžno, velike črke, ikona stavbe)
+     in število ljudi v ekipi; v oknu je vodja in pod njim ekipa. Pod-vodje so svoja okna znotraj okna nadrejenega.
+   - Povezave so oranžne črte z zaobljenimi koti (CSS .fos-drevo v globals.css).
+   - Platno (Platno.tsx): okvir čez celo širino, VISOK PO VSEBINI (največ višina zaslona - 330 px), pikčasta mreža.
+     "Brez vodje" je tik pod platnom (majhen razmik), da sta hierarhija in nerazporejeni hkrati na zaslonu
+     in za povleci-spusti ni treba drseti gor in dol. Prilagodi upošteva največjo višino platna.
+     Kolešček miške = povečava / pomanjšava okoli kazalca (25-160 %, tudi stisk prstov na sledilni ploščici),
+     vlečenje praznega ozadja = premik pogleda. Desno zgoraj steklena vrstica: -, odstotek (klik = 100 %), +,
+     Prilagodi (vse na zaslon). Ob prvem odprtju se prilagodi, nato si brskalnik zapomni povečavo.
+   - Kartica osebe 176 px: avatar, ime, oddelek; vodja ima značko s številom podrejenih (klik zloži / razpre),
+     ikona za odprtje lista, "+" pri zaposlenem brez podrejenih.
+   - Prazno mesto = črtkan kvadrat s "+" na koncu vrste podrejenih; klik odpre okno z izbiro
+     "Nov zaposleni" / "Obstoječ zaposleni" (veliki ploščici). Na koncu "Nova lestvica" (črtkan pas), spodaj "Brez vodje".
+   - Povleci in spusti (dnd-kit; miška, na telefonu pridrži in povleci, tipkovnica): zaposleni gre s svojimi
+     podrejenimi. Med vlečenjem: kartica sledi kazalcu (nagnjena, oranžen sij), dovoljen cilj se poveča in oranžno
+     zasveti, nedovoljen (sam sebi / svoj podrejeni) je bled in rdeč. Sprememba se shrani takoj, potrditev = obvestilo.
+
+15. Prijava (Prijava, Seja, Zaklep)
+   - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
+     okvir podstrani (glava, ozadje) + na sredini steklena kartica z oranžno črto zgoraj, logo, FIN:OS, ime dela,
+     slogan, "E-mail ali uporabniško ime", geslo s pokaži / skrij, oranžen gumb Prijava.
+   - Prijavljen uporabnik brez dostopa: "Ni dostopa" (rdeče prazno stanje) z gumbom Odjava.
+   - V glavi e-mail uporabnika (sivo, od lg naprej) in Izhod = odjava - samo, ko je uporabnik prijavljen.
+   - Polje za geslo: samo naše oko (pokaži / skrij), Edgeovo vgrajeno je skrito (::-ms-reveal).
 
 DNEVNIK POPRAVKOV UPORABNIKA
 ----------------------------
@@ -78,3 +167,30 @@ DNEVNIK POPRAVKOV UPORABNIKA
              barve s prelivi, ne dolgočasne. -> razdelki 1-10, vse komponente.
 2026-10-29 - Ob nalaganju moderna animacija, ki zloži FIN:OS, slogan "People Bake for People". -> Intro, Znak.
 2026-10-29 - Navigacija: FIN:OS Admin = "Administracija", FIN:ME = "Moj Fines". Gumbi za zdaj ne klikajo. -> VstopKartica, Domov.
+2026-10-29 - Oblika je "vrhunska", nadaljujeva točno v tej smeri. -> vsa pravila ostanejo.
+2026-10-29 - Maskota Finesek: priteče, vklopi elektriko, FIN:OS zasveti, steče naprej, FIN:OS ugasne, cikel 30 s;
+             naslonjen na znak pomaha proti zaslonu. -> razdelek 11, ZnakPrizor, Finesek.
+2026-10-29 - Levo zgoraj stikalo, ki ustavi vse dodatne animacije (Finesek ...), določeno po porabi CPU;
+             gumbi, menjave strani ipd. delajo naprej. -> razdelek 12, AnimacijeStikalo, vse dodatne animacije.
+2026-10-29 - Prizor s Finesekom naj teče na vsake 3 minute (počitek). -> razdelek 11, ZnakPrizor (CIKEL_MS).
+2026-10-29 - Gumb za svetlo / temno temo desno zgoraj; vse mora biti v svetli ali temni temi. -> razdelek 13,
+             TemaStikalo, globals.css (žetoni), vse komponente (snow / coal za prave barve).
+2026-10-29 - Administracija: mreža kvadratnih ploščic (naslov, kratek opis), začetek z "Zaposleni"; seznam s hitrimi
+             filtri in razvrščanjem po imenu, priimku, oddelku; klik odpre list zaposlenega po razdelkih;
+             logična navigacija brez preveč gumbov. -> razdelek 14, nav.ts, Okvir, Ploscice, SeznamZaposlenih,
+             ListZaposlenega.
+2026-10-29 - Ploščica: krogec s puščico ob hoverju je prekril opis -> puščica je zdaj v vrsti z naslovom. -> razdelek 14, Ploscice.
+2026-10-29 - Gumb nazaj ni v glavi, ampak v vrsti z drobtinami ob desnem robu. -> razdelek 14, GlavaStrani, Glava.
+2026-10-29 - Gumb Osveži ni logičen -> odstranjen; namesto njega "Dodaj zaposlenega" z obrazcem. Vsa polja zaposlenega
+             so urejljiva razen ID-jev (zaenkrat samo za fines@fines.si). -> razdelek 14, ZaposleniObrazec, ListZaposlenega, SaveBar.
+2026-10-29 - FIN:OS (domača stran) ne rabi prijave; Administracija rabi prijavo in je za zdaj samo za fines@fines.si.
+             -> razdelek 15, Seja / Zaklep, administracija/layout.tsx, Glava (Izhod samo s prijavo).
+2026-10-29 - Zaposleni dobi e-mail, uporabniško ime in geslo (zaščiteno) za prijavo v FIN:ME, urejljivo na listu
+             zaposlenega. -> razdelek 14 (Podatki -> Prijava v FIN:ME), PoljaPrijave, /api/zaposleni/racun, /api/prijava.
+2026-10-29 - Gumb "Prikaz hierarhije" na Zaposlenih in nova stran s celotno hierarhijo po vodjih; prazna mesta z gumbom
+             (nov vodja / nov ali obstoječ zaposleni); povleci in spusti k drugemu vodji ali v novo lestvico. -> razdelek 16, Hierarhija.
+2026-10-29 - Okna v hierarhiji se ne zlagajo navpično, ampak vodoravno drug ob drugem; vsak vodja ima svoje okno
+             z imenom oddelka, ki ga vodi. -> razdelek 16, Hierarhija (Okno), globals.css (.fos-drevo).
+2026-10-29 - Hierarhija: povečava / pomanjšava (kolešček), ker bo komponent veliko. -> razdelek 16, Platno.
+2026-10-29 - Okno hierarhije je previsoko, med njim in "Brez vodje" je preveč prostora (pri vlečenju je bilo treba drseti).
+             -> razdelek 16, Platno (višina po vsebini), Hierarhija (manjši razmik).

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useAnimacije } from "@/lib/animacije";
 import { CalendarClock, Coffee, DoorOpen, HeartPulse, IdCard, Palmtree, type LucideIcon } from "lucide-react";
 
 type Modul = { ime: string; opis: string; icon: LucideIcon; hint: string };
@@ -36,7 +37,7 @@ export function Moduli({ zamik = 0 }: { zamik?: number }) {
           >
             <div className="animate-float" style={{ animationDelay: `${-i * 0.9}s` }}>
               <div className="fos-glass group relative flex h-full min-w-0 items-center gap-3 overflow-hidden rounded-2xl p-3 transition-all duration-300 hover:-translate-y-1 hover:border-fines-400/40 hover:shadow-[0_16px_40px_-16px_rgb(202_80_16/0.7)]">
-                <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,rgb(238_122_58/0.25),rgb(202_80_16/0.08))] text-fines-300 ring-1 ring-fines-400/25 transition-all duration-300 group-hover:bg-[linear-gradient(135deg,#ee7a3a,#ca5010)] group-hover:text-white group-hover:shadow-[0_0_20px_rgb(238_122_58/0.6)]">
+                <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,rgb(238_122_58/0.25),rgb(202_80_16/0.08))] text-fines-300 ring-1 ring-fines-400/25 transition-all duration-300 group-hover:bg-[linear-gradient(135deg,#ee7a3a,#ca5010)] group-hover:text-snow group-hover:shadow-[0_0_20px_rgb(238_122_58/0.6)]">
                   <m.icon className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0">
@@ -56,9 +57,14 @@ export function Moduli({ zamik = 0 }: { zamik?: number }) {
 export function Trak() {
   const besede = ["Delovni čas", "Dopusti", "Prosti čas", "Bolniška", "FIN:DOOR", "Kartice", "Dostopi", "People Bake for People"];
   const vrsta = [...besede, ...besede];
+  const animacije = useAnimacije();
   return (
     <div aria-hidden className="relative w-full overflow-hidden py-3 [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
-      <motion.div className="flex w-max gap-8" animate={{ x: ["0%", "-50%"] }} transition={{ duration: 40, ease: "linear", repeat: Infinity }}>
+      <motion.div
+        className="flex w-max gap-8"
+        animate={animacije ? { x: ["0%", "-50%"] } : { x: "-10%" }}
+        transition={animacije ? { duration: 40, ease: "linear", repeat: Infinity } : { duration: 0.6 }}
+      >
         {vrsta.map((b, i) => (
           <span key={i} className="flex items-center gap-8 font-display text-2xl font-semibold text-white/15 sm:text-4xl">
             {b}

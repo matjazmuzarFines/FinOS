@@ -31,7 +31,7 @@ export function Intro({ onKonec }: { onKonec: () => void }) {
       {odprto && (
         <motion.div
           key="intro"
-          className="fixed inset-0 z-[60] flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-ink-950"
+          className="fos-intro fixed inset-0 z-[60] flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-ink-950"
           title="Klikni za preskok uvodne animacije"
           onClick={() => setOdprto(false)}
           exit={{ clipPath: "inset(0 0 100% 0)" }}

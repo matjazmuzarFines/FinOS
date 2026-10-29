@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { ANIMACIJE_SKRIPTA } from "@/lib/animacijeSkripta";
+import { Seja } from "@/components/Seja";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,8 +28,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="sl" className={`${inter.variable} ${display.variable} h-full antialiased`}>
-      <body className="min-h-full overflow-x-clip">{children}</body>
+    <html lang="sl" className={`${inter.variable} ${display.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ANIMACIJE_SKRIPTA }} />
+      </head>
+      <body className="min-h-full overflow-x-clip">
+        <Seja>{children}</Seja>
+      </body>
     </html>
   );
 }

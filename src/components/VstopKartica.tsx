@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, type PointerEvent } from "react";
+import { useRouter } from "next/navigation";
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "motion/react";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import { Znak } from "./Znak";
@@ -13,14 +14,18 @@ type Props = {
   icon: LucideIcon;
   funkcije: string[];
   zamik?: number;
+  /** Kam vodi kartica; brez = "Kmalu" (ne klikne). */
+  href?: string;
 };
 
 /**
  * Velika vstopna kartica (Administracija, Moj Fines): steklo, 3D nagib za miško,
  * svetlobni žaromet pod kazalcem, animirana obroba s prelivom ob hoverju.
- * Za zdaj ne vodi nikamor (`aria-disabled`).
+ * Brez `href` ne vodi nikamor (`aria-disabled`, značka "Kmalu").
  */
-export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije, zamik = 0 }: Props) {
+export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije, zamik = 0, href }: Props) {
+  const router = useRouter();
+  const odpri = () => href && router.push(href);
   const ref = useRef<HTMLDivElement>(null);
   const px = useMotionValue(0.5);
   const py = useMotionValue(0.5);
@@ -51,8 +56,10 @@ export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije
       <motion.div
         ref={ref}
         role="link"
-        aria-disabled
+        aria-disabled={!href}
         tabIndex={0}
+        onClick={odpri}
+        onKeyDown={(e) => e.key === "Enter" && odpri()}
         title={hint}
         onPointerMove={premik}
         onPointerLeave={ven}
@@ -69,7 +76,7 @@ export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije
         {/* zunanji sij */}
         <span aria-hidden className="absolute -inset-6 -z-10 rounded-[40px] bg-[radial-gradient(closest-side,rgb(202_80_16/0.45),transparent)] opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
 
-        <div className="relative overflow-hidden rounded-[27px] bg-[linear-gradient(160deg,rgb(43_43_47/0.92),rgb(18_18_20/0.96))] p-6 backdrop-blur-xl sm:p-8">
+        <div className="relative overflow-hidden rounded-[27px] fos-kartica p-6 backdrop-blur-xl sm:p-8">
           <motion.span aria-hidden className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: zaromet }} />
           {/* velik prosojen znak v ozadju */}
           <span aria-hidden className="pointer-events-none absolute -bottom-10 -right-6 font-display text-[9rem] font-bold leading-none text-white/[0.03] transition-transform duration-700 group-hover:-translate-x-4 sm:text-[11rem]">
@@ -77,13 +84,15 @@ export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije
           </span>
 
           <div className="relative flex items-start justify-between gap-4" style={{ transform: "translateZ(40px)" }}>
-            <span className="fos-fines-fill relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl text-white transition-transform duration-500 group-hover:rotate-[-6deg] group-hover:scale-110 sm:h-16 sm:w-16">
+            <span className="fos-fines-fill relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl text-snow transition-transform duration-500 group-hover:rotate-[-6deg] group-hover:scale-110 sm:h-16 sm:w-16">
               <Icon className="h-7 w-7 sm:h-8 sm:w-8" aria-hidden />
               <span className="fos-shine absolute inset-0" />
             </span>
-            <span className="rounded-full border border-fines-400/30 bg-fines-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-fines-300">
-              Kmalu
-            </span>
+            {!href && (
+              <span className="rounded-full border border-fines-400/30 bg-fines-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-fines-300">
+                Kmalu
+              </span>
+            )}
           </div>
 
           <div className="relative mt-6" style={{ transform: "translateZ(30px)" }}>
@@ -109,7 +118,7 @@ export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije
           <div className="relative mt-8 flex items-center gap-3 text-sm font-semibold text-fines-300" style={{ transform: "translateZ(30px)" }}>
             <span>Vstopi</span>
             <span className="h-px flex-1 origin-left scale-x-[0.25] bg-[linear-gradient(90deg,#ee7a3a,transparent)] transition-transform duration-500 group-hover:scale-x-100" />
-            <span className="grid h-10 w-10 place-items-center rounded-full border border-fines-400/40 bg-fines-500/10 transition-all duration-500 group-hover:translate-x-1 group-hover:bg-fines-500 group-hover:text-white group-hover:shadow-[0_0_24px_rgb(238_122_58/0.8)]">
+            <span className="grid h-10 w-10 place-items-center rounded-full border border-fines-400/40 bg-fines-500/10 transition-all duration-500 group-hover:translate-x-1 group-hover:bg-fines-500 group-hover:text-snow group-hover:shadow-[0_0_24px_rgb(238_122_58/0.8)]">
               <ArrowRight className="h-4 w-4" aria-hidden />
             </span>
           </div>
