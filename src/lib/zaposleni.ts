@@ -18,8 +18,6 @@ export type ZaposleniVrstica = {
   email: string | null;
   uporabnisko_ime: string | null;
   id_uporabnika: string | null;
-  /** Dostop do FIN:OS Administracije (nastavi samo strežnik). */
-  super_admin: boolean;
 };
 
 /**
@@ -34,6 +32,10 @@ export type Zaposleni = ZaposleniVrstica & {
   id_kot_vodja: number | null;
   /** id-ji aplikacij z vklopljenim dostopom (ln_fos_zaposleni_aplikacije), urejeni. */
   aplikacije: number[];
+  /** Kode funkcij (ln_fos_zaposleni_funkcije, Nastavitve -> Pravice in dostopi). */
+  funkcije: string[];
+  /** Funkcija Super Admin - dostop do FIN:OS Administracije. */
+  super_admin: boolean;
 };
 
 /** Aplikacija (fos_aplikacije), do katere ima zaposleni lahko dostop (zaposleni -> Dostopi). */
@@ -56,7 +58,6 @@ export type ZaposleniVnos = {
   uporabnisko_ime: string;
   /** Novo geslo (prazno = brez spremembe); nikoli se ne prebere iz baze. */
   geslo: string;
-  super_admin: boolean;
   aplikacije: number[];
 };
 
@@ -75,15 +76,14 @@ export const vnosIz = (z: Zaposleni): ZaposleniVnos => ({
   email: z.email ?? "",
   uporabnisko_ime: z.uporabnisko_ime ?? "",
   geslo: "",
-  super_admin: z.super_admin,
   aplikacije: z.aplikacije,
 });
-export const PRAZEN_VNOS: ZaposleniVnos = { ime: "", priimek: "", st_kartice: "", id_oddelek: null, id_vodja: null, je_vodja: false, email: "", uporabnisko_ime: "", geslo: "", super_admin: false, aplikacije: [] };
+export const PRAZEN_VNOS: ZaposleniVnos = { ime: "", priimek: "", st_kartice: "", id_oddelek: null, id_vodja: null, je_vodja: false, email: "", uporabnisko_ime: "", geslo: "", aplikacije: [] };
 
 async function nalozi(): Promise<ZaposleniPodatki> {
   const sb = getSupabase();
-  const [vrstice, oddelki, vodjeVrstice, povezave, aplikacije, dostopi] = await Promise.all([
-    fetchAll<ZaposleniVrstica>((from, to) => sb.from("fos_zaposleni").select("id, ime, priimek, st_kartice, id_oddelek, email, uporabnisko_ime, id_uporabnika, super_admin").eq("visible", true).order("id").range(from, to)),
+  const [vrstice, oddelki, vodjeVrstice, povezave, aplikacije, dostopi, funkcije] = await Promise.all([
+    fetchAll<ZaposleniVrstica>((from, to) => sb.from("fos_zaposleni").select("id, ime, priimek, st_kartice, id_oddelek, email, uporabnisko_ime, id_uporabnika").eq("visible", true).order("id").range(from, to)),
     fetchAll<Oddelek>((from, to) => sb.from("fos_oddelek").select("id, ime_oddelka").eq("visible", true).order("ime_oddelka").range(from, to)),
     fetchAll<{ id: number; id_zaposlenega: number }>((from, to) => sb.from("fos_vodje").select("id, id_zaposlenega").eq("visible", true).order("id").range(from, to)),
     fetchAll<{ id_zaposlenega: number; id_vodja: number }>((from, to) =>
@@ -93,7 +93,13 @@ async function nalozi(): Promise<ZaposleniPodatki> {
     fetchAll<{ id_zaposlenega: number; id_aplikacije: number }>((from, to) =>
       sb.from("ln_fos_zaposleni_aplikacije").select("id_zaposlenega, id_aplikacije").eq("visible", true).order("id").range(from, to),
     ),
+    // funkcije (008) - brez tabele seznam vseeno deluje
+    fetchAll<{ id_zaposlenega: number; fos_funkcije: { koda: string } | { koda: string }[] }>((from, to) =>
+      sb.from("ln_fos_zaposleni_funkcije").select("id_zaposlenega, fos_funkcije!inner(koda)").eq("visible", true).eq("fos_funkcije.visible", true).order("id").range(from, to),
+    ).catch(() => []),
   ]);
+  const funkcijePo = new Map<number, string[]>();
+  for (const f of funkcije) funkcijePo.set(f.id_zaposlenega, [...(funkcijePo.get(f.id_zaposlenega) ?? []), ...[f.fos_funkcije].flat().map((x) => x.koda)]);
   const dostopPo = new Map<number, number[]>();
   for (const d of dostopi) dostopPo.set(d.id_zaposlenega, [...(dostopPo.get(d.id_zaposlenega) ?? []), d.id_aplikacije]);
   const oddelekPoId = new Map(oddelki.map((o) => [o.id, o]));
@@ -116,6 +122,8 @@ async function nalozi(): Promise<ZaposleniPodatki> {
       vodja: idVodja != null ? (vodjaPoId.get(idVodja)?.zaposleni ?? null) : null,
       id_kot_vodja: kotVodja.get(v.id) ?? null,
       aplikacije: [...new Set(dostopPo.get(v.id) ?? [])].sort((a, b) => a - b),
+      funkcije: funkcijePo.get(v.id) ?? [],
+      super_admin: funkcijePo.get(v.id)?.includes("super_admin") ?? false,
     };
   });
   return { zaposleni, oddelki, vodje, aplikacije, poId: new Map(zaposleni.map((z) => [z.id, z])) };
@@ -189,7 +197,7 @@ export function preveriVnos(v: ZaposleniVnos): string | null {
 }
 
 const prijavaSpremenjena = (v: ZaposleniVnos, prej: ZaposleniVnos) =>
-  v.geslo !== "" || v.super_admin !== prej.super_admin || v.email.trim().toLowerCase() !== prej.email.trim().toLowerCase() || v.uporabnisko_ime.trim().toLowerCase() !== prej.uporabnisko_ime.trim().toLowerCase();
+  v.geslo !== "" || v.email.trim().toLowerCase() !== prej.email.trim().toLowerCase() || v.uporabnisko_ime.trim().toLowerCase() !== prej.uporabnisko_ime.trim().toLowerCase();
 
 /** E-mail, uporabniško ime in geslo shrani strežnik (/api/zaposleni/racun) - geslo gre samo v Supabase Auth. */
 async function shraniPrijavo(id: number, v: ZaposleniVnos) {
@@ -197,7 +205,7 @@ async function shraniPrijavo(id: number, v: ZaposleniVnos) {
   const odg = await fetch("/api/zaposleni/racun", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token ?? ""}` },
-    body: JSON.stringify({ id_zaposlenega: id, email: v.email, uporabnisko_ime: v.uporabnisko_ime, geslo: v.geslo || null, super_admin: v.super_admin }),
+    body: JSON.stringify({ id_zaposlenega: id, email: v.email, uporabnisko_ime: v.uporabnisko_ime, geslo: v.geslo || null }),
   });
   if (!odg.ok) throw new Error(((await odg.json().catch(() => null)) as { napaka?: string } | null)?.napaka ?? "Prijave ni bilo mogoče shraniti.");
 }
@@ -305,4 +313,14 @@ export function hierarhija(zaposleni: Zaposleni[]) {
     return out;
   };
   return { vrhovi, nerazporejeni, podrejeni, potomci };
+}
+
+/** Obseg pregleda (npr. registracija časa): Administracija vidi vse, FIN:ME sebe in vse svoje (posredne) podrejene. */
+export type Obseg = { nacin: "vsi" } | { nacin: "moji"; idZaposlenega: number };
+
+export function vidniZaposleni(zaposleni: Zaposleni[], obseg: Obseg): Zaposleni[] {
+  if (obseg.nacin === "vsi") return zaposleni;
+  const ids = hierarhija(zaposleni).potomci(obseg.idZaposlenega);
+  ids.add(obseg.idZaposlenega);
+  return zaposleni.filter((z) => ids.has(z.id));
 }

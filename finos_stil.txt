@@ -112,6 +112,11 @@ PRAVILA
    - Ploščice (Ploscice): kvadrat (aspect-square), steklo fos-kartica, ikona v oranžnem prelivu, desno zgoraj
      število (npr. zaposlenih), spodaj naslov in kratek opis; hover dvig, vrteča obroba, sij in puščica, ki zdrsne
      ob naslov (v isti vrsti - nikoli čez opis).
+     Modul z nastavitvami (npr. Registracija časa): desno zgoraj steklen krog z zobnikom (hover oranžen, zasuk 90°)
+     -> nastavitve modula; klik kjerkoli drugje na ploščici odpre modul (Ploscica.nastavitve v nav.ts).
+     Naslov ploščice se NIKOLI ne skrajša s "...": če gre v eno vrsto, je velik (18 / 24 px), sicer se prelomi v največ
+     dve vrstici z manjšo pisavo (15 / 18 px, tesen razmik) - NaslovPloscice v Ploscice.tsx izmeri sam. Naslov, ki ne gre
+     v dve vrstici, ni primeren (v razvoju opozorilo v konzoli) - skrajšaj ga; naslovi ploščic so kratki (nadzorni pregled).
      Mreža 2 / 3 / 4 / 5 v vrsti. Ploščice so združene pod naslovom razdelka (npr. LJUDJE).
    - Seznam (npr. Zaposleni) - ni standardna tabela:
      * desno zgoraj samo glavno dejanje (npr. "Dodaj zaposlenega", zelen) - gumba Osveži ni.
@@ -127,19 +132,29 @@ PRAVILA
    - Urejanje: na listu so polja vedno vnosna polja (ID-ji samo za branje), spremembe se zbirajo v osnutku;
      spodaj se pokaže lepljiva vrstica SaveBar (število sprememb, Prekliči bel, Shrani zelen, neprosojna).
      Brez pravice do urejanja so polja zaklenjena, v glavi osebe piše "Samo ogled".
+   - Kadrovski podatki (PoljaKadrovsko, src/lib/kadrovsko.ts RAZDELKI): v zavihku Podatki pod "Prijava v FIN:ME" razdelki
+     Osebni podatki, Stalno prebivališče, Začasno prebivališče (oba s km do dela, pri začasnem še "Prevoz iz"),
+     Izplačilo, Kontakt v sili; zavihek Zaposlitev:
+     3 povzetki (Pogodba, V Fines = staž, Delovni čas) z oranžno črto zgoraj, nato Pogodba, Delovni čas in dopust, Izobrazba.
+     Občutljive številke (EMŠO, davčna, ZZZS, TRR) imajo ključavnico ob naslovu, skrite so (pike + zadnje 3 znake) samo,
+     ko polje ni v fokusu - med pisanjem je vrednost vidna; oko jih pokaže.
+     Napaka (kontrolna števka ...) se pokaže šele, ko polje zapustiš (ali ob neuspelem Shrani - takrat vse): rdeče pod
+     poljem, rdeča obroba. Polja so v mreži poravnana ZGORAJ (naslov v eni vrsti), napaka zamakne celo vrstico - vnosna
+     polja v vrsti ostanejo v isti višini. Razmik med vrsticami 20 px.
    - Dodajanje: okno (Modal) z istimi polji kot list (ena komponenta polj), Prekliči + Shrani v nogi,
      napaka rdeče pod polji; po shranjevanju se odpre list novega zapisa. Uspeh / napaka = obvestilo (Obvestila).
 
-17. Nastavitve zaposlenega - Super Admin
-   - Prvi na vrhu zavihka Nastavitve: razdelek DOSTOP, kartica s ščitom, naslov "Super Admin", opis, desno Stikalo.
-     Vklopljen: ikona v oranžnem prelivu, kartica z oranžno obrobo in sijem; v glavi osebe oznaka "Super Admin".
-   - Brez računa (e-mail + geslo) je stikalo zaklenjeno in pod njim rumeno opozorilo, kaj najprej narediti.
+17. Nastavitve zaposlenega - Pravice (samo pregled)
+   - Prvi na vrhu zavihka Nastavitve: razdelek PRAVICE (desno gumb "Uredi pravice", bel -> Pravice in dostopi s ?zaposleni=),
+     kartica za vsako funkcijo: ikona, ime, značka Ima (zelena) / Nima, opis. Ima: ikona v oranžnem prelivu, oranžna obroba in sij.
+     V glavi osebe oznaka "Super Admin". Brez računa rumeno opozorilo, kaj najprej narediti.
+   - Funkcij se tu NE ureja - samo v Pravicah in dostopih (razdelek 20).
    - Seznam zaposlenih: Super Admin ima levo pred kvadratkom z začetnicami okroglo ikono ščita v oranžnem prelivu
      (ostali imajo na tem mestu prazen prostor, da so stolpci poravnani).
 
 18. Dostopi zaposlenega - aplikacije (zavihek Dostopi, na vrhu)
    - Razdelek APLIKACIJE: mreža stikal (Stikalo), ena aplikacija = eno stikalo z imenom in kratkim opisom pod njim.
-     Prva ploščica je FIN:OS Administracija - brez stikala, stanje pove Super Admin (ureja se v Nastavitvah).
+     Prva ploščica je FIN:OS Administracija - brez stikala, stanje pove funkcija Super Admin (Pravice in dostopi).
    - Spremembe gredo v spodnjo vrstico Shrani (kot ostala polja lista). Pod stikali opomba, da dostop velja za račun.
 
 16. Prikaz hierarhije (Hierarhija, /administracija/zaposleni/hierarhija; gumb "Prikaz hierarhije" bel na seznamu)
@@ -161,6 +176,87 @@ PRAVILA
    - Povleci in spusti (dnd-kit; miška, na telefonu pridrži in povleci, tipkovnica): zaposleni gre s svojimi
      podrejenimi. Med vlečenjem: kartica sledi kazalcu (nagnjena, oranžen sij), dovoljen cilj se poveča in oranžno
      zasveti, nedovoljen (sam sebi / svoj podrejeni) je bled in rdeč. Sprememba se shrani takoj, potrditev = obvestilo.
+
+19. Nastavitve in Podatki baze (/administracija/nastavitve, PodatkiBaze, src/lib/tabeleBaze.ts)
+   - Ploščica "Nastavitve" je v Administraciji poleg Zaposlenih; odpre podmeni = mreža ploščic po razdelkih
+     (NASTAVITVE_RAZDELKI, npr. BAZA -> Podatki baze). Vse splošne nastavitve adminov gredo sem.
+   - Podatki baze: levo meni tabel (steklo, drseče oranžno polje izbrane tabele, ikona, naslov, ime tabele mono,
+     število prikazanih vrstic); na telefonu vodoravna drsna vrsta nad vsebino. Izbrana tabela v naslovu ?tabela=.
+   - Desno: glava tabele (ikona v oranžnem prelivu, naslov, ime tabele, prikazanih / skritih, opis) z gumbi
+     Izvozi CSV (oranžen), Uvozi CSV (oranžen), Dodaj vrstico (zelen); zložljiva kartica "Navodila za uvoz CSV"
+     (pravila datoteke, tabela stolpcev: ime, tip, obvezno, opis, primer; primer datoteke, opombe rumeno,
+     Prenesi predlogo CSV); filtri (iskanje, preklopnik Prikazane / Skrite / Vse); tabela s temno glavo,
+     razvrščanje na vsakem stolpcu (naraščajoče, padajoče, privzeto po ID), skrite vrstice blede. Klik na vrstico = urejanje.
+   - Dodaj / uredi vrstico (okno): eno polje na stolpec, nad njim naslov (* = obvezno) in desno ime stolpca, tip (text, int4,
+     text[]) in "enolično"; pod poljem opis. Seznam (text[]) se vpiše z | in pokaže kot čipi. Stikalo "Prikazana"
+     (visible) namesto brisanja. Sistemski id, created_at, updated_at samo za branje.
+   - Uvoz CSV (široko okno): polje povleci in spusti (oranžna obroba ob vlečenju), zložljiva navodila; nato predogled:
+     4 kvadratki (Nova zelena, Posodobi modra, Brez sprememb siva, Napaka rdeča), stikalo "Posodobi obstoječe",
+     tabela vrstic (napake najprej, spremenjene celice oranžne, stara vrednost v hover tekstu). Vrstice z napako se ne zapišejo.
+   - Nova tabela za urejanje = nov vnos v TABELE (stolpci z opisom in primerom, ključ, primeri, opombe).
+
+20. Pravice in dostopi (/administracija/nastavitve/pravice, PraviceDostopi, /api/pravice)
+   - Ploščica v Nastavitvah (razdelek SISTEM) poleg Podatkov baze, število = uporabnikov z računom.
+   - FUNKCIJE: kartica za vsako funkcijo (fos-kartica, ikona v oranžnem prelivu z bleščico, ime, desno število uporabnikov,
+     opis, siv okvir "OBSEGA" s kljukicami - kaj spada pod funkcijo). Kadrovanje ima spodaj opombo s ključavnico.
+   - UPORABNIKI = zaposleni z računom: filtri (iskanje, čipi Vsi / funkcije / Brez funkcij s številom), tabela:
+     Uporabnik (avatar, ime, "Ti"), Prijava (e-mail, uporabniško ime), Oddelek, Zadnja prijava ("pred 2 h", "nikoli"),
+     nato stolpec za vsako funkcijo s kvadratkom 28 px (vklop = oranžen preliv in kljukica z odskokom, spremenjen = rumen obroč,
+     zaklenjen = bled s ključavnico + hover tekst zakaj). Razvrščanje po uporabniku, oddelku, zadnji prijavi.
+   - Spremembe v osnutku (vrstica rahlo rumena), Shrani v SaveBar. Odprto z lista zaposlenega: vrstica oranžno označena.
+   - Brez Kadrovanja: osebni podatki na listu zaposlenega so zamegljen nadomestek s ključavnico "Zaščiteno - Kadrovanje".
+
+21. Registracija časa (/administracija/registracija, RegistracijaCasa - isti pogled bo v FIN:ME)
+   - Ploščica je PRVA v Administraciji, z zobnikom za nastavitve. V glavi strani rumena značka "Testni podatki"
+     (dokler baza ni potrjena) in bel gumb Nastavitve.
+   - Postavitev: levo ozek izbor oseb (15 rem; iskanje, oddelek, seznam z drsečim oranžnim poljem; na telefonu zložen),
+     na sredini koledar (~60 %), desno povzetek (na tablici pod koledarjem). Ena oseba (FIN:ME brez podrejenih) = brez izbora.
+   - Koledar: preklop Mesec / Teden (drseče oranžno polje), puščici levo / desno (mesec ali teden), "Danes" ko nisi v
+     tekočem obdobju. Stanje v naslovu (?oseba=&datum=&pogled=).
+   - Vrstica dneva: ikona stanja v krogu (barva stanja), datum v dveh vrsticah (13 px "31.10", pod njim 10 px "SOB";
+     oranžno "DANES" / praznik, danes še oranžna obroba), časovna linija 00-24 čim širša (mreža ur, odseki v barvi
+     statistike s prelivom in sijem; celodnevna odsotnost = poševne črte + ikona; delo čez polnoč = puščica >> na
+     koncu; danes oranžna črta "zdaj"), stanje z besedo v barvi stanja (pri prazniku ime praznika), prostor za oznake
+     (ročni popravek, komentar ...), čisto desno malice in prevozi eno pod drugim (ikona + število, 0 = bledo).
+     Vikend / praznik = črtkano ozadje. Tedni so ločeni s tanko sivo črto; os ur je lepljiva nad vrsticami.
+     Teden: višja linija, časi na robovih, žigi kot čipi. Delo čez polnoč šteje v dan prihoda (čas "01:00 +1").
+   - Stanja: Prisoten, Na delu, Odsoten (danes še ni prihoda), Ni vnosa (pretečen delovni dan brez vsega), Prost dan,
+     Praznik; vse ostalo (Bolniška, Delo od doma ...) = ime, barva in ikona statistike.
+   - Klik na dan = okno: stanje, linija, delovni čas / malice / prevozi, urnik dneva, štempljanja (smer, čas, statistika, vir).
+   - Povzetek: opravljeno / obveznost s trakom, malice, prevozi, ure po statistikah (barvni trakovi), dnevi po stanjih.
+
+22. Urniki (/administracija/registracija/nastavitve/urniki)
+   - Levo: Urniki (ikona koledarja v naslovu URNIKI, + zelen; vrstica: ročaj za povleci in spusti - vrstni red urnikov,
+     celo ime brez "..." in brez ikone, pod njim "N intervalov · M oseb"; izbran = drseče oranžno polje) in "Intervali v urniku" (pika statistike, ime, čas, zelena pika = velja danes).
+   - Glava strani desno: značka Testni podatki (samo, če baze 010 ni), gumb Prazniki (oranžen) -> okno praznikov,
+     desno od njega Urniki zaposlenih (oranžen) -> okno.
+   - Urniki zaposlenih (okno, široko): dve iskalni polji (ime / priimek in oddelek) in izbor Vsi / Brez urnika / urnik
+     (s številom); glava ZAPOSLENI / ODDELEK = razvrščanje (klik naraščajoče, ponovni klik padajoče, aktivna oranžna;
+     brez oddelka vedno na koncu);
+     vrstica: kvadratek z začetnicami (vodja ima zlato krono v kotu in značko VODJA), ime priimek, oddelek, izbira
+     urnika ("Brez urnika" sivo). Spremenjena vrstica rumena; v nogi okna (vedno na dnu, ne prekriva seznama)
+     število sprememb, Prekliči, Shrani (zelen).
+     Brez posebnih skupin - zaposleni gre neposredno v urnik. V seznamu urnikov levo "N intervalov · M oseb".
+   - Levo spodaj "V urniku": ime in opis izbranega urnika (svinčnik = uredi), njegovi intervali z X za odstranitev.
+   - Imena intervalov se NIKOLI ne skrajšajo s "..." (dolga se prelomijo) - ime je edini pregled nad intervali.
+     V seznamih je glavno ime (mono, npr. PRIHOD_PISARNA); prikazno ime (Prihod) je za krmilnik in FIN:ME.
+   - Sredina: VEDNO seznam VSEH intervalov ("Vsi intervali" brez podnaslova, Nov interval zelen), iskanje in preklop
+     Vsi / V urniku / Ostali. Vrstica: ročaj (povleci in spusti za vrstni red - prihodi na vrh, izhodi na konec; med
+     vlečenjem oranžna obroba in sij), pika statistike + glavno ime (SAMO ime, brez podatkov pod njim - ostalo je
+     v podrobnostih desno); Od / Do eno pod drugim (+1 = čez polnoč); dnevi;
+     na koncu "+" (doda v izbran urnik) ali zelena kljukica (hover rdeča = odstrani). Brez razpiranja vrstic.
+     Stolpci se nikoli ne prekrivajo; na telefonu čas in dnevi v drugi vrsti.
+   - Desno: Podrobnosti intervala (oranžna črta zgoraj): Ime, Prikazno ime, Opis, Čas od / do (obvezno), Velja od / do,
+     Dnevi (gumbi), Statistika (obvezno ena; spustno okno z ikono in kodo, brez prazne izbire). Spremembe -> SaveBar.
+   - Prazniki (okno): leto s puščicama, seznam (datum, dan - oranžen, če pade na delovni dan, ime, "Zakon" s
+     ključavnico ali "Poseben" z brisanjem), spodaj Dodaj poseben dela prost dan (datum, ime, opis).
+
+23. Statistike (/administracija/registracija/nastavitve/statistike)
+   - Levo: Dodaj (zelen), Kopiraj / Uredi (oranžna kroga), Izbriši (rdeč krog), iskanje, seznam (ikona v barvi, koda, ime).
+   - Desno: glava (velika ikona v barvi, sij v barvi statistike, koda, ime, opis, Uredi), "Kaj se šteje" (kvadratki),
+     "Na koledarju" (predogled odseka in celodnevne odsotnosti), "Uporaba" (intervali).
+   - Okno: Koda (mono, velike črke), Ime, Opis, Barva (16 predlogov + prosta), Ikona (mreža), Kaj se šteje (kvadratki), predogled.
+   - Brisanje = skrij (visible), opozorilo, če jo uporabljajo intervali.
 
 15. Prijava (Prijava, Seja, Zaklep)
    - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
@@ -211,3 +307,41 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-10-29 - Vse Super Admine označi v seznamu: ikona pred kvadratkom z začetnicami. -> razdelek 17, SeznamZaposlenih.
 2026-10-29 - Ponovno zaganjanje migracije za vsako novo tabelo ni sprejemljivo -> v Dostopih pri zaposlenem stikala za
              aplikacije, nove tabele se zaščitijo same. -> razdelek 18, ListZaposlenega (Dostopi), 006_dostopi_aplikacije.
+2026-10-31 - Ploščica "Nastavitve" poleg Zaposlenih s podmenijem splošnih nastavitev; prvi pogled "Podatki baze" z menijem
+             tabel (fos_aplikacije, fos_oddelek), dodajanje vrstic kot "add row" v Supabase, uvoz CSV in navodila
+             za strukturo stolpcev za vsako tabelo. -> razdelek 19, nav.ts, PodatkiBaze, VrsticaObrazec, UvozCsv,
+             NavodilaTabele, tabeleBaze.ts, csv.ts.
+2026-10-31 - V osnovne podatke zaposlenega pod Prijava osebni podatki: prebivališče (ulica, hišna št., poštna št., pošta),
+             kilometri do službe, EMŠO, davčna, številka zdravstvenega zavarovanja + dodatni potrebni razdelki.
+             -> razdelek 14 (Kadrovski podatki), PoljaKadrovsko, ListZaposlenega (zavihek Zaposlitev), kadrovsko.ts, 007_kadrovsko.sql.
+2026-10-31 - Skrito polje (EMŠO ...) se je po prvi števki zaklenilo; napaka med tipkanjem premakne polje gor in podre poravnavo;
+             kilometri naj bodo tudi pri stalnem prebivališču. -> razdelek 14 (Kadrovski podatki), PoljaKadrovsko, kadrovsko.ts, 007.
+2026-10-31 - Pravice kot "funkcije": v Nastavitvah "Pravice in dostopi" s tabelo uporabnikov (FIN:OS / FIN:ME) in
+             kvadratki; vsaka funkcija z opisom. Super Admin prestavljen sem, nova Kadrovanje - brez nje osebni podatki
+             skriti, tudi Super Adminu. -> razdelka 17, 20, PraviceDostopi, ListZaposlenega, 008_funkcije.sql.
+2026-10-31 - Naslov ploščice se je skrajšal ("Pravice in d..."): vedno cel, ena vrstica velika, sicer dve manjši,
+             predolg naslov = drugačna oblika. -> razdelek 14, Ploscice (NaslovPloscice).
+2026-10-31 - Registracija časa: ploščica na prvem mestu, zobnik na ploščici = nastavitve; koledar meseca / tedna z izborom
+             oseb (ozek), časovna linija 00-24 v barvah, stanja z ikono in besedo, malice in prevozi, prostor za oznake;
+             pogled pripravljen tudi za FIN:ME (obseg). Nastavitve: Urniki (urniki, intervali, potek dneva, podrobnosti
+             desno) in Statistike (koda, ime, opis, barva, ikona, kvadratki). Baza najprej kot osnutek za potrditev,
+             UI s testnimi podatki; čim manj trdo kodirano (šifranti). -> razdelki 14, 21, 22, 23, src/components/cas/,
+             cas.ts, casNastavitve.ts, supabase/osnutki/009_registracija_casa.sql.
+2026-10-31 - Urniki: tip intervala ni potreben (odstranjen); interval = okno od-do z natanko eno statistiko, dogodek je
+             štempljanje (vir: Krmilnik / Ročni popravek / Online aplikacija), potek dneva odstranjen; mreža intervalov se
+             je prekrivala in gumb Odstrani se ni videl -> nova mreža; gumb Prazniki ob urniku (standardni + posebni).
+             -> razdelek 22, Urniki, PrazniciOkno, casNastavitve.ts, 009_statistike.sql, osnutek 010.
+2026-10-31 - Delo čez polnoč (22:00-01:00) šteje v dan začetka; koledar: datum eno pod drugim in manjši, malice / prevozi
+             čisto desno eno pod drugim, daljša linija, siva črta med tedni; Urniki: na sredini vedno vsi intervali in "+"
+             za dodajanje v izbran urnik. Statistike povezane z bazo (009 zagnan). -> razdelka 21, 22, Koledar, Urniki,
+             CasovnaLinija, cas.ts, casNastavitve.ts.
+2026-10-31 - Urniki: brez podnaslova pod "Vsi intervali" in brez razpiranja vrstic; Od / Do eno pod drugim; "danes ne
+             velja" ne sme prekriti imena, imena (tudi levo "V urniku") nikoli skrajšana; povleci in spusti za vrstni red
+             intervalov; v seznamih glavno ime, prikazno ime je za krmilnik. -> razdelek 22, Urniki, casNastavitve.ts.
+2026-10-31 - Urniki: podatki pod imenom intervala (prikazno ime, veljavnost, urniki) so odveč - v vrstici samo ime. -> razdelek 22, Urniki.
+2026-10-31 - Povezava ljudi na urnike brez posebnih skupin (stari sistem): gumb "Urniki zaposlenih" desno od Praznikov,
+             okno s seznamom vseh zaposlenih (ime, priimek, oddelek, ikona vodje) in izbiro urnika, Shrani. Vse na
+             produkcijo - urniki v bazi. -> razdelek 22, UrnikiZaposlenih, 010_urniki.sql, casNastavitve.ts.
+2026-10-31 - Urniki zaposlenih: razvrščanje ASC / DESC po imenu in po oddelku, iskanje za oboje. -> razdelek 22, UrnikiZaposlenih.
+2026-10-31 - Urniki zaposlenih: gumbi na dnu okna (prej so prekrivali tabelo). Urniki levo: povleci in spusti za vrstni red,
+             ime nikoli skrajšano, brez ikone pri urniku (ikona v naslovu URNIKI). -> razdelek 22, Urniki, UrnikiZaposlenih, 010.

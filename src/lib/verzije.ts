@@ -3,6 +3,108 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "5.05",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Urniki, intervali, dnevi, posebni prazniki in vrstni red intervalov se shranjujejo v bazo.",
+      "Urniki: gumb Urniki zaposlenih - seznam vseh zaposlenih (vodje s krono) in izbira urnika za vsakega, Shrani. Brez posebnih skupin.",
+      "Urniki zaposlenih: razvrščanje po imenu in po oddelku (naraščajoče / padajoče) ter ločeno iskanje po imenu in po oddelku.",
+      "Urniki zaposlenih: Prekliči in Shrani sta v nogi okna (ne prekrivata več seznama).",
+      "Urniki: seznam urnikov levo se zlaga s povleci in spusti, imena urnikov so vedno cela; ikona je v naslovu URNIKI.",
+      "Ob menjavi urnika zaposlenega ostane zgodovina (prejšnji urnik se skrije, nov velja od danes).",
+      "Koledar registracije uporablja urnik zaposlenega iz baze (štempljanja so še testna).",
+    ],
+  },
+  {
+    verzija: "5.04",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Urniki: intervale zlagaš s povleci in spusti (ročaj levo) - npr. prihodi na vrhu, izhodi na koncu.",
+      "Urniki: v seznamih je glavno ime (PRIHOD_PISARNA) vedno celo; prikazno ime (Prihod) je za krmilnik.",
+      "Urniki: čas Od / Do eno pod drugim; v vrstici intervala samo ime (brez dodatnih podatkov pod njim); brez razpiranja vrstic.",
+    ],
+  },
+  {
+    verzija: "5.03",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Statistike se berejo in shranjujejo v bazo (dodaj, kopiraj, uredi, izbriši, kvadratki).",
+      "Delo čez polnoč (npr. 22:00-01:00) se šteje v dan prihoda; na časovni liniji puščica, da se nadaljuje naslednji dan. Interval je lahko čez polnoč (+1).",
+      "Koledar: datum v dveh vrsticah (dd.mm, pod njim dan), malice in prevozi čisto desno eno pod drugim, daljša časovna linija, tanka siva črta med tedni.",
+      "Urniki: na sredini vedno seznam vseh intervalov (iskanje, Vsi / V urniku / Ostali); + doda interval v izbran urnik, kljukica ga odstrani.",
+    ],
+  },
+  {
+    verzija: "5.02",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Urniki: interval je časovno okno od-do (npr. prihod 06:00-09:00) z obvezno eno statistiko; tip intervala in potek dneva odstranjena.",
+      "Urniki: mreža intervalov se ne prekriva več, gumb Odstrani je vedno viden; razprt interval pokaže okno na časovni liniji.",
+      "Urniki: gumb Prazniki - standardni dela prosti dnevi po zakonu za vsako leto in dodajanje posebnih (npr. dan solidarnosti).",
+      "Štempljanje ima vir: Krmilnik, Online aplikacija, Ročni popravek.",
+      "Baza: pripravljena migracija 009 za statistike; urniki, intervali in prazniki ostajajo v osnutku.",
+    ],
+  },
+  {
+    verzija: "5.01",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Administracija: nova ploščica Registracija časa (na prvem mestu), zobnik na ploščici odpre njene nastavitve.",
+      "Registracija časa: koledar cel mesec ali teden po dnevih - stanje z ikono, datum, časovna linija 00-24 v barvah statistik, malice, prevozi, stanje z besedo, prostor za oznake.",
+      "Izbor oseb z iskanjem in filtrom oddelka, povzetek obdobja (ure, malice, prevozi, po statistikah, dnevi), klik na dan odpre podrobnosti.",
+      "Nastavitve -> Urniki: urniki, intervali (tip, veljavnost, dnevi s prazniki, statistika), potek dneva z urejanjem, povezovanje obstoječih intervalov.",
+      "Nastavitve -> Statistike: koda, ime, opis, barva, ikona in kvadratki (delovna obveznost, prevozi, malice, lanski dopust); dodaj, kopiraj, uredi, izbriši.",
+      "Za zdaj testni podatki (označeno) - baza je v osnutku za pregled.",
+    ],
+  },
+  {
+    verzija: "4.02",
+    datum: "31. 10. 2026",
+    spremembe: ["Ploščice: naslov se vedno vidi cel - v eni vrsti velik, če je predolg, v dveh vrsticah z manjšo pisavo (brez \"...\")."],
+  },
+  {
+    verzija: "4.01",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Nastavitve -> Pravice in dostopi: uporabniki FIN:OS / FIN:ME z zadnjo prijavo in kvadratki za funkcije, Shrani v spodnji vrstici.",
+      "Funkcije z opisom, kaj obsegajo: Super Admin (prestavljen iz Nastavitev zaposlenega) in nova Kadrovanje.",
+      "Brez funkcije Kadrovanje so osebni podatki zaposlenih skriti - tudi Super Adminu; zaščito izvaja baza.",
+      "Kadrovanje lahko dodeli ali odvzame samo uporabnik, ki ga ima.",
+      "Podatki o zaposlitvi (pogodba, ure, dopust) so v svoji tabeli in niso pod Kadrovanjem.",
+    ],
+  },
+  {
+    verzija: "3.03",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Popravek: v skrita polja (EMŠO, davčna, ZZZS, TRR) se da pisati naprej - skrita so samo, ko jih ne urejaš.",
+      "Napaka pri polju se pokaže šele, ko polje zapustiš (ali ob shranjevanju), ne med tipkanjem.",
+      "Polja v vrsti ostanejo poravnana: napaka pod poljem zamakne celo vrstico.",
+      "Kilometri do dela pri stalnem in pri začasnem prebivališču.",
+    ],
+  },
+  {
+    verzija: "3.02",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "List zaposlenega -> Podatki: osebni podatki (EMŠO, davčna, številka zdravstvenega zavarovanja, rojstvo, kontakt), stalno in začasno prebivališče, kilometri do dela, TRR, kontakt v sili.",
+      "Nov zavihek Zaposlitev: pogodba, delovno mesto, tedenske ure, letni dopust, delovna doba, izobrazba; povzetek staža v Fines.",
+      "EMŠO, davčna in TRR se preverijo s kontrolno števko; EMŠO sam izpolni datum rojstva in spol.",
+      "Občutljive številke so skrite (vidne zadnje 3 števke), oko jih pokaže.",
+    ],
+  },
+  {
+    verzija: "3.01",
+    datum: "31. 10. 2026",
+    spremembe: [
+      "Administracija: nova ploščica Nastavitve (poleg Zaposlenih) s podmenijem splošnih nastavitev.",
+      "Nastavitve -> Podatki baze: meni tabel (Oddelki, Aplikacije), pregled vrstic z iskanjem, razvrščanjem in prikazom skritih.",
+      "Dodaj vrstico / uredi vrstico: polje za vsak stolpec z imenom, tipom in opisom, stikalo Prikazana (brez brisanja).",
+      "Uvoz CSV: povleci in spusti, predogled (nova / posodobi / brez sprememb / napaka), obstoječe vrstice se posodobijo po ključu.",
+      "Navodila za vsako tabelo: stolpci, tipi, obvezni podatki, primer datoteke in predloga CSV; izvoz tabele v CSV.",
+    ],
+  },
+  {
     verzija: "2.10",
     datum: "29. 10. 2026",
     spremembe: [

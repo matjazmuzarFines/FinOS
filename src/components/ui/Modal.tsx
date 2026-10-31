@@ -13,10 +13,12 @@ type Props = {
   children: ReactNode;
   /** Gumbi v nogi okna (ne drsijo z vsebino). */
   noga?: ReactNode;
+  /** Široko okno (npr. predogled uvoza s tabelo). */
+  siroko?: boolean;
 };
 
 /** Okno: od `sm` na sredini (steklo, zaobljeno 20 px), na telefonu cel zaslon. Vedno v <body>. */
-export function Modal({ open, title, onClose, children, noga }: Props) {
+export function Modal({ open, title, onClose, children, noga, siroko }: Props) {
   // portal šele v brskalniku (na strežniku ni document.body)
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -46,7 +48,7 @@ export function Modal({ open, title, onClose, children, noga }: Props) {
             role="dialog"
             aria-modal
             aria-label={title}
-            className="fos-glass flex h-full w-full flex-col overflow-hidden bg-ink-900/80 sm:h-auto sm:max-h-[85vh] sm:max-w-xl sm:rounded-[20px]"
+            className={`fos-glass flex h-full w-full flex-col overflow-hidden bg-ink-900/80 sm:h-auto sm:max-h-[85vh] sm:rounded-[20px] ${siroko ? "sm:max-w-4xl" : "sm:max-w-xl"}`}
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}

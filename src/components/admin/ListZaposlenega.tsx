@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, ShieldCheck, Building2, ChevronRight, CreditCard, DoorOpen, Eye, IdCard, Network, Settings2, UserRound, UserRoundX, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Briefcase, DatabaseZap, KeyRound, LockKeyhole, ShieldCheck, Building2, ChevronRight, CreditCard, DoorOpen, Eye, IdCard, Network, Settings2, UserRound, UserRoundX, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { GlavaStrani, NaslovRazdelka } from "@/components/ui/GlavaStrani";
 import { Avatar } from "@/components/ui/Avatar";
@@ -14,13 +14,18 @@ import { SaveBar } from "@/components/ui/SaveBar";
 import { obvesti } from "@/components/ui/Obvestila";
 import { Znak } from "@/components/Znak";
 import { PoljaOrganizacije, PoljaOsebe, PoljaPrijave } from "./ZaposleniObrazec";
+import { PoljaKadrovsko } from "./PoljaKadrovsko";
 import { useLahkoUreja } from "@/lib/pravice";
+import { IKONE, useFunkcije } from "@/lib/funkcije";
+import { useFunkcija } from "@/components/Seja";
+import { RAZDELKI, preveriKadrovsko, shraniKadrovsko, spremembKadrovsko, useKadrovsko, VRSTE_POGODBE, type Kadrovsko, type KadrovskoVnos } from "@/lib/kadrovsko";
 import { polnoIme, preveriVnos, type Aplikacija, shraniZaposlenega, useZaposleni, vnosIz, zacetnice, type Zaposleni, type ZaposleniPodatki, type ZaposleniVnos } from "@/lib/zaposleni";
 
 /** Razdelki lista zaposlenega - en vir (zavihki). Nov razdelek = nov vnos tukaj + komponenta. */
 const ZAVIHKI = [
   { id: "podatki", ime: "Podatki", icon: IdCard, hint: "Osnovni podatki zaposlenega" },
   { id: "organizacija", ime: "Oddelek in vodja", icon: Network, hint: "Oddelek, vodja in podrejeni zaposleni" },
+  { id: "zaposlitev", ime: "Zaposlitev", icon: Briefcase, hint: "Pogodba, delovni čas, dopust in izobrazba" },
   { id: "dostopi", ime: "Dostopi", icon: DoorOpen, hint: "Kartica in dostopi do prostorov" },
   { id: "nastavitve", ime: "Nastavitve", icon: Settings2, hint: "Nastavitve zaposlenega" },
 ] as const satisfies readonly { id: string; ime: string; icon: LucideIcon; hint: string }[];
@@ -35,10 +40,11 @@ const DROBTINE = [
 /** List zaposlenega: glava osebe, zavihki razdelkov (izbran zavihek je v naslovu strani ?zavihek=). */
 export function ListZaposlenega({ id }: { id: number }) {
   const { podatki, napaka } = useZaposleni();
+  const kadrovsko = useKadrovsko(id, useFunkcija("kadrovanje"));
   const router = useRouter();
 
   if (napaka) return <PraznoStanje ton="napaka" icon={AlertTriangle} naslov="Zaposlenega ni mogoče prebrati" opis={napaka} />;
-  if (!podatki) return <div className="fos-glass h-48 animate-pulse rounded-[24px]" aria-label="Nalagam zaposlenega" />;
+  if (!podatki || (!kadrovsko.podatki && !kadrovsko.napaka)) return <div className="fos-glass h-48 animate-pulse rounded-[24px]" aria-label="Nalagam zaposlenega" />;
 
   const z = podatki.poId.get(id);
   if (!z)
@@ -59,13 +65,37 @@ export function ListZaposlenega({ id }: { id: number }) {
     );
 
   // nov ključ po shranjevanju (sveži podatki iz baze) -> osnutek se ponastavi
-  return <Urejanje key={JSON.stringify(vnosIz(z))} z={z} podatki={podatki} />;
+  return (
+    <Urejanje
+      key={JSON.stringify([vnosIz(z), kadrovsko.podatki])}
+      z={z}
+      podatki={podatki}
+      kadrovsko={kadrovsko.podatki}
+      kadrovskoNapaka={kadrovsko.manjkaTabela ? "manjka" : kadrovsko.napaka}
+      osveziKadrovsko={kadrovsko.osvezi}
+    />
+  );
 }
 
 type UrejanjeProps = { vnos: ZaposleniVnos; nastavi: (p: Partial<ZaposleniVnos>) => void; ureja: boolean };
 
+/** Kadrovski podatki v osnutku (fos_zaposleni_kadrovsko); napaka "manjka" = tabela še ni ustvarjena (007). */
+type KadrovskoProps = { kVnos: KadrovskoVnos; nastaviK: (p: KadrovskoVnos) => void; napakeK: Record<string, string>; pokaziNapake: boolean; kadrovskoNapaka: string | null };
+
 /** Vsebina lista z osnutkom sprememb: polja so urejljiva (razen ID), shrani se prek spodnje vrstice (SaveBar). */
-function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
+function Urejanje({
+  z,
+  podatki,
+  kadrovsko,
+  kadrovskoNapaka,
+  osveziKadrovsko,
+}: {
+  z: Zaposleni;
+  podatki: ZaposleniPodatki;
+  kadrovsko: Kadrovsko | null;
+  kadrovskoNapaka: string | null;
+  osveziKadrovsko: () => void;
+}) {
   const router = useRouter();
   const pot = usePathname();
   const iskalni = useSearchParams();
@@ -77,20 +107,36 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
   const [vnos, setVnos] = useState<ZaposleniVnos>(prej);
   const [shranjujem, setShranjujem] = useState(false);
   const nastavi = (p: Partial<ZaposleniVnos>) => setVnos((v) => ({ ...v, ...p }));
-  const sprememb = (Object.keys(prej) as (keyof ZaposleniVnos)[]).filter((k) => JSON.stringify(prej[k]) !== JSON.stringify(vnos[k])).length;
+  const kPrej = kadrovsko?.vnos;
+  const [kVnos, setKVnos] = useState<KadrovskoVnos>(kPrej ?? {});
+  const nastaviK = (p: KadrovskoVnos) => setKVnos((v) => ({ ...v, ...p }));
+  const napakeK = preveriKadrovsko(kVnos);
+  const [pokaziNapake, setPokaziNapake] = useState(false);
+  const kSprememb = kPrej ? spremembKadrovsko(kVnos, kPrej) : 0;
+  const sprememb = (Object.keys(prej) as (keyof ZaposleniVnos)[]).filter((k) => JSON.stringify(prej[k]) !== JSON.stringify(vnos[k])).length + kSprememb;
 
   const shrani = async () => {
-    const n = preveriVnos(vnos);
-    if (n) return obvesti(n, "napaka");
+    const stNapak = Object.keys(napakeK).length;
+    const n = preveriVnos(vnos) ?? (stNapak ? `Popravi označena polja (${stNapak}): ${Object.values(napakeK)[0]}` : null);
+    if (n) {
+      setPokaziNapake(stNapak > 0);
+      return obvesti(n, "napaka");
+    }
     setShranjujem(true);
     try {
+      // kadrovski podatki najprej: po shranjevanju zaposlenega se list znova naloži
+      if (kadrovsko && kSprememb) await shraniKadrovsko(z.id, kadrovsko, kVnos);
       await shraniZaposlenega(z.id, vnos, prej);
+      if (kSprememb) osveziKadrovsko();
       obvesti(`Shranjeno: ${vnos.ime.trim()} ${vnos.priimek.trim()}.`);
     } catch (e) {
       obvesti((e as Error).message, "napaka");
+    } finally {
       setShranjujem(false);
     }
   };
+  const k: KadrovskoProps = { kVnos, nastaviK, napakeK, pokaziNapake, kadrovskoNapaka };
+  const delovnoMesto = kPrej?.delovno_mesto;
 
   const podrejeni = podatki.zaposleni.filter((p) => p.vodja?.id === z.id);
 
@@ -125,6 +171,11 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
               <Oznaka icon={CreditCard} hint="Številka kartice zaposlenega" mono>
                 {z.st_kartice ?? "Brez kartice"}
               </Oznaka>
+              {delovnoMesto && (
+                <Oznaka icon={Briefcase} hint="Delovno mesto">
+                  {delovnoMesto}
+                </Oznaka>
+              )}
               {z.super_admin && (
                 <Oznaka icon={ShieldCheck} hint="Ima dostop do FIN:OS Administracije">
                   Super Admin
@@ -182,19 +233,29 @@ function Urejanje({ z, podatki }: { z: Zaposleni; podatki: ZaposleniPodatki }) {
 
       <AnimatePresence mode="wait">
         <motion.div key={zavihek} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
-          {zavihek === "podatki" && <Podatki z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} />}
+          {zavihek === "podatki" && <Podatki z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} {...k} />}
+          {zavihek === "zaposlitev" && <Zaposlitev ureja={ureja} {...k} />}
           {zavihek === "organizacija" && <Organizacija z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} podrejeni={podrejeni} podatki={podatki} />}
           {zavihek === "dostopi" && <Dostopi z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} aplikacije={podatki.aplikacije} />}
-          {zavihek === "nastavitve" && <Nastavitve z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} />}
+          {zavihek === "nastavitve" && <Nastavitve z={z} />}
         </motion.div>
       </AnimatePresence>
 
-      <SaveBar sprememb={sprememb} shranjujem={shranjujem} onShrani={shrani} onPreklici={() => setVnos(prej)} />
+      <SaveBar
+        sprememb={sprememb}
+        shranjujem={shranjujem}
+        onShrani={shrani}
+        onPreklici={() => {
+          setVnos(prej);
+          setKVnos(kPrej ?? {});
+          setPokaziNapake(false);
+        }}
+      />
     </>
   );
 }
 
-function Podatki({ z, vnos, nastavi, ureja }: { z: Zaposleni } & UrejanjeProps) {
+function Podatki({ z, vnos, nastavi, ureja, ...k }: { z: Zaposleni } & UrejanjeProps & KadrovskoProps) {
   return (
     <section className="flex flex-col gap-4">
       <NaslovRazdelka>Osnovni podatki</NaslovRazdelka>
@@ -215,7 +276,111 @@ function Podatki({ z, vnos, nastavi, ureja }: { z: Zaposleni } & UrejanjeProps) 
           Geslo se shrani zaščiteno (Supabase Auth) in ga ni mogoče prebrati - lahko ga samo zamenjaš. Zaposleni se prijavi z e-mailom ali uporabniškim imenom.
         </p>
       </div>
+      <KadrovskiRazdelki zavihek="podatki" ureja={ureja} {...k} />
     </section>
+  );
+}
+
+function Zaposlitev({ ureja, ...k }: { ureja: boolean } & KadrovskoProps) {
+  const vrsta = VRSTE_POGODBE.find((v) => v.id === k.kVnos.vrsta_pogodbe)?.ime;
+  const od = k.kVnos.datum_zaposlitve;
+  return (
+    <section className="flex flex-col gap-4">
+      {!k.kadrovskoNapaka && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Povzetek naslov="Pogodba" vrednost={vrsta ?? "-"} opis={k.kVnos.pogodba_do ? `do ${datum(k.kVnos.pogodba_do)}` : undefined} />
+          <Povzetek naslov="V Fines" vrednost={od ? stazOd(od) : "-"} opis={od ? `od ${datum(od)}` : undefined} />
+          <Povzetek naslov="Delovni čas" vrednost={k.kVnos.tedenske_ure ? `${k.kVnos.tedenske_ure} h / teden` : "-"} opis={k.kVnos.letni_dopust ? `${k.kVnos.letni_dopust} dni dopusta na leto` : undefined} />
+        </div>
+      )}
+      <KadrovskiRazdelki zavihek="zaposlitev" ureja={ureja} {...k} />
+    </section>
+  );
+}
+
+const datum = (d: string) => new Date(d).toLocaleDateString("sl-SI");
+
+/** Staž od datuma zaposlitve do danes (leta, meseci). */
+function stazOd(od: string): string {
+  const z = new Date(od);
+  const d = new Date();
+  let m = (d.getFullYear() - z.getFullYear()) * 12 + d.getMonth() - z.getMonth() - (d.getDate() < z.getDate() ? 1 : 0);
+  if (m < 0) return "še ni začel";
+  const l = Math.floor(m / 12);
+  m %= 12;
+  const leta = l === 1 ? "leto" : l === 2 ? "leti" : l < 5 ? "leta" : "let";
+  return [l > 0 && `${l} ${leta}`, (m > 0 || l === 0) && `${m} mes.`].filter(Boolean).join(" ");
+}
+
+function Povzetek({ naslov, vrednost, opis }: { naslov: string; vrednost: string; opis?: string }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="fos-glass relative flex flex-col gap-0.5 overflow-hidden rounded-[16px] p-4">
+      <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-[linear-gradient(90deg,#f19a66,#ca5010,transparent)]" />
+      <span className="text-xs font-semibold text-ink-400">{naslov}</span>
+      <span className="font-display text-xl font-bold text-white">{vrednost}</span>
+      {opis && <span className="text-xs text-ink-500">{opis}</span>}
+    </motion.div>
+  );
+}
+
+/** Kadrovski razdelki zavihka ali opozorilo, če tabele še ni / je ni mogoče prebrati. */
+function KadrovskiRazdelki({ zavihek, ureja, kVnos, nastaviK, napakeK, pokaziNapake, kadrovskoNapaka }: { zavihek: "podatki" | "zaposlitev"; ureja: boolean } & KadrovskoProps) {
+  const kadrovanje = useFunkcija("kadrovanje");
+  if (kadrovskoNapaka)
+    return (
+      <PraznoStanje
+        ton="napaka"
+        icon={DatabaseZap}
+        naslov={kadrovskoNapaka === "manjka" ? "Kadrovski podatki še niso pripravljeni" : "Kadrovskih podatkov ni mogoče prebrati"}
+        opis={
+          kadrovskoNapaka === "manjka" ? (
+            <>
+              V Supabase (SQL Editor) po vrsti zaženi <code className="font-mono text-fines-300">007_kadrovsko.sql</code> in <code className="font-mono text-fines-300">008_funkcije.sql</code> (mapa supabase/migrations).
+            </>
+          ) : (
+            kadrovskoNapaka
+          )
+        }
+      />
+    );
+  if (zavihek === "podatki" && !kadrovanje) return <OsebniZaklenjeni />;
+  return <PoljaKadrovsko zavihek={zavihek} vnos={kVnos} nastavi={nastaviK} ureja={ureja} napake={napakeK} pokaziNapake={pokaziNapake} />;
+}
+
+/** Osebni podatki brez funkcije Kadrovanje: baza jih ne vrne, prikaže se samo zaklenjen okvir z imeni razdelkov. */
+function OsebniZaklenjeni() {
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-4">
+      <NaslovRazdelka>Osebni podatki</NaslovRazdelka>
+      <div className="fos-glass relative overflow-hidden rounded-[18px] p-5 sm:p-6">
+        {/* zamegljen nadomestek polj - podatkov v brskalniku ni */}
+        <div aria-hidden className="pointer-events-none grid select-none gap-4 opacity-40 blur-[3px] sm:grid-cols-2 lg:grid-cols-4">
+          {RAZDELKI.filter((r) => r.zavihek === "podatki")
+            .flatMap((r) => r.polja)
+            .slice(0, 8)
+            .map((p) => (
+              <span key={p.ime} className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-ink-400">{p.naslov}</span>
+                <span className="h-10 rounded-[10px] border border-white/10 bg-white/[0.04] px-3 font-mono leading-10 text-ink-400">••••••••••</span>
+              </span>
+            ))}
+        </div>
+        <div className="absolute inset-0 grid place-items-center bg-ink-950/30 p-4">
+          <div className="flex max-w-md flex-col items-center gap-2 text-center">
+            <span className="fos-fines-fill grid h-12 w-12 place-items-center rounded-2xl text-snow shadow-[var(--fos-glow-fines)]">
+              <LockKeyhole className="h-6 w-6" aria-hidden />
+            </span>
+            <span className="font-display text-lg font-bold text-white">Zaščiteno - Kadrovanje</span>
+            <span className="text-sm text-ink-300">
+              {RAZDELKI.filter((r) => r.zavihek === "podatki")
+                .map((r) => r.naslov)
+                .join(", ")}{" "}
+              vidi in ureja samo uporabnik s funkcijo Kadrovanje (Nastavitve → Pravice in dostopi).
+            </span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -257,36 +422,42 @@ function Organizacija({ z, vnos, nastavi, ureja, podrejeni, podatki }: { z: Zapo
   );
 }
 
-/** Nastavitve zaposlenega: na vrhu dostop (Super Admin), nato ostale nastavitve. */
-function Nastavitve({ z, vnos, nastavi, ureja }: { z: Zaposleni } & UrejanjeProps) {
-  const imaRacun = z.id_uporabnika != null || (vnos.email.trim() !== "" && vnos.geslo !== "");
+/** Nastavitve zaposlenega: na vrhu pravice (funkcije - samo pregled, urejajo se v Nastavitve -> Pravice in dostopi). */
+function Nastavitve({ z }: { z: Zaposleni }) {
+  const router = useRouter();
+  const { funkcije } = useFunkcije();
   return (
     <section className="flex flex-col gap-4">
-      <NaslovRazdelka>Dostop</NaslovRazdelka>
-      <div className={`fos-glass flex flex-col gap-3 rounded-[18px] p-4 sm:p-5 ${vnos.super_admin ? "border-fines-400/50 shadow-[0_0_40px_-18px_rgb(238_122_58/0.8)]" : ""}`}>
-        <div className="flex flex-wrap items-center gap-4">
-          <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${vnos.super_admin ? "fos-fines-fill text-snow" : "bg-white/[0.06] text-ink-400"}`}>
-            <ShieldCheck className="h-5 w-5" aria-hidden />
-          </span>
-          <div className="flex min-w-[min(100%,16rem)] flex-1 flex-col">
-            <span className="font-display text-lg font-bold text-white">Super Admin</span>
-            <span className="text-sm text-ink-400">Dostop do FIN:OS Administracije z e-mailom ali uporabniškim imenom in geslom tega zaposlenega.</span>
-          </div>
-          <div className="w-full sm:w-56">
-            <Stikalo
-              vklop={vnos.super_admin}
-              onChange={(v) => nastavi({ super_admin: v })}
-              hint={vnos.super_admin ? "Odvzemi dostop do FIN:OS Administracije" : "Dovoli dostop do FIN:OS Administracije"}
-              disabled={!ureja || (!imaRacun && !vnos.super_admin)}
-            >
-              {vnos.super_admin ? "Vklopljen" : "Izklopljen"}
-            </Stikalo>
-          </div>
-        </div>
-        {!imaRacun && (
-          <p className="text-xs text-warn-500">Zaposleni še nima računa - najprej v razdelku Podatki vpiši e-mail in geslo (Prijava v FIN:ME).</p>
-        )}
+      <NaslovRazdelka
+        desno={
+          <Button hint="Uredi funkcije zaposlenega v Pravicah in dostopih" variant="neutral" icon={KeyRound} onClick={() => router.push(`/administracija/nastavitve/pravice?zaposleni=${z.id}`)}>
+            Uredi pravice
+          </Button>
+        }
+      >
+        Pravice
+      </NaslovRazdelka>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(funkcije ?? []).map((f) => {
+          const ima = z.funkcije.includes(f.koda);
+          const Ikona = IKONE[f.koda] ?? KeyRound;
+          return (
+            <div key={f.koda} className={`fos-glass flex items-start gap-4 rounded-[18px] p-4 sm:p-5 ${ima ? "border-fines-400/50 shadow-[0_0_40px_-18px_rgb(238_122_58/0.8)]" : ""}`}>
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${ima ? "fos-fines-fill text-snow" : "bg-white/[0.06] text-ink-400"}`}>
+                <Ikona className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-display text-lg font-bold text-white">{f.ime}</span>
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${ima ? "border-ok-500/40 bg-ok-500/10 text-ok-500" : "border-white/10 bg-white/[0.04] text-ink-400"}`}>{ima ? "Ima" : "Nima"}</span>
+                </span>
+                <span className="text-sm text-ink-400">{f.opis}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
+      {!z.id_uporabnika && <p className="text-xs text-warn-500">Zaposleni še nima računa - funkcije lahko dobi, ko mu v razdelku Podatki vpišeš e-mail in geslo (Prijava v FIN:ME).</p>}
 
       <NaslovRazdelka>Ostale nastavitve</NaslovRazdelka>
       <PraznoStanje icon={Settings2} naslov="Kmalu" opis="Tu bodo ostale nastavitve zaposlenega (npr. delovni čas)." />
@@ -299,18 +470,18 @@ function Dostopi({ z, vnos, nastavi, ureja, aplikacije }: { z: Zaposleni; aplika
     nastavi({ aplikacije: (vklop ? [...vnos.aplikacije, id] : vnos.aplikacije.filter((a) => a !== id)).sort((a, b) => a - b) });
   return (
     <section className="flex flex-col gap-4">
-      <NaslovRazdelka desno={<span className="text-xs tabular-nums text-ink-400">{vnos.aplikacije.length + (vnos.super_admin ? 1 : 0)}</span>}>Aplikacije</NaslovRazdelka>
+      <NaslovRazdelka desno={<span className="text-xs tabular-nums text-ink-400">{vnos.aplikacije.length + (z.super_admin ? 1 : 0)}</span>}>Aplikacije</NaslovRazdelka>
       <div className="fos-glass flex flex-col gap-3 rounded-[18px] p-4 sm:p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {/* FIN:OS: dostop samo prek Super Admina (Nastavitve) */}
           <div
-            title="Dostop do FIN:OS Administracije ureja stikalo Super Admin v Nastavitvah"
-            className={`flex flex-col gap-1 rounded-[14px] border p-3 ${vnos.super_admin ? "border-fines-400/50 bg-fines-500/10" : "border-white/10 bg-white/[0.03]"}`}
+            title="Dostop do FIN:OS Administracije da funkcija Super Admin (Nastavitve -> Pravice in dostopi)"
+            className={`flex flex-col gap-1 rounded-[14px] border p-3 ${z.super_admin ? "border-fines-400/50 bg-fines-500/10" : "border-white/10 bg-white/[0.03]"}`}
           >
             <span className="flex items-center gap-2 text-sm font-semibold text-white">
               <Znak pripona="OS" className="text-sm" /> Administracija
             </span>
-            <span className="text-xs text-ink-400">{vnos.super_admin ? "Dostop: Super Admin" : "Brez dostopa - vklopi Super Admin v Nastavitvah"}</span>
+            <span className="text-xs text-ink-400">{z.super_admin ? "Dostop: Super Admin" : "Brez dostopa - funkcija Super Admin (Pravice in dostopi)"}</span>
           </div>
           {aplikacije.map((a) => (
             <div key={a.id} className="flex flex-col gap-1.5">

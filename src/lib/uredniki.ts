@@ -1,5 +1,5 @@
 /**
- * Dostop do Administracije ima Super Admin (fos_zaposleni.super_admin, stikalo v Nastavitvah zaposlenega).
+ * Dostop do Administracije ima Super Admin (funkcija, Nastavitve -> Pravice in dostopi, 008_funkcije.sql).
  * NEXT_PUBLIC_FOS_UREDNIKI (e-maili z vejico, .env.local in Vercel - ne v kodi) je ZASILNI seznam, da se
  * ne zaklenemo ven (npr. fines@fines.si).
  * Uporablja se v brskalniku (Zaklep, useLahkoUreja) in na strežniku (API za račune zaposlenih).

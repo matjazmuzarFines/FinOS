@@ -90,7 +90,7 @@ declare
   z record;
 begin
   -- zaposleni, povezan s prijavljenim računom (tudi skrit - skrit zaposleni nima dostopa)
-  select id, visible, super_admin into z
+  select id, visible into z
   from fos_zaposleni where id_uporabnika = auth.uid()
   order by visible desc limit 1;
 
@@ -101,7 +101,7 @@ begin
     return false;
   end if;
   if starts_with(p_ime, 'fos_') or starts_with(p_ime, 'ln_fos_') then
-    return z.super_admin;  -- FIN:OS Administracija (FIN:ME bo dobil svoje pravice za lastne podatke)
+    return fos_je_super_admin();  -- FIN:OS Administracija (005 / 008 funkcije; FIN:ME bo dobil pravice za lastne podatke)
   end if;
 
   return exists (

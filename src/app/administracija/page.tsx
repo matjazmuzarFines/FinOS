@@ -23,7 +23,7 @@ export default function AdministracijaStran() {
         opis="Vodje in kadrovska služba: zaposleni, evidence, dostopi in kartice. Izberi modul."
       />
       <section className="flex flex-col gap-4">
-        <NaslovRazdelka>Ljudje</NaslovRazdelka>
+        <NaslovRazdelka>Moduli</NaslovRazdelka>
         <Ploscice ploscice={ADMIN_PLOSCICE.map((p) => ({ ...p, stevilo: stevila[p.href] }))} />
       </section>
     </>

@@ -13,6 +13,8 @@ import { PraznoStanje } from "./ui/PraznoStanje";
 const SejaKontekst = createContext<Session | null | undefined>(undefined);
 // dostop do Administracije: undefined = še preverjam
 const DostopKontekst = createContext<boolean | undefined>(undefined);
+// funkcije prijavljenega uporabnika (008: super_admin, kadrovanje ...)
+const FunkcijeKontekst = createContext<string[]>([]);
 
 /** Prijavljen uporabnik (Supabase Auth) ali null. Domača stran FIN:OS deluje tudi brez prijave. */
 export function useSeja() {
@@ -24,6 +26,11 @@ export function useDostop() {
   return useContext(DostopKontekst) === true;
 }
 
+/** true = prijavljen uporabnik ima funkcijo (Nastavitve -> Pravice in dostopi). Zasilni račun nima nobene. */
+export function useFunkcija(koda: string) {
+  return useContext(FunkcijeKontekst).includes(koda);
+}
+
 export async function odjava() {
   await getSupabase().auth.signOut();
 }
@@ -31,7 +38,7 @@ export async function odjava() {
 /** Seja za celo aplikacijo (root layout). Sama ne zaklene ničesar - zaklep je `Zaklep`. */
 export function Seja({ children }: { children: ReactNode }) {
   const [seja, setSeja] = useState<Session | null | undefined>(undefined);
-  const [superAdmin, setSuperAdmin] = useState<{ uporabnik: string; je: boolean } | null>(null);
+  const [funkcije, setFunkcije] = useState<{ uporabnik: string; kode: string[] } | null>(null);
 
   useEffect(() => {
     if (!supabaseConfigured) return;
@@ -41,30 +48,30 @@ export function Seja({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  // Super Admin (fos_zaposleni.super_admin) - preveri baza za prijavljenega uporabnika
+  // funkcije (ln_fos_zaposleni_funkcije) - preveri baza za prijavljenega uporabnika
   const idUporabnika = seja?.user.id;
   useEffect(() => {
     if (!idUporabnika) return;
     let ziv = true;
-    getSupabase()
-      .rpc("fos_je_super_admin")
-      .then(({ data, error }) => ziv && setSuperAdmin({ uporabnik: idUporabnika, je: !error && data === true }));
+    const sb = getSupabase();
+    sb.rpc("fos_moje_funkcije").then(async ({ data, error }) => {
+      // pred 008 je samo Super Admin (stolpec)
+      const kode = !error ? ((data as string[] | null) ?? []) : (await sb.rpc("fos_je_super_admin")).data === true ? ["super_admin"] : [];
+      if (ziv) setFunkcije({ uporabnik: idUporabnika, kode });
+    });
     return () => {
       ziv = false;
     };
   }, [idUporabnika]);
 
-  const dostop = !seja
-    ? false
-    : jeUrednik(seja.user.email)
-      ? true
-      : superAdmin?.uporabnik === seja.user.id
-        ? superAdmin.je
-        : undefined;
+  const kode = funkcije && funkcije.uporabnik === seja?.user.id ? funkcije.kode : undefined;
+  const dostop = !seja ? false : jeUrednik(seja.user.email) ? true : kode ? kode.includes("super_admin") : undefined;
 
   return (
     <SejaKontekst.Provider value={supabaseConfigured ? seja : null}>
-      <DostopKontekst.Provider value={dostop}>{children}</DostopKontekst.Provider>
+      <DostopKontekst.Provider value={dostop}>
+        <FunkcijeKontekst.Provider value={(seja && kode) || []}>{children}</FunkcijeKontekst.Provider>
+      </DostopKontekst.Provider>
     </SejaKontekst.Provider>
   );
 }
