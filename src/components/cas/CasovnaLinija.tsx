@@ -31,7 +31,7 @@ export function CasovnaLinija({ segmenti, statistike, velik, zdaj, zamik = 0, bl
 
   return (
     <div className={`flex min-w-0 flex-col gap-1 ${bledo ? "opacity-40" : ""}`}>
-      <div className={`relative w-full overflow-hidden rounded-[6px] border border-white/[0.07] bg-white/[0.03] ${velik ? "h-9" : "h-[18px]"}`} style={{ backgroundImage: MREZA }}>
+      <div className={`relative w-full overflow-hidden rounded-[6px] border border-white/[0.07] bg-white/[0.03] ${velik ? "h-8" : "h-[13px]"}`} style={{ backgroundImage: MREZA }}>
         {segmenti.filter((x) => x.od < DAN).map((x, i) => {
           const s = stat(x.id_statistike);
           const barva = s?.barva ?? "#6b6b72";
@@ -87,7 +87,7 @@ function oznakeCasov(segmenti: Segment[]) {
 /** Os ur nad koledarjem (poravnana s časovno linijo). */
 export function OsUr() {
   return (
-    <div className="relative h-4 text-[10px] font-semibold tabular-nums text-ink-500">
+    <div className="relative h-3.5 text-[9px] font-semibold tabular-nums text-ink-500">
       {Array.from({ length: 9 }, (_, i) => i * 3).map((h) => (
         <span key={h} className={`absolute ${h === 0 ? "" : h === 24 ? "-translate-x-full" : "-translate-x-1/2"}`} style={{ left: `${(h / 24) * 100}%` }}>
           {String(h).padStart(2, "0")}

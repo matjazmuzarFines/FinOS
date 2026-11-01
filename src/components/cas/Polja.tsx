@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 
 /** Polje obrazca: naslov zgoraj (* = obvezno), pod poljem opis ali napaka (rdeče). Poravnano zgoraj. */
 export function PoljeObrazca({ naslov, obvezno, opis, napaka, children, className = "" }: { naslov: string; obvezno?: boolean; opis?: ReactNode; napaka?: string; children: ReactNode; className?: string }) {
@@ -26,24 +26,33 @@ export function PoljeObrazca({ naslov, obvezno, opis, napaka, children, classNam
   );
 }
 
-/** Kvadratek za vklop (lastnost, dan): oranžen preliv in kljukica z odskokom. */
-export function Kvadratek({ vklop, onChange, hint, disabled }: { vklop: boolean; onChange?: (v: boolean) => void; hint: string; disabled?: boolean }) {
+/**
+ * Kvadratek za vklop (lastnost, dan, oseba): oranžen preliv in kljukica z odskokom. delno = del skupine je označen
+ * ("Označi vse"): bled oranžen z vodoravno črto; klik ga vklopi.
+ */
+export function Kvadratek({ vklop, delno, onChange, hint, disabled, majhen }: { vklop: boolean; delno?: boolean; onChange?: (v: boolean) => void; hint: string; disabled?: boolean; /** 18 px (gosti seznami) */ majhen?: boolean }) {
+  const ikona = majhen ? "h-3 w-3" : "h-4 w-4";
+  const pol = !vklop && !!delno;
   return (
     <button
       type="button"
       role="checkbox"
-      aria-checked={vklop}
+      aria-checked={pol ? "mixed" : vklop}
       title={hint}
       disabled={disabled || !onChange}
       onClick={() => onChange?.(!vklop)}
-      className={`grid h-6 w-6 shrink-0 place-items-center rounded-[7px] transition-all duration-300 disabled:cursor-default ${
-        vklop ? "bg-[linear-gradient(135deg,#f19a66,#ca5010_60%,#8f380b)] text-snow shadow-[0_0_14px_-3px_rgb(238_122_58/0.9)]" : "border border-white/15 bg-white/[0.04] hover:border-fines-400/50"
+      className={`grid shrink-0 place-items-center transition-all duration-300 disabled:cursor-default ${majhen ? "h-[18px] w-[18px] rounded-[5px]" : "h-6 w-6 rounded-[7px]"} ${
+        vklop
+          ? "bg-[linear-gradient(135deg,#f19a66,#ca5010_60%,#8f380b)] text-snow shadow-[0_0_14px_-3px_rgb(238_122_58/0.9)]"
+          : pol
+            ? "border border-fines-400/60 bg-fines-500/20 text-fines-200"
+            : "border border-white/15 bg-white/[0.04] hover:border-fines-400/50"
       }`}
     >
       <AnimatePresence>
-        {vklop && (
-          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
-            <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
+        {(vklop || pol) && (
+          <motion.span key={vklop ? "da" : "delno"} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
+            {vklop ? <Check className={ikona} strokeWidth={3} aria-hidden /> : <Minus className={ikona} strokeWidth={3} aria-hidden />}
           </motion.span>
         )}
       </AnimatePresence>

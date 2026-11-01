@@ -11,6 +11,7 @@ export default function NastavitveRegistracijeStran() {
   const stevila: Record<string, number> = {
     "/administracija/registracija/nastavitve/urniki": n.urniki.filter((u) => u.visible).length,
     "/administracija/registracija/nastavitve/statistike": n.statistike.filter((s) => s.visible).length,
+    "/administracija/registracija/nastavitve/krmilnik": n.tipke.filter((t) => t.visible).length,
   };
 
   return (

@@ -43,6 +43,7 @@ import {
  *
  * BAZA: statistike in lastnosti (kvadratki) - 009_statistike.sql; dnevi, intervali, urniki, posebni prazniki in urniki
  * zaposlenih - 010_urniki.sql. Dokler tabel ni (migracija ni zagnana), so v brskalniku TESTNI podatki (značka na strani).
+ * Tipke krmilnika (fos_tipke, fos_intervali.id_tipke) - 013_krmilnik.sql; brez njih urniki delajo naprej, tipke so testne.
  * Šifranti (lastnosti, dnevi) so podatki, ne koda - nov vnos = nova vrstica.
  */
 
@@ -52,32 +53,97 @@ export type Lastnost = { id: number; koda: string; ime: string; opis: string };
 export type Statistika = { id: number; koda: string; ime: string; opis: string; barva: string; ikona: string; lastnosti: number[]; visible: boolean };
 /** Dan, na katerega velja interval (fos_dnevi): pon-ned in praznik. iso = 1 (pon) .. 7 (ned), praznik = null. */
 export type Dan = { id: number; koda: string; ime: string; kratko: string; iso: number | null };
+/** Zaokroževanje knjiženega časa (null = brez). */
+export type Zaokrozevanje = "gor" | "dol" | "najblizje";
 /**
- * Interval (fos_intervali): časovno okno OD-DO (npr. Prihod na delo 06:00-09:00) z obvezno eno statistiko -
- * kdor pride v tem oknu, dobi čas od prihoda do izhoda v to statistiko. Velja na izbrane dni in v obdobju veljavnosti.
- * cas_do < cas_od = okno čez polnoč (npr. 22:00-02:00). Čas se vedno šteje v dan ZAČETKA (prihoda).
+ * Pravila knjiženja intervala (011_pravila_obveznost.sql): krmilnik vedno zapiše dejanski čas, pravila določijo KNJIŽEN čas (izračun v
+ * knjizenje.ts). Veljajo po vrsti intervala: prihod = začetek izmene, izhod = konec izmene in presežek nad dnevno
+ * obveznostjo (saldo), tipka = seštevek trajanja (prekoračitev v drugo statistiko).
+ */
+export type PravilaIntervala = {
+  /** Prihod: "ne prej kot" (npr. 06:30 - prej se knjiži 06:30); null = dejanski čas. */
+  zacetek_ne_prej: string | null;
+  zacetek_zaokrozi: Zaokrozevanje | null;
+  zacetek_korak: number;
+  /** Izhod: "ne pozneje kot"; null = dejanski čas. */
+  konec_ne_pozneje: string | null;
+  konec_zaokrozi: Zaokrozevanje | null;
+  konec_korak: number;
+  /** Izhod: presežek nad obveznostjo - šteje ves / zaokroži navzdol na presezek_korak / ne šteje. */
+  presezek: "steje" | "zaokrozi" | "ne_steje";
+  presezek_korak: number;
+  /** Tipka: največ minut na dan (vsi odseki tipke skupaj, npr. malica 30); null = brez omejitve. */
+  trajanje_max: number | null;
+  /** Tipka: statistika za čas nad trajanje_max (npr. Zamuda); obvezna, ko je trajanje omejeno. */
+  id_statistike_prekoracitve: number | null;
+};
+export const PRAVILA_DEJANSKO: PravilaIntervala = {
+  zacetek_ne_prej: null,
+  zacetek_zaokrozi: null,
+  zacetek_korak: 15,
+  konec_ne_pozneje: null,
+  konec_zaokrozi: null,
+  konec_korak: 15,
+  presezek: "steje",
+  presezek_korak: 15,
+  trajanje_max: null,
+  id_statistike_prekoracitve: null,
+};
+export const POLJA_PRAVIL = Object.keys(PRAVILA_DEJANSKO) as (keyof PravilaIntervala)[];
+
+/** Kje se tipka pokaže (fos_tipke.prikaz); nobeno = nikjer. */
+export const MESTA_TIPK = { krmilnik: "Krmilnik", fin_me: "FIN:ME" } as const;
+export type MestoTipke = keyof typeof MESTA_TIPK;
+/** Sistemska funkcija tipke na krmilniku (namesto intervala). */
+export const FUNKCIJE_TIPK = { info: "Info - stanje in saldo", preklici: "Prekliči zadnji pritisk" } as const;
+export type FunkcijaTipke = keyof typeof FUNKCIJE_TIPK;
+
+/**
+ * Tipka (fos_tipke): številka (1, 2, 3 ...) in besedilo, ki se izpiše ob žigu s to tipko; prikaz = kje se pokaže.
+ * Tipka s funkcijo (Info, Prekliči) ni za interval.
+ */
+export type Tipka = { id: number; tipka: number; besedilo: string; prikaz: MestoTipke[]; funkcija: FunkcijaTipke | null; visible: boolean };
+
+/** Vrsta intervala (014): prihod in izhod brez tipke (samodejno ob prislonu kartice), tipka = izhod / odsotnost s tipko. */
+export const VRSTE_INTERVALOV = {
+  prihod: { ime: "Prihod", okno: "Prihod", opis: "Okno prihoda - začne izmeno. Brez tipke = samodejno ob prislonu kartice; s tipko (npr. Izredno) = drug prihod, ki ga izbere tipka." },
+  izhod: { ime: "Izhod", okno: "Izhod", opis: "Okno izhoda - konča izmeno. Brez tipke = samodejno ob prislonu kartice; s tipko (npr. Izredno) = drug izhod, ki ga izbere tipka." },
+  tipka: { ime: "Tipka", okno: "Žig", opis: "Izhod s tipko (malica, odmor, poslovni ...) - oba žiga morata biti v oknu." },
+} as const;
+export type VrstaIntervala = keyof typeof VRSTE_INTERVALOV;
+
+/**
+ * Interval (fos_intervali): časovno okno OD-DO z obvezno eno statistiko in vrsto. Prihod: kdor pride v oknu, dobi čas od
+ * prihoda do izhoda v statistiko intervala. Izhod: okno izhoda. Tipka: čas od žiga s tipko do vrnitve gre v statistiko.
+ * Velja vedno, na izbrane dni (neuporaben interval se izbriše). cas_do < cas_od = okno čez polnoč (npr. 22:00-02:00).
+ * Čas se vedno šteje v dan ZAČETKA (prihoda).
  */
 export type Interval = {
   id: number;
   ime: string;
   prikazno_ime: string;
   opis: string;
+  vrsta: VrstaIntervala;
   cas_od: string;
   cas_do: string;
-  velja_od: string | null;
-  velja_do: string | null;
   dnevi: number[];
   /** Obvezno (null samo med vnosom novega intervala). */
   id_statistike: number | null;
+  /** Tipka (fos_tipke): obvezna pri vrsti tipka; pri prihodu / izhodu neobvezna (drug prihod / izhod s tipko, 016). */
+  id_tipke: number | null;
   visible: boolean;
-};
-/** Urnik (fos_urniki): skupina, v katero je dodan vsak zaposleni; intervali prek ln_fos_urniki_intervali. */
-export type Urnik = { id: number; ime: string; opis: string; intervali: number[]; visible: boolean };
+} & PravilaIntervala;
+/**
+ * Urnik (fos_urniki): skupina, v katero je dodan vsak zaposleni; intervali prek ln_fos_urniki_intervali.
+ * obveznost = delovna obveznost v minutah po id dneva (fos_dnevi, ln_fos_urniki_dnevi); manjkajoč dan = 0.
+ */
+export type Urnik = { id: number; ime: string; opis: string; intervali: number[]; obveznost: Record<number, number>; visible: boolean };
 
 export type CasNastavitve = {
   lastnosti: Lastnost[];
   statistike: Statistika[];
   dnevi: Dan[];
+  tipke: Tipka[];
   intervali: Interval[];
   urniki: Urnik[];
   /** Posebni dela prosti dnevi (standardni so v prazniki.ts). */
@@ -90,6 +156,12 @@ export type CasNastavitve = {
   /** Od kod so urniki, intervali, prazniki (010). */
   virUrnikov: "nalagam" | "baza" | "test";
   napakaUrnikov: string | null;
+  /** Od kod so pravila intervalov in delovna obveznost (011_pravila_obveznost.sql); test = samo v brskalniku. */
+  virPravil: "nalagam" | "baza" | "test";
+  napakaPravil: string | null;
+  /** Od kod so tipke krmilnika in vrsta intervala (013, 014); test = samo v brskalniku. */
+  virTipk: "nalagam" | "baza" | "test";
+  napakaTipk: string | null;
 };
 
 export type ZaposleniUrnik = { id_zaposlenega: number; id_urnika: number; velja_od: string };
@@ -174,35 +246,55 @@ const DNEVI: Dan[] = [
   { id: 8, koda: "praznik", ime: "Prazniki", kratko: "Praz", iso: null },
 ];
 
-const i = (id: number, ime: string, prikazno_ime: string, cas_od: string, cas_do: string, dnevi: number[], stat: number, opis = "", velja_od: string | null = "2026-01-01", velja_do: string | null = null): Interval => ({
+const t = (id: number, tipka: number, besedilo: string, prikaz: MestoTipke[] = ["krmilnik"], funkcija: FunkcijaTipke | null = null): Tipka => ({ id, tipka, besedilo, prikaz, funkcija, visible: true });
+const TIPKE: Tipka[] = [
+  t(1, 1, "Poslovni izhod"),
+  t(2, 2, "Privatni izhod"),
+  t(3, 4, "Info", ["krmilnik"], "info"),
+  t(4, 5, "Odmor"),
+  t(5, 9, "Prekliči", ["krmilnik"], "preklici"),
+  t(6, 101, "Delo od doma", ["fin_me"]),
+  t(7, 3, "Izredno"),
+];
+
+const i = (id: number, vrsta: VrstaIntervala, ime: string, prikazno_ime: string, cas_od: string, cas_do: string, dnevi: number[], stat: number, opis = "", dodatno: Partial<Interval> = {}): Interval => ({
+  ...PRAVILA_DEJANSKO,
   id,
   ime,
   prikazno_ime,
   opis,
+  vrsta,
   cas_od,
   cas_do,
-  velja_od,
-  velja_do,
   dnevi,
   id_statistike: stat,
+  id_tipke: null,
   visible: true,
+  ...dodatno,
 });
 
+const VSI_DNEVI = [1, 2, 3, 4, 5, 6, 7, 8];
+const PON_PET = [1, 2, 3, 4, 5];
+const PON_SOB = [1, 2, 3, 4, 5, 6];
 const INTERVALI: Interval[] = [
-  i(1, "PRIHOD_PISARNA", "Prihod", "06:00", "09:00", [1, 2, 3, 4, 5], 1, "Gibljiv prihod v pisarno."),
-  i(2, "PRIHOD_PISARNA_PET", "Prihod", "06:00", "08:00", [5], 1, "Poletni petek - prihod do 8:00.", "2026-06-01", "2026-08-31"),
-  i(3, "PRIHOD_JUTRANJA", "Prihod", "05:30", "06:30", [1, 2, 3, 4, 5], 1, "Proizvodnja - fiksen prihod do 6:30."),
-  i(4, "PRIHOD_POPOLDANSKA", "Prihod", "13:30", "14:30", [1, 2, 3, 4, 5], 1, "Proizvodnja - druga izmena."),
-  i(5, "PRIHOD_SOBOTA", "Prihod", "05:30", "06:30", [6], 1, "Dodatna sobotna izmena po potrebi."),
-  i(6, "DEZURSTVO_SERVIS", "Dežurstvo", "07:00", "09:00", [6, 7, 8], 1, "Dežurni serviser ob vikendih in praznikih."),
-  i(7, "PRIHOD_TEREN", "Prihod", "07:00", "09:00", [1, 2, 3, 4, 5], 1, "Serviserji na terenu."),
-  i(8, "PRIHOD_NOCNI", "Prihod", "21:00", "01:00", [1, 2, 3, 4, 5], 1, "Npr. programer: prihod 22:00, odhod 01:00 - vse šteje v dan prihoda."),
+  i(1, "prihod", "PRIHOD_PISARNA", "Prihod", "06:00", "09:00", PON_PET, 1, "Gibljiv prihod v pisarno."),
+  i(2, "prihod", "PRIHOD_PROIZVODNJA", "Prihod", "00:00", "06:30", PON_SOB, 1, "Proizvodnja 1 izmena - prihod do 6:30 (kasneje = napaka)."),
+  i(3, "tipka", "POSLOVNI_IZHOD", "Poslovni izhod", "00:00", "23:59", VSI_DNEVI, 4, "Poslovni izhod - šteje v delovni čas.", { id_tipke: 1 }),
+  i(4, "tipka", "PRIVATNI_IZHOD", "Privatni izhod", "00:00", "23:59", VSI_DNEVI, 5, "Privatni izhod - ne šteje v delovni čas.", { id_tipke: 2 }),
+  i(5, "tipka", "ODMOR_PISARNA", "Odmor", "00:00", "23:59", VSI_DNEVI, 6, "Odmor kadarkoli, skupaj 30 min na dan; več gre v zasebno odsotnost.", { id_tipke: 4, trajanje_max: 30, id_statistike_prekoracitve: 5 }),
+  i(6, "tipka", "ODMOR_PROIZVODNJA", "Odmor", "09:55", "10:35", PON_SOB, 6, "Odmor med 9:55 in 10:35 (oba žiga), skupaj 30 min.", { id_tipke: 4, trajanje_max: 30, id_statistike_prekoracitve: 5 }),
+  i(7, "tipka", "DELO_OD_DOMA", "Delo od doma", "00:00", "23:59", PON_PET, 2, "Prihod s tipko v FIN:ME.", { id_tipke: 6 }),
+  i(8, "izhod", "IZHOD_PISARNA", "Izhod", "00:00", "23:59", PON_PET, 1, "Izhod kadarkoli; presežek nad obveznostjo se zaokroži navzdol na 15 min.", { presezek: "zaokrozi" }),
+  i(9, "izhod", "IZHOD_PROIZVODNJA", "Izhod", "14:30", "23:59", PON_SOB, 1, "Izhod po 14:30 se knjiži 14:30; prej = napaka.", { konec_ne_pozneje: "14:30" }),
+  i(10, "prihod", "IZREDNO_PRIHOD", "Izredno", "00:00", "23:59", PON_SOB, 1, "Nadure (do Dovolilnic): prihod s tipko Izredno - dejanski čas, brez napake.", { id_tipke: 7 }),
+  i(11, "izhod", "IZREDNO_IZHOD", "Izredno", "00:00", "23:59", PON_SOB, 1, "Nadure (do Dovolilnic): izhod s tipko Izredno - dejanski čas, presežek zaokrožen na 15 min.", { id_tipke: 7, presezek: "zaokrozi" }),
 ];
 
+/** Privzeta obveznost urnika: 8 h od ponedeljka do petka. */
+const privzetaObveznost = (dnevi: Dan[]): Record<number, number> => Object.fromEntries(dnevi.filter((d) => d.iso != null && d.iso <= 5).map((d) => [d.id, 480]));
 const URNIKI: Urnik[] = [
-  { id: 1, ime: "Pisarna", opis: "Uprava, prodaja, računovodstvo - gibljiv delovni čas.", intervali: [1, 2], visible: true },
-  { id: 2, ime: "Proizvodnja - 2 izmeni", opis: "Izmensko delo v proizvodnji - fiksen prihod.", intervali: [3, 4, 5], visible: true },
-  { id: 3, ime: "Servis", opis: "Serviserji na terenu z dežurstvom.", intervali: [7, 6], visible: true },
+  { id: 1, ime: "Pisarna", opis: "Uprava, prodaja, računovodstvo - gibljiv delovni čas.", intervali: [1, 3, 4, 5, 7, 8], obveznost: privzetaObveznost(DNEVI), visible: true },
+  { id: 2, ime: "Proizvodnja - 1 izmena", opis: "Fiksen prihod do 6:30, odmor 9:55-10:35, izhod po 14:30.", intervali: [2, 3, 4, 6, 9, 10, 11], obveznost: privzetaObveznost(DNEVI), visible: true },
 ];
 
 const PRAZNIKI: PosebniPraznik[] = [{ id: 1, datum: "2023-08-14", ime: "Dan solidarnosti", opis: "Enkraten dela prost dan po poplavah.", visible: true }];
@@ -215,6 +307,7 @@ let stanje: CasNastavitve = {
   lastnosti: LASTNOSTI,
   statistike: STATISTIKE,
   dnevi: DNEVI,
+  tipke: TIPKE,
   intervali: INTERVALI,
   urniki: URNIKI,
   prazniki: PRAZNIKI,
@@ -223,6 +316,10 @@ let stanje: CasNastavitve = {
   napakaBaze: null,
   virUrnikov: "nalagam",
   napakaUrnikov: null,
+  virPravil: "nalagam",
+  napakaPravil: null,
+  virTipk: "nalagam",
+  napakaTipk: null,
 };
 const poslusalci = new Set<() => void>();
 const narocnina = (p: () => void) => {
@@ -270,7 +367,10 @@ async function naloziStatistike() {
       lastnosti,
       statistike: zLastnostmi,
       // testni intervali (baza 010 še ni) kažejo na testne statistike
-      intervali: preslikano || st.virUrnikov === "baza" ? st.intervali : st.intervali.map((iv) => ({ ...iv, id_statistike: poKodi.get(kodaTestne.get(iv.id_statistike ?? -1) ?? "") ?? null })),
+      intervali:
+        preslikano || st.virUrnikov === "baza"
+          ? st.intervali
+          : st.intervali.map((iv) => ({ ...iv, id_statistike: poKodi.get(kodaTestne.get(iv.id_statistike ?? -1) ?? "") ?? null, id_statistike_prekoracitve: poKodi.get(kodaTestne.get(iv.id_statistike_prekoracitve ?? -1) ?? "") ?? null })),
     }));
     preslikano = true;
   } catch (e) {
@@ -359,34 +459,126 @@ export async function skrijStatistiko(id: number) {
 
 let nalaganjeUrnikov: Promise<void> | null = null;
 const cas = (t: string) => t.slice(0, 5); // "06:00:00" -> "06:00"
+/** Pravila in obveznost, dokler 011 ni v bazi: samo v brskalniku (do osvežitve strani). */
+const lokalnaPravila = new Map<number, PravilaIntervala>();
+const lokalnaObveznost = new Map<number, Record<number, number>>();
+/** Vrsta in tipka intervalov, dokler 013 / 014 nista v bazi: samo v brskalniku. */
+const lokalneVrste = new Map<number, Pick<Interval, "vrsta" | "id_tipke">>();
+type PravilaVrstica = PravilaIntervala & { id: number };
+type ObveznostVrstica = { id_urnika: number; id_dneva: number; obveznost_min: number };
+
+/** Pravila (011) posebej: brez stolpcev v bazi urniki delajo naprej, pravila in obveznost so testni. */
+async function naloziPravila(sb: ReturnType<typeof getSupabase>) {
+  try {
+    const [pravila, obveznosti] = await Promise.all([
+      fetchAll<PravilaVrstica>((from, to) =>
+        sb
+          .from("fos_intervali")
+          .select("id, zacetek_ne_prej, zacetek_zaokrozi, zacetek_korak, konec_ne_pozneje, konec_zaokrozi, konec_korak, presezek, presezek_korak, trajanje_max, id_statistike_prekoracitve")
+          .eq("visible", true)
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAll<ObveznostVrstica>((from, to) => sb.from("ln_fos_urniki_dnevi").select("id_urnika, id_dneva, obveznost_min").eq("visible", true).order("id").range(from, to)),
+    ]);
+    return { pravila, obveznosti, napaka: null };
+  } catch (e) {
+    return { pravila: null, obveznosti: null, napaka: (e as Error).message };
+  }
+}
+type VrstaVrstica = { id: number; id_tipke: number | null; vrsta: VrstaIntervala; ime: string; prikazno_ime: string };
+/** Vrsta brez stolpca (014 ni zagnan): kot v migraciji - s tipko = tipka, ime "Izhod..." = izhod, sicer prihod. */
+const ugibajVrsto = (x: Omit<VrstaVrstica, "vrsta">): VrstaIntervala => (x.id_tipke != null ? "tipka" : /^izhod/i.test(x.ime) || /^izhod/i.test(x.prikazno_ime) ? "izhod" : "prihod");
+
+/**
+ * Tipke in vrsta intervalov (013, 014) posebej: brez 014 se prebere 013 (vrsta ugibana, vir test), brez 013 so tipke
+ * testne - urniki delajo naprej v vseh primerih.
+ */
+async function naloziTipke(sb: ReturnType<typeof getSupabase>) {
+  // stolpci kot spremenljivka: tip vrstice določi fetchAll
+  const beri = (tipke: string, intervali: string) =>
+    Promise.all([
+      fetchAll<Tipka>((from, to) => sb.from("fos_tipke").select(tipke as "*").eq("visible", true).order("tipka").range(from, to)),
+      fetchAll<VrstaVrstica>((from, to) => sb.from("fos_intervali").select(intervali as "*").eq("visible", true).order("id").range(from, to)),
+    ]);
+  try {
+    const [tipke, intervali] = await beri("id, tipka, besedilo, prikaz, funkcija, visible", "id, id_tipke, vrsta, ime, prikazno_ime");
+    return { tipke, intervali, vir: "baza" as const, napaka: null };
+  } catch (e) {
+    try {
+      const [tipke, intervali] = await beri("id, tipka, besedilo, visible", "id, id_tipke, ime, prikazno_ime");
+      return {
+        tipke: tipke.map((x) => ({ ...x, prikaz: ["krmilnik"] as MestoTipke[], funkcija: null })),
+        intervali: intervali.map((x) => ({ ...x, vrsta: lokalneVrste.get(x.id)?.vrsta ?? ugibajVrsto(x) })),
+        vir: "test" as const,
+        napaka: `Migracija 014 še ni zagnana (${(e as Error).message})`,
+      };
+    } catch (e2) {
+      return { tipke: null, intervali: null, vir: "test" as const, napaka: (e2 as Error).message };
+    }
+  }
+}
+
+const izVrstice = ({ id: _, ...p }: PravilaVrstica): PravilaIntervala => ({
+  ...p,
+  zacetek_ne_prej: p.zacetek_ne_prej && cas(p.zacetek_ne_prej),
+  konec_ne_pozneje: p.konec_ne_pozneje && cas(p.konec_ne_pozneje),
+});
 
 async function naloziUrnike() {
   const sb = getSupabase();
   try {
     const [dnevi, intervali, dneviIntervalov, urniki, intervaliUrnikov, zaposleniUrniki, prazniki] = await Promise.all([
       fetchAll<{ id: number; koda: string; ime: string; kratko: string; iso_dan: number | null }>((from, to) => sb.from("fos_dnevi").select("id, koda, ime, kratko, iso_dan").eq("visible", true).order("vrstni_red").range(from, to)),
-      fetchAll<Omit<Interval, "dnevi">>((from, to) =>
-        sb.from("fos_intervali").select("id, ime, prikazno_ime, opis, cas_od, cas_do, velja_od, velja_do, id_statistike, visible").eq("visible", true).order("vrstni_red").order("id").range(from, to),
+      fetchAll<Omit<Interval, "dnevi" | "id_tipke" | "vrsta" | keyof PravilaIntervala>>((from, to) =>
+        sb.from("fos_intervali").select("id, ime, prikazno_ime, opis, cas_od, cas_do, id_statistike, visible").eq("visible", true).order("vrstni_red").order("id").range(from, to),
       ),
       fetchAll<{ id_intervala: number; id_dneva: number }>((from, to) => sb.from("ln_fos_intervali_dnevi").select("id_intervala, id_dneva").eq("visible", true).order("id").range(from, to)),
-      fetchAll<Omit<Urnik, "intervali">>((from, to) => sb.from("fos_urniki").select("id, ime, opis, visible").eq("visible", true).order("vrstni_red").order("ime").range(from, to)),
+      fetchAll<Omit<Urnik, "intervali" | "obveznost">>((from, to) => sb.from("fos_urniki").select("id, ime, opis, visible").eq("visible", true).order("vrstni_red").order("ime").range(from, to)),
       fetchAll<{ id_urnika: number; id_intervala: number }>((from, to) => sb.from("ln_fos_urniki_intervali").select("id_urnika, id_intervala").eq("visible", true).order("id").range(from, to)),
       fetchAll<ZaposleniUrnik>((from, to) => sb.from("ln_fos_zaposleni_urniki").select("id_zaposlenega, id_urnika, velja_od").eq("visible", true).order("id").range(from, to)),
       fetchAll<PosebniPraznik>((from, to) => sb.from("fos_prazniki").select("id, datum, ime, opis, visible").eq("visible", true).order("datum").range(from, to)),
     ]);
+    const [p, t] = await Promise.all([naloziPravila(sb), naloziTipke(sb)]);
+    const vrstaIntervala = (iv: { id: number; ime: string; prikazno_ime: string }): Pick<Interval, "vrsta" | "id_tipke"> => {
+      const lokalno = t.vir === "test" ? lokalneVrste.get(iv.id) : undefined;
+      if (lokalno) return lokalno;
+      const v = t.intervali?.find((x) => x.id === iv.id);
+      return v ? { vrsta: v.vrsta, id_tipke: v.id_tipke } : { vrsta: ugibajVrsto({ ...iv, id_tipke: null }), id_tipke: null };
+    };
+    const dneviApp: Dan[] = dnevi.map((d) => ({ id: d.id, koda: d.koda, ime: d.ime, kratko: d.kratko, iso: d.iso_dan }));
+    const pravilaIntervala = (id: number) => {
+      const v = p.pravila?.find((x) => x.id === id);
+      return v ? izVrstice(v) : (lokalnaPravila.get(id) ?? PRAVILA_DEJANSKO);
+    };
+    const obveznostUrnika = (id: number) =>
+      p.obveznosti ? Object.fromEntries(p.obveznosti.filter((x) => x.id_urnika === id).map((x) => [x.id_dneva, x.obveznost_min])) : (lokalnaObveznost.get(id) ?? privzetaObveznost(dneviApp));
     spremeni((st) => ({
       ...st,
       virUrnikov: "baza",
       napakaUrnikov: null,
-      dnevi: dnevi.map((d) => ({ id: d.id, koda: d.koda, ime: d.ime, kratko: d.kratko, iso: d.iso_dan })),
-      intervali: intervali.map((i) => ({ ...i, cas_od: cas(i.cas_od), cas_do: cas(i.cas_do), dnevi: dneviIntervalov.filter((d) => d.id_intervala === i.id).map((d) => d.id_dneva).sort((a, b) => a - b) })),
-      urniki: urniki.map((u) => ({ ...u, intervali: intervaliUrnikov.filter((l) => l.id_urnika === u.id).map((l) => l.id_intervala) })),
+      virPravil: p.pravila ? "baza" : "test",
+      napakaPravil: p.napaka,
+      virTipk: t.vir,
+      napakaTipk: t.napaka,
+      tipke: t.tipke ?? st.tipke,
+      dnevi: dneviApp,
+      intervali: intervali.map((i) => ({
+        ...i,
+        ...pravilaIntervala(i.id),
+        ...vrstaIntervala(i),
+        cas_od: cas(i.cas_od),
+        cas_do: cas(i.cas_do),
+        dnevi: dneviIntervalov.filter((d) => d.id_intervala === i.id).map((d) => d.id_dneva).sort((a, b) => a - b),
+      })),
+      urniki: urniki.map((u) => ({ ...u, intervali: intervaliUrnikov.filter((l) => l.id_urnika === u.id).map((l) => l.id_intervala), obveznost: obveznostUrnika(u.id) })),
       zaposleniUrniki,
       prazniki,
     }));
   } catch (e) {
     nalaganjeUrnikov = null;
-    spremeni((st) => ({ ...st, virUrnikov: "test", napakaUrnikov: (e as Error).message }));
+    const napaka = (e as Error).message;
+    spremeni((st) => ({ ...st, virUrnikov: "test", napakaUrnikov: napaka, virPravil: "test", napakaPravil: napaka, virTipk: "test", napakaTipk: napaka }));
   }
 }
 
@@ -417,7 +609,7 @@ export async function shraniUrnik(v: UrnikVnos, id?: number): Promise<number> {
   const vrstica = { ime: v.ime.trim(), opis: v.opis.trim() };
   if (!vBazi()) {
     const nov = id ?? novId(stanje.urniki);
-    spremeni((s) => ({ ...s, urniki: id ? s.urniki.map((x) => (x.id === id ? { ...x, ...vrstica } : x)) : [...s.urniki, { id: nov, ...vrstica, intervali: [], visible: true }] }));
+    spremeni((s) => ({ ...s, urniki: id ? s.urniki.map((x) => (x.id === id ? { ...x, ...vrstica } : x)) : [...s.urniki, { id: nov, ...vrstica, intervali: [], obveznost: privzetaObveznost(s.dnevi), visible: true }] }));
     return nov;
   }
   let nov = id;
@@ -426,6 +618,11 @@ export async function shraniUrnik(v: UrnikVnos, id?: number): Promise<number> {
     const r = await sb.from("fos_urniki").insert({ ...vrstica, vrstni_red: stanje.urniki.length + 1 }).select("id").single();
     preveri(r, "Urnik s tem imenom že obstaja.");
     nov = r.data!.id as number;
+    // nov urnik dobi privzeto delovno obveznost (8 h pon-pet, sicer 0) - brez nje bi bilo vse delo presežek
+    if (stanje.virPravil === "baza") {
+      const privzeta = privzetaObveznost(stanje.dnevi);
+      for (const d of stanje.dnevi) preveri(await sb.rpc("fos_nastavi_obveznost", { p_id_urnika: nov, p_id_dneva: d.id, p_minute: privzeta[d.id] ?? 0 }));
+    }
   });
   return nov!;
 }
@@ -467,7 +664,7 @@ export async function odvezi(idUrnika: number, idIntervala: number) {
 }
 
 export type IntervalVnos = Omit<Interval, "id" | "visible">;
-export const PRAZEN_INTERVAL: IntervalVnos = { ime: "", prikazno_ime: "", opis: "", cas_od: "06:00", cas_do: "08:00", velja_od: null, velja_do: null, dnevi: [1, 2, 3, 4, 5], id_statistike: null };
+export const PRAZEN_INTERVAL: IntervalVnos = { ime: "", prikazno_ime: "", opis: "", vrsta: "prihod", cas_od: "06:00", cas_do: "08:00", dnevi: [1, 2, 3, 4, 5], id_statistike: null, id_tipke: null, ...PRAVILA_DEJANSKO };
 
 const CAS = /^\d{2}:\d{2}$/;
 export function preveriInterval(v: IntervalVnos, id?: number): Partial<Record<keyof IntervalVnos, string>> {
@@ -477,29 +674,52 @@ export function preveriInterval(v: IntervalVnos, id?: number): Partial<Record<ke
   if (!CAS.test(v.cas_od)) n.cas_od = "Vpiši začetek intervala.";
   if (!CAS.test(v.cas_do)) n.cas_do = "Vpiši konec intervala.";
   else if (v.cas_do === v.cas_od) n.cas_do = "Konec mora biti drugačen od začetka.";
-  if (v.velja_od && v.velja_do && v.velja_do < v.velja_od) n.velja_do = "Konec veljavnosti je pred začetkom.";
   if (!v.dnevi.length) n.dnevi = "Izberi vsaj en dan.";
   if (v.id_statistike == null) n.id_statistike = "Izberi statistiko - interval ima obvezno eno.";
+  if (v.vrsta === "tipka" && v.id_tipke == null) n.id_tipke = "Izberi tipko - interval vrste Tipka jo ima obvezno.";
+  if (v.zacetek_ne_prej != null && !CAS.test(v.zacetek_ne_prej)) n.zacetek_ne_prej = "Vpiši čas.";
+  if (v.konec_ne_pozneje != null && !CAS.test(v.konec_ne_pozneje)) n.konec_ne_pozneje = "Vpiši čas.";
+  if (v.trajanje_max != null && !(v.trajanje_max >= 1 && v.trajanje_max <= 1440)) n.trajanje_max = "Vpiši trajanje, npr. 00:30.";
+  if (v.trajanje_max != null && v.id_statistike_prekoracitve == null) n.id_statistike_prekoracitve = "Izberi, kam gre čas nad trajanjem (npr. Zamuda).";
+  for (const k of ["zacetek_korak", "konec_korak", "presezek_korak"] as const) if (!(v[k] >= 1 && v[k] <= 240)) n[k] = "Korak je 1-240 min.";
   return n;
+}
+
+/** Pravila, ki ne veljajo za vrsto intervala, se ob shranjevanju ponastavijo (v bazi ne ostanejo skrite vrednosti). */
+function pravilaVrste(v: IntervalVnos): PravilaIntervala {
+  const p = Object.fromEntries(POLJA_PRAVIL.map((k) => [k, v[k]])) as PravilaIntervala;
+  const d = PRAVILA_DEJANSKO;
+  if (v.vrsta !== "prihod") Object.assign(p, { zacetek_ne_prej: d.zacetek_ne_prej, zacetek_zaokrozi: d.zacetek_zaokrozi });
+  if (v.vrsta !== "izhod") Object.assign(p, { konec_ne_pozneje: d.konec_ne_pozneje, konec_zaokrozi: d.konec_zaokrozi, presezek: d.presezek });
+  if (v.vrsta !== "tipka") Object.assign(p, { trajanje_max: d.trajanje_max, id_statistike_prekoracitve: d.id_statistike_prekoracitve });
+  return p;
 }
 
 /** Shrani interval in njegove dneve (ln_fos_intervali_dnevi: dodani = nov zapis, odvzeti = skrit). Nov gre na konec seznama. */
 export async function shraniInterval(v: IntervalVnos, id?: number): Promise<number> {
-  const vrstica = { ime: v.ime.trim(), prikazno_ime: v.prikazno_ime.trim(), opis: v.opis.trim(), cas_od: v.cas_od, cas_do: v.cas_do, velja_od: v.velja_od, velja_do: v.velja_do, id_statistike: v.id_statistike };
+  const vrstica = { ime: v.ime.trim(), prikazno_ime: v.prikazno_ime.trim(), opis: v.opis.trim(), cas_od: v.cas_od, cas_do: v.cas_do, id_statistike: v.id_statistike };
+  const pravila = pravilaVrste(v);
+  const vrsta = { vrsta: v.vrsta, id_tipke: v.id_tipke };
   if (!vBazi()) {
     const nov = id ?? novId(stanje.intervali);
-    const zapis: Interval = { ...vrstica, dnevi: v.dnevi, id: nov, visible: true };
+    const zapis: Interval = { ...vrstica, ...pravila, ...vrsta, dnevi: v.dnevi, id: nov, visible: true };
     spremeni((s) => ({ ...s, intervali: id ? s.intervali.map((x) => (x.id === id ? zapis : x)) : [...s.intervali, zapis] }));
     return nov;
   }
   let nov = id;
+  // brez 011 / 014 v bazi gredo pravila / vrsta in tipka samo v brskalnik
+  const zPravili = stanje.virPravil === "baza";
+  const zVrsto = stanje.virTipk === "baza";
+  const zapis = { ...vrstica, ...(zPravili ? pravila : {}), ...(zVrsto ? vrsta : {}) };
   await vBazo(async (sb) => {
-    if (id) preveri(await sb.from("fos_intervali").update(vrstica).eq("id", id), "Interval s tem imenom že obstaja.");
+    if (id) preveri(await sb.from("fos_intervali").update(zapis).eq("id", id), "Interval s tem imenom že obstaja.");
     else {
-      const r = await sb.from("fos_intervali").insert({ ...vrstica, vrstni_red: stanje.intervali.length + 1 }).select("id").single();
+      const r = await sb.from("fos_intervali").insert({ ...zapis, vrstni_red: stanje.intervali.length + 1 }).select("id").single();
       preveri(r, "Interval s tem imenom že obstaja.");
       nov = r.data!.id as number;
     }
+    if (!zPravili) lokalnaPravila.set(nov!, pravila);
+    if (!zVrsto) lokalneVrste.set(nov!, vrsta);
     const stari = id ? (stanje.intervali.find((x) => x.id === id)?.dnevi ?? []) : [];
     const dodaj = v.dnevi.filter((d) => !stari.includes(d));
     const odvzemi = stari.filter((d) => !v.dnevi.includes(d));
@@ -535,8 +755,57 @@ export async function skrijInterval(id: number) {
   });
 }
 
-/** Ali interval velja na datum (YYYY-MM-DD) - brez meja = vedno. */
-export const veljaNa = (iv: Pick<Interval, "velja_od" | "velja_do">, datum: string) => (!iv.velja_od || iv.velja_od <= datum) && (!iv.velja_do || iv.velja_do >= datum);
+export type TipkaVnos = { id?: number; tipka: number | null; besedilo: string; prikaz: MestoTipke[]; funkcija: FunkcijaTipke | null };
+
+/** Intervali, ki uporabljajo tipko (vidni). */
+export const intervaliTipke = (idTipke: number, n: Pick<CasNastavitve, "intervali">) => n.intervali.filter((x) => x.visible && x.id_tipke === idTipke);
+
+/**
+ * Napake vnosa tipk po vrsticah (indeks): številka 1 ali več in enolična, besedilo obvezno; tipka, ki jo uporablja
+ * interval, ne more dobiti funkcije (Info, Prekliči) - interval mora imeti navadno tipko.
+ */
+export function preveriTipke(vnosi: TipkaVnos[]): Record<number, { tipka?: string; besedilo?: string; funkcija?: string }> {
+  const n: Record<number, { tipka?: string; besedilo?: string; funkcija?: string }> = {};
+  vnosi.forEach((v, k) => {
+    const e: { tipka?: string; besedilo?: string; funkcija?: string } = {};
+    if (v.tipka == null || !Number.isInteger(v.tipka) || v.tipka < 1) e.tipka = "Številka 1 ali več.";
+    else if (vnosi.some((x, j) => j !== k && x.tipka === v.tipka)) e.tipka = `Tipka ${v.tipka} je že v seznamu.`;
+    if (!v.besedilo.trim()) e.besedilo = "Vpiši besedilo.";
+    if (v.funkcija && v.id != null && intervaliTipke(v.id, stanje).length) e.funkcija = "Tipko uporablja interval - funkcija ni mogoča.";
+    if (e.tipka || e.besedilo || e.funkcija) n[k] = e;
+  });
+  return n;
+}
+
+/**
+ * Shrani seznam tipk (stran Krmilnik): spremenjene se posodobijo, nove dodajo, odstranjene skrijejo (tipke, ki jo
+ * uporablja interval, ni mogoče odstraniti - Krmilnik to prepreči). Obstoječe s spremenjeno številko gredo najprej na
+ * začasno številko, da zamenjava (1 <-> 2) ne trči ob enoličnost.
+ */
+export async function shraniTipke(vnosi: TipkaVnos[], skrite: number[]) {
+  const vrstica = (v: TipkaVnos) => ({ tipka: v.tipka!, besedilo: v.besedilo.trim(), prikaz: v.prikaz, funkcija: v.funkcija });
+  if (stanje.virTipk !== "baza") {
+    let nov = novId(stanje.tipke);
+    const tipke = [
+      ...stanje.tipke.filter((t) => !t.visible || skrite.includes(t.id)).map((t) => ({ ...t, visible: false })),
+      ...vnosi.map((v) => ({ ...vrstica(v), id: v.id ?? nov++, visible: true })),
+    ].sort((a, b) => a.tipka - b.tipka);
+    return spremeni((s) => ({ ...s, tipke }));
+  }
+  const spremenjene = vnosi.filter((v) => {
+    const t = v.id != null && stanje.tipke.find((x) => x.id === v.id);
+    return !t || t.tipka !== v.tipka || t.besedilo !== v.besedilo.trim() || t.funkcija !== v.funkcija || [...t.prikaz].sort().join() !== [...v.prikaz].sort().join();
+  });
+  await vBazo(async (sb) => {
+    if (skrite.length) preveri(await sb.from("fos_tipke").update({ visible: false }).in("id", skrite));
+    const premik = spremenjene.filter((v) => v.id != null && stanje.tipke.find((t) => t.id === v.id)?.tipka !== v.tipka);
+    const zacasno = Math.max(0, ...stanje.tipke.map((t) => t.tipka), ...vnosi.map((v) => v.tipka ?? 0)) + 1;
+    for (const [k, v] of premik.entries()) preveri(await sb.from("fos_tipke").update({ tipka: zacasno + k }).eq("id", v.id!));
+    for (const v of spremenjene.filter((x) => x.id != null)) preveri(await sb.from("fos_tipke").update(vrstica(v)).eq("id", v.id!), `Tipka ${v.tipka} že obstaja.`);
+    const nove = spremenjene.filter((v) => v.id == null);
+    if (nove.length) preveri(await sb.from("fos_tipke").insert(nove.map(vrstica)), "Tipka s to številko že obstaja.");
+  });
+}
 
 /** Ime dela prostega dne na datum: poseben (tabela) ali standarden (zakon) - ali null. */
 export const imePraznika = (datum: string, n: Pick<CasNastavitve, "prazniki">) => n.prazniki.find((p) => p.visible && p.datum === datum)?.ime ?? praznik(datum);
@@ -574,6 +843,26 @@ export async function nastaviUrnike(spremembe: { id_zaposlenega: number; id_urni
     for (const x of spremembe) preveri(await sb.rpc("fos_nastavi_urnik", { p_id_zaposlenega: x.id_zaposlenega, p_id_urnika: x.id_urnika }));
   });
 }
+
+/** Delovna obveznost urnikov (stran Delovna obveznost): minute po dnevih. Brez 011 v bazi samo v brskalniku. */
+export async function shraniObveznost(spremembe: { id_urnika: number; obveznost: Record<number, number> }[]) {
+  if (!spremembe.length) return;
+  if (stanje.virPravil !== "baza") {
+    for (const x of spremembe) lokalnaObveznost.set(x.id_urnika, x.obveznost);
+    return spremeni((s) => ({ ...s, urniki: s.urniki.map((u) => ({ ...u, obveznost: spremembe.find((x) => x.id_urnika === u.id)?.obveznost ?? u.obveznost })) }));
+  }
+  await vBazo(async (sb) => {
+    for (const x of spremembe) {
+      const staro = stanje.urniki.find((u) => u.id === x.id_urnika)?.obveznost ?? {};
+      for (const [dan, min] of Object.entries(x.obveznost)) {
+        if ((staro[Number(dan)] ?? 0) !== min) preveri(await sb.rpc("fos_nastavi_obveznost", { p_id_urnika: x.id_urnika, p_id_dneva: Number(dan), p_minute: min }));
+      }
+    }
+  });
+}
+
+/** Id dneva (fos_dnevi) za dan v tednu (1 = pon ... 7 = ned) ali praznik. */
+export const idDneva = (iso: number, jePraznik: boolean, n: Pick<CasNastavitve, "dnevi">) => (jePraznik ? n.dnevi.find((d) => d.iso == null) : n.dnevi.find((d) => d.iso === iso))?.id ?? null;
 
 /** Okno intervala prečka polnoč (konec je naslednji dan). */
 export const cezPolnoc = (iv: Pick<Interval, "cas_od" | "cas_do">) => iv.cas_do < iv.cas_od;

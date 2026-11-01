@@ -1,5 +1,5 @@
 import { danVTednu, izCasa, stTedna, type DanPodatki, type Oznaka, type Zig } from "./cas";
-import { imePraznika, urnikZaposlenega, veljaNa, type CasNastavitve, type Interval } from "./casNastavitve";
+import { imePraznika, PRAVILA_DEJANSKO, urnikZaposlenega, type CasNastavitve, type Interval } from "./casNastavitve";
 
 /**
  * TESTNA ŠTEMPLJANJA za koledar (samo UI, nič ni v bazi). Vedno enaka za isto osebo in dan (psevdonaključno iz id + datum).
@@ -30,23 +30,30 @@ export function testniUrnik(idZaposlenega: number, n: CasNastavitve) {
 }
 
 /** Zaposleni brez urnika: testna štempljanja po privzetem oknu (samo za prikaz koledarja). */
-const PRIVZETI: Interval = { id: 0, ime: "PRIVZETO", prikazno_ime: "Prihod", opis: "", cas_od: "06:00", cas_do: "09:00", velja_od: null, velja_do: null, dnevi: [], id_statistike: null, visible: true };
+const PRIVZETI: Interval = { ...PRAVILA_DEJANSKO, id: 0, ime: "PRIVZETO", prikazno_ime: "Prihod", opis: "", vrsta: "prihod", cas_od: "06:00", cas_do: "09:00", dnevi: [], id_statistike: null, id_tipke: null, visible: true };
 
-/** Interval urnika, ki velja na datum (pri dveh izmenah se izmenjujeta po tednih). */
-export function intervalNaDan(idZaposlenega: number, datum: string, n: CasNastavitve): Interval | null {
+/** Intervali urnika zaposlenega, ki veljajo na datum. */
+function intervaliNaDan(idZaposlenega: number, datum: string, n: CasNastavitve): Interval[] {
   const urnik = testniUrnik(idZaposlenega, n);
-  const dan = danVTednu(datum);
-  if (!urnik) return dan <= 5 && !imePraznika(datum, n) ? PRIVZETI : null;
-  const idDneva = imePraznika(datum, n) ? n.dnevi.find((d) => d.iso == null)?.id : n.dnevi.find((d) => d.iso === dan)?.id;
-  const kandidati = urnik.intervali
-    .map((id) => n.intervali.find((x) => x.id === id && x.visible))
-    .filter((x): x is Interval => !!x && idDneva != null && x.dnevi.includes(idDneva) && veljaNa(x, datum));
-  if (!kandidati.length) return null;
-  // ožji interval (npr. poletni petek) ima prednost pred splošnim
-  const ozji = kandidati.filter((x) => x.velja_do);
-  const izbor = ozji.length ? ozji : kandidati;
-  return izbor[(stTedna(datum) + idZaposlenega) % izbor.length];
+  if (!urnik) return [];
+  const idDneva = imePraznika(datum, n) ? n.dnevi.find((d) => d.iso == null)?.id : n.dnevi.find((d) => d.iso === danVTednu(datum))?.id;
+  return n.intervali.filter((x) => x.visible && urnik.intervali.includes(x.id) && idDneva != null && x.dnevi.includes(idDneva));
 }
+
+/** Interval prihoda, ki velja na datum (pri dveh izmenah se izmenjujeta po tednih). */
+export function intervalNaDan(idZaposlenega: number, datum: string, n: CasNastavitve): Interval | null {
+  if (!testniUrnik(idZaposlenega, n)) return danVTednu(datum) <= 5 && !imePraznika(datum, n) ? PRIVZETI : null;
+  const kandidati = intervaliNaDan(idZaposlenega, datum, n).filter((x) => x.vrsta === "prihod");
+  if (!kandidati.length) return null;
+  // več intervalov na dan (npr. dve izmeni) se menja po tednih
+  return kandidati[(stTedna(datum) + idZaposlenega) % kandidati.length];
+}
+
+/** Čas v oknu intervala (od + delež dolžine okna); okno čez polnoč se nadaljuje čez 1440. */
+const vOknuTest = (iv: Interval, delez: number) => {
+  const od = izCasa(iv.cas_od);
+  return od + Math.round(((izCasa(iv.cas_do) - od + 1440) % 1440) * delez);
+};
 
 const PRAZEN: DanPodatki = { zigi: [], odsotnost: null, oznake: [] };
 
@@ -62,7 +69,6 @@ export function testniDan(idZaposlenega: number, datum: string, n: CasNastavitve
 
   const od = izCasa(iv.cas_od);
   const okno = (izCasa(iv.cas_do) - od + 1440) % 1440; // okno čez polnoč: 22:00-02:00 = 240 min
-  const delovna = iv.id_statistike ?? stat("DELO");
   if (prost && r() < 0.6) return PRAZEN; // dežurstvo / sobotna izmena: samo vsak drugi
 
   // celodnevne odsotnosti v blokih po tednih (prikaz od začetka okna, trajanje delovnika)
@@ -83,27 +89,50 @@ export function testniDan(idZaposlenega: number, datum: string, n: CasNastavitve
   if (!prost && x < 0.058) return odsotnost("IZS") ?? PRAZEN;
   if (!prost && x < 0.066) return odsotnost("IZD") ?? PRAZEN;
 
-  const zigi: Zig[] = [];
+  const zigi: Omit<Zig, "id">[] = [];
   const oznake: Oznaka[] = [];
-  const domov = !prost && x < 0.16 && stat("DOM") != null;
+  const dne = intervaliNaDan(idZaposlenega, datum, n);
+  const tipkaNa = (mesto: "krmilnik" | "fin_me", samo = false) =>
+    dne.filter((t) => {
+      const p = n.tipke.find((x) => x.id === t.id_tipke)?.prikaz ?? [];
+      return t.vrsta === "tipka" && p.includes(mesto) && (!samo || p.length === 1);
+    });
+  // delo od doma = tipka samo v FIN:ME ob prihodu
+  const doma = tipkaNa("fin_me", true)[0];
+  const domov = !prost && x < 0.16 && !!doma;
   const vir = domov ? "online" : "krmilnik";
-  const prihod = od + Math.round(r() * okno);
+  // prihod v zadnjih 2 h okna (okno 00:00-06:30 = prihodi med 4:30 in 6:30)
+  let prihod = od + okno - Math.round(r() * Math.min(okno, 120));
+  if (r() < 0.04) prihod = od + okno + 5 + Math.round(r() * 40); // zamuda - prihod izven okna (napaka)
   let odhod = prihod + DELOVNIK + Math.round(r() * 30 - 5);
+  // okno izhoda (npr. po 14:30): večinoma v oknu, redko prej (napaka)
+  const izhodIv = dne.find((x) => x.vrsta === "izhod");
+  if (izhodIv) {
+    const izhodOd = izCasa(izhodIv.cas_od) + (izCasa(izhodIv.cas_od) < od ? 1440 : 0);
+    if (odhod < izhodOd && r() > 0.05) odhod = izhodOd + Math.round(r() * 45);
+  }
   if (!domov && r() < 0.07) odhod = prihod + 12 * 60 + Math.round(r() * 40); // dolg dan -> 2 malici
-  zigi.push({ cas: prihod, smer: "prihod", id_statistike: domov ? stat("DOM") : delovna, vir });
+  // žig nima smeri (določi jo knjiženje); tipka da interval (odmor, poslovni, privatni ...)
+  zigi.push({ cas: prihod, id_tipke: domov ? doma.id_tipke : null, vir });
 
-  // malica (štempljana), zasebni ali službeni izhod
-  if (!domov && r() < 0.45 && stat("MAL")) {
-    const m = prihod + 180 + Math.round(r() * 60);
-    zigi.push({ cas: m, smer: "odhod", id_statistike: stat("MAL"), vir }, { cas: m + 25 + Math.round(r() * 10), smer: "prihod", id_statistike: delovna, vir });
+  const krmilnik = domov ? [] : tipkaNa("krmilnik");
+  // odmor (tipka s seštetim trajanjem): v oknu, včasih predolg (prekoračitev) ali izven okna (napaka)
+  const odmor = krmilnik.find((t) => t.trajanje_max != null);
+  if (odmor && r() < 0.6) {
+    const ozko = (izCasa(odmor.cas_do) - izCasa(odmor.cas_od) + 1440) % 1440 < 180;
+    let m = ozko ? vOknuTest(odmor, r() * 0.2) : prihod + 180 + Math.round(r() * 60);
+    if (r() < 0.04) m -= 30; // odšel prezgodaj - izven okna
+    const trajanje = (odmor.trajanje_max ?? 30) - 8 + Math.round(r() * (r() < 0.15 ? 25 : 10));
+    zigi.push({ cas: m, id_tipke: odmor.id_tipke, vir }, { cas: m + trajanje, id_tipke: null, vir });
   }
-  const izhod = r();
-  if (!domov && izhod < 0.3) {
-    const koda = izhod < 0.18 ? "ZAS" : "SLO";
+  // poslovni ali privatni izhod
+  const ostali = krmilnik.filter((t) => t.trajanje_max == null);
+  if (ostali.length && r() < 0.3) {
+    const t = ostali[Math.floor(r() * ostali.length)];
     const zac = Math.max(prihod + 60, odhod - 200 - Math.round(r() * 60));
-    if (stat(koda)) zigi.push({ cas: zac, smer: "odhod", id_statistike: stat(koda), vir }, { cas: zac + 40 + Math.round(r() * 70), smer: "prihod", id_statistike: delovna, vir });
+    zigi.push({ cas: zac, id_tipke: t.id_tipke, vir }, { cas: zac + 40 + Math.round(r() * 70), id_tipke: null, vir });
   }
-  zigi.push({ cas: odhod, smer: "odhod", id_statistike: null, vir }); // lahko čez polnoč (> 1440) - šteje v dan prihoda
+  zigi.push({ cas: odhod, id_tipke: null, vir }); // lahko čez polnoč (> 1440) - šteje v dan prihoda
   zigi.sort((a, b) => a.cas - b.cas);
 
   if (r() < 0.07) {
@@ -113,6 +142,8 @@ export function testniDan(idZaposlenega: number, datum: string, n: CasNastavitve
   if (r() < 0.05) oznake.push({ tip: "komentar", besedilo: "Komentar zaposlenega: zamuda zaradi zastoja na avtocesti." });
 
   // danes: samo žigi do zdaj
-  const vidni = datum === danes ? zigi.filter((z) => z.cas <= zdajMin) : zigi;
+  // id je stalen (oseba, dan, zaporedje) - spregled ostane pri istem dogodku
+  const zId = zigi.map((z, i): Zig => ({ ...z, id: `test|${idZaposlenega}|${datum}|${i}` }));
+  const vidni = datum === danes ? zId.filter((z) => z.cas <= zdajMin) : zId;
   return { zigi: vidni, odsotnost: null, oznake: datum === danes && !vidni.length ? [] : oznake };
 }

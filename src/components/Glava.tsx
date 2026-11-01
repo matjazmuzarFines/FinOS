@@ -11,7 +11,9 @@ import { AnimacijeStikalo } from "./ui/AnimacijeStikalo";
 import { TemaStikalo } from "./ui/TemaStikalo";
 import { odjava, useSeja } from "./Seja";
 import { Znak } from "./Znak";
+import { usePathname } from "next/navigation";
 import { APP_VERSION, VERZIJE } from "@/lib/verzije";
+import { sirinaStrani } from "@/lib/nav";
 
 /**
  * Glava aplikacije: stikalo animacij, logo (bela ploščica), znak FIN:OS;
@@ -20,6 +22,7 @@ import { APP_VERSION, VERZIJE } from "@/lib/verzije";
 export function Glava() {
   const [info, setInfo] = useState(false);
   const seja = useSeja();
+  const pot = usePathname();
 
   return (
     <>
@@ -29,7 +32,7 @@ export function Glava() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 24, delay: 0.1 }}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-1 px-3 sm:gap-3 sm:px-6">
+        <div className={`mx-auto flex h-16 items-center gap-1 px-3 sm:gap-3 sm:px-6 ${sirinaStrani(pot)}`}>
           <AnimacijeStikalo />
           <Link
             href="/"

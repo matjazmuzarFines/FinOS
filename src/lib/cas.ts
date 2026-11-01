@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarOff, CircleAlert, CircleDashed, MessageSquare, Moon, Pencil, UserCheck, UserX, type LucideIcon } from "lucide-react";
-import { ikonaStatistike, imePraznika as praznikNa, type CasNastavitve, type Statistika } from "./casNastavitve";
+import { CalendarOff, CircleAlert, CircleDashed, LogOut, MessageSquare, Moon, Pencil, TriangleAlert, UserCheck, UserX, type LucideIcon } from "lucide-react";
+import { idDneva, ikonaStatistike, imePraznika as praznikNa, type CasNastavitve, type Interval, type Statistika, type Urnik } from "./casNastavitve";
+import { imaLastnost, knjizi, type NapakaKnjizenja, type ZigKnjizen } from "./knjizenje";
 
 /**
  * Registracija časa - izračun dneva za koledar (skupno Administraciji in FIN:ME).
@@ -12,13 +13,16 @@ import { ikonaStatistike, imePraznika as praznikNa, type CasNastavitve, type Sta
  */
 
 /**
- * Štempljanje: prihod / odhod; pri odhodu statistika pove razlog izhoda (zasebni, službeni ...), brez nje = konec dela.
+ * Štempljanje: samo čas, tipka in vir - SMERI NI (določi jo knjizenje.ts: odsoten -> prihod, prisoten -> izhod).
+ * id_tipke = tipka na krmilniku / v FIN:ME (fos_tipke): statistiko da interval urnika s to tipko (malica, poslovni,
+ * privatni, delo od doma ...); null = brez tipke (prihod = začetek izmene, izhod = konec izmene).
  * Vir: krmilnik (čitalec na vhodu), online aplikacija (FIN:ME), ročni popravek.
+ * Dogodkov se ne briše in ne ureja: spregledan = izračun ga ne upošteva (prečrtan); ročno se dodajo novi (komentar).
  */
-export type Zig = { cas: number; smer: "prihod" | "odhod"; id_statistike: number | null; vir: keyof typeof VIRI };
+export type Zig = { id: string; cas: number; id_tipke: number | null; vir: keyof typeof VIRI; spregledan?: boolean; komentar?: string };
 
 /** Vir štempljanja (kasneje šifrant v bazi štempljanj). */
-export const VIRI = { krmilnik: "Krmilnik", online: "Online aplikacija", rocno: "Ročni popravek" } as const;
+export const VIRI = { krmilnik: "Krmilnik", online: "Online aplikacija", rocno: "Ročni popravek", uvoz: "Uvoz (stari sistem)" } as const;
 /** Dodatna oznaka dneva (ročni popravek, komentar ...) - ikona v vrstici dneva. */
 export type Oznaka = { tip: keyof typeof OZNAKE; besedilo: string };
 export type DanPodatki = {
@@ -39,9 +43,25 @@ export type DanIzracun = {
   danes: boolean;
   prihodnji: boolean;
   podatki: DanPodatki;
+  /** Žigi s samodejno smerjo in knjiženim časom (po pravilih intervala). */
+  zigi: ZigKnjizen[];
+  /** Interval prve izmene (pravila knjiženja) ali null. */
+  interval: Interval | null;
   segmenti: Segment[];
-  /** Minute, ki štejejo v delovno obveznost. */
+  /** Knjižene minute, ki štejejo v delovno obveznost. */
   delo: number;
+  /** Obveznost dneva po urniku (minute); null = brez urnika. */
+  obveznost: number | null;
+  /** Dnevni saldo = delo - obveznost; null = brez urnika, dan še teče ali še ni bil. */
+  saldo: number | null;
+  /** Presežek, ki ga pravilo intervala ni priznalo (minute). */
+  nepriznano: number;
+  /** Čas tipk nad seštetim trajanjem (npr. malica nad 30 min), ki je šel v statistiko prekoračitve. */
+  prekoraceno: number;
+  /** Oznake dneva: iz podatkov + izračunane (napake knjiženja, manjka odhod). */
+  oznake: Oznaka[];
+  /** Napake knjiženja (prihod / izhod izven okna ...) - kasneje jih izničijo Dovolilnice. */
+  napake: NapakaKnjizenja[];
   malice: number;
   prevozi: number;
   stanje: StanjeDneva;
@@ -73,6 +93,8 @@ export const STANJA = {
 export const OZNAKE = {
   popravek: { ime: "Ročni popravek", ikona: Pencil, barva: "#f59e0b" },
   komentar: { ime: "Komentar", ikona: MessageSquare, barva: "#60a5fa" },
+  napaka: { ime: "Napaka", ikona: TriangleAlert, barva: "#ef4444" },
+  manjka: { ime: "Manjka odhod", ikona: LogOut, barva: "#ef4444" },
 } satisfies Record<string, { ime: string; ikona: LucideIcon; barva: string }>;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -129,12 +151,33 @@ export const fmtCas = (min: number) => {
   const m = min % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(Math.floor(m) % 60).padStart(2, "0")}${min >= 1440 ? " +1" : ""}`;
 };
+/** Saldo s predznakom: 15 -> "+0:15", -7 -> "-0:07", 0 -> "0:00" */
+export const fmtSaldo = (min: number) => `${min > 0 ? "+" : min < 0 ? "-" : ""}${fmtTrajanje(Math.abs(min), true)}`;
 /** 485 -> "8 h 05 min" (kratko: "8:05") */
 export const fmtTrajanje = (min: number, kratko = false) => {
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
   return kratko ? `${h}:${String(m).padStart(2, "0")}` : m ? `${h} h ${String(m).padStart(2, "0")} min` : `${h} h`;
 };
+/**
+ * Ure iz vnosa: "8", "8:00", "7:30", "7,5" -> minute; prazno = 0; neveljavno = null. Z negativno = true še predznak
+ * (+12:30, -3:15) za saldo. Največ 24 h, razen pri saldu.
+ */
+export function izUr(t: string, negativno = false): number | null {
+  let s = t.trim().replace(",", ".");
+  if (!s) return 0;
+  let znak = 1;
+  if (negativno && /^[+-]/.test(s)) {
+    znak = s[0] === "-" ? -1 : 1;
+    s = s.slice(1).trim();
+  }
+  const m = /^(\d{1,4})(?::(\d{1,2}))?$/.exec(s);
+  let min = NaN;
+  if (m && Number(m[2] ?? 0) < 60) min = Number(m[1]) * 60 + Number(m[2] ?? 0);
+  else if (/^\d{1,4}\.\d+$/.test(s)) min = Math.round(Number(s) * 60);
+  if (!Number.isFinite(min) || (!negativno && min > 1440)) return null;
+  return znak * min;
+}
 export const izCasa = (cas: string) => {
   const [h, m] = cas.split(":").map(Number);
   return h * 60 + (m || 0);
@@ -154,53 +197,52 @@ export function useZdaj() {
 // Izračun dneva
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Odseki časovne linije: prihod -> naslednji žig = prisotnost; odhod z razlogom -> vrnitev = odsotnost z razlogom. */
-export function segmenti(p: DanPodatki, zdajMin: number | null): Segment[] {
-  const out: Segment[] = [];
-  if (p.odsotnost) out.push({ od: p.odsotnost.od, do: p.odsotnost.do, id_statistike: p.odsotnost.id_statistike, celodnevno: true });
-  const zigi = [...p.zigi].sort((a, b) => a.cas - b.cas);
-  zigi.forEach((z, i) => {
-    if (z.id_statistike == null) return;
-    const naslednji = zigi[i + 1];
-    const konec = naslednji?.cas ?? zdajMin;
-    if (konec == null || konec <= z.cas) return;
-    out.push({ od: z.cas, do: konec, id_statistike: z.id_statistike, odprt: !naslednji });
-  });
-  return out;
-}
+/** Besedilo napake knjiženja (oznaka dneva, razpis dogodkov). */
+export const opisNapake = ({ tip, cas, interval: iv, tipka }: NapakaKnjizenja) =>
+  ({
+    prihod: `Napaka: prihod ob ${fmtCas(cas)} je izven okna prihoda ${iv?.cas_od}-${iv?.cas_do} (${iv?.ime}) - knjižen je dejanski čas.`,
+    izhod: `Napaka: izhod ob ${fmtCas(cas)} je izven okna izhoda ${iv?.cas_od}-${iv?.cas_do} (${iv?.ime}) - knjižen je dejanski čas.`,
+    brez_intervala: `Napaka: prihod ob ${fmtCas(cas)} na dan, ko urnik nima intervala prihoda - knjižen je dejanski čas.`,
+    tipka_okno: `Napaka: žig ob ${fmtCas(cas)} (tipka ${tipka}) je izven okna ${iv?.cas_od}-${iv?.cas_do} (${iv?.ime}) - oba žiga morata biti v oknu.`,
+    tipka_brez_intervala: `Napaka: tipka ${tipka ?? "?"} ob ${fmtCas(cas)} - urnik nima intervala s to tipko (čas ni razvrščen).`,
+  })[tip];
 
-const imaLastnost = (s: Statistika | undefined, koda: string, n: CasNastavitve) => !!s && s.lastnosti.some((id) => n.lastnosti.find((l) => l.id === id)?.koda === koda);
 const stanjeStatistike = (s: Statistika): StanjeDneva => ({ koda: `stat:${s.koda}`, ime: s.ime, ikona: ikonaStatistike(s.ikona), barva: s.barva, opis: s.opis });
 
-/** Izračun dneva za prikaz (danes = YYYY-MM-DD, zdajMin = minute od polnoči). */
-export function izracunajDan(datum: string, podatki: DanPodatki, n: CasNastavitve, danes: string, zdajMin: number): DanIzracun {
+/**
+ * Izračun dneva za prikaz (danes = YYYY-MM-DD, zdajMin = minute od polnoči). Knjiženje po pravilih intervalov urnika
+ * (knjizenje.ts), obveznost in prost dan po urniku (Delovna obveznost); brez urnika vikend / praznik = prost dan.
+ */
+export function izracunajDan(datum: string, podatki: DanPodatki, n: CasNastavitve, danes: string, zdajMin: number, urnik: Urnik | null): DanIzracun {
   const dan = danVTednu(datum);
   const imePraznika = praznikNa(datum, n);
-  const prost = dan >= 6 || !!imePraznika;
   const jeDanes = datum === danes;
   const prihodnji = datum > danes;
-  const seg = segmenti(podatki, jeDanes ? zdajMin : null);
+  const idDne = idDneva(dan, !!imePraznika, n);
+  const obveznost = urnik ? (idDne != null ? (urnik.obveznost[idDne] ?? 0) : 0) : null;
+  const prost = obveznost != null ? obveznost === 0 : dan >= 6 || !!imePraznika;
+  // spregledani dogodki ostanejo v podatkih (prikaz prečrtano), izračun jih ne vidi
+  const k = knjizi(podatki.zigi.filter((z) => !z.spregledan), { urnik, idDneva: idDne, obveznost, odsotnost: podatki.odsotnost, zdajMin: jeDanes ? zdajMin : null, danes: jeDanes, n });
+  const seg = k.segmenti;
   const stat = (id: number) => n.statistike.find((s) => s.id === id);
 
-  let delo = 0;
   let zaMalico = 0;
   let prevoz = false;
   for (const x of seg) {
     const s = stat(x.id_statistike);
     const min = x.do - x.od;
-    if (imaLastnost(s, "delovna_obveznost", n)) delo += min;
     if (imaLastnost(s, "malice", n)) zaMalico += min;
     if (imaLastnost(s, "prevozi", n) && !x.celodnevno) prevoz = true;
   }
   const malice = PRAVILA.malice.reduce((st, p) => (zaMalico >= p.od ? p.stevilo : st), 0);
 
   let stanje: StanjeDneva;
-  const zadnji = [...podatki.zigi].sort((a, b) => a.cas - b.cas).at(-1);
+  const zadnji = k.zigi.at(-1);
   if (podatki.odsotnost && stat(podatki.odsotnost.id_statistike)) stanje = stanjeStatistike(stat(podatki.odsotnost.id_statistike)!);
   else if (zadnji) {
     if (jeDanes && zadnji.smer === "prihod") stanje = STANJA.na_delu;
     else if (jeDanes && zadnji.id_statistike != null && stat(zadnji.id_statistike)) stanje = stanjeStatistike(stat(zadnji.id_statistike)!);
-    else if (podatki.zigi.some((z) => z.smer === "prihod" && z.vir !== "online")) stanje = STANJA.prisoten;
+    else if (k.zigi.some((z) => z.smer === "prihod" && z.vir !== "online")) stanje = STANJA.prisoten;
     else {
       // samo štempljanje prek FIN:ME (npr. delo od doma): stanje = statistika z največ časa
       const po = new Map<number, number>();
@@ -212,5 +254,35 @@ export function izracunajDan(datum: string, podatki: DanPodatki, n: CasNastavitv
   else if (prost) stanje = imePraznika ? { ...STANJA.praznik, opis: `${imePraznika} - prisotnost ni potrebna.` } : STANJA.prost;
   else stanje = jeDanes ? STANJA.odsoten : STANJA.ni_vnosa;
 
-  return { datum, dan, praznik: imePraznika, prost, danes: jeDanes, prihodnji, podatki, segmenti: seg, delo, malice, prevozi: prevoz ? PRAVILA.prevozovNaDan : 0, stanje };
+  // saldo: samo zaključen dan (danes šele po izhodu; brez urnika ga ni)
+  const zakljucen = !prihodnji && (!jeDanes || (!k.odprt && (k.zigi.length > 0 || !!podatki.odsotnost)));
+  const saldo = obveznost != null && zakljucen ? k.delo - obveznost : null;
+  const oznake: Oznaka[] = [
+    ...podatki.oznake,
+    ...k.napake.map((x): Oznaka => ({ tip: "napaka", besedilo: opisNapake(x) })),
+    ...(k.manjkaOdhod ? [{ tip: "manjka", besedilo: "Dan se konča s prihodom - manjka odhod (zadnji odsek se ne šteje)." } as Oznaka] : []),
+  ];
+
+  return {
+    datum,
+    dan,
+    praznik: imePraznika,
+    prost,
+    danes: jeDanes,
+    prihodnji,
+    podatki,
+    zigi: k.zigi,
+    interval: k.interval,
+    segmenti: seg,
+    delo: k.delo,
+    obveznost,
+    saldo,
+    nepriznano: k.nepriznano,
+    prekoraceno: k.prekoraceno,
+    oznake,
+    napake: k.napake,
+    malice,
+    prevozi: prevoz ? PRAVILA.prevozovNaDan : 0,
+    stanje,
+  };
 }

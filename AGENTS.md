@@ -21,16 +21,57 @@
 - Migracije (SQL) so v `supabase/migrations/` (številčene, idempotentne); uporabnik jih zažene v Supabase -> SQL Editor.
 - **Osnutki** baze gredo v `supabase/osnutki/` - samo za pregled, NE zaganjaj. Uporabnik vsako tabelo pregleda in potrdi,
   šele nato gre (po korakih) v `migrations/`. Dokler ni potrjeno, UI dela s testnimi podatki (značka "Testni podatki").
-  - `010_urniki.sql`: `fos_dnevi`, `fos_intervali` (okno `cas_od`-`cas_do`, obvezna `id_statistike`, `vrstni_red`),
+  - `010_urniki.sql`: `fos_dnevi`, `fos_intervali` (okno `cas_od`-`cas_do`, obvezna `id_statistike`, `vrstni_red`; stolpca `velja_od` / `velja_do` sta v bazi, a se ne uporabljata - interval velja vedno),
     `ln_fos_intervali_dnevi`, `fos_urniki` (`vrstni_red`), `ln_fos_urniki_intervali`, `fos_prazniki` (samo posebni dela prosti dnevi -
     standardne izračuna `src/lib/prazniki.ts`), `ln_fos_zaposleni_urniki` = urnik zaposlenega (EN viden zapis na
     zaposlenega, ob menjavi se star skrije -> zgodovina, `velja_od`); piše se SAMO prek `fos_nastavi_urnik(id_zaposlenega,
     id_urnika)`. Brez posebnih skupin (kot v starem sistemu) - zaposleni se veže neposredno na urnik.
-  - Registracija časa - dogovor: interval = časovno okno prihoda (npr. 06:00-09:00) z NATANKO eno statistiko; čas od prihoda
-    do izhoda gre v to statistiko, poračuna se, ko je interval končan. Brez toleranc in brez tipa intervala. Dogodek =
-    štempljanje (nima tipa ne statistike), samo vir: Krmilnik, Ročni popravek, Online aplikacija (`VIRI` v cas.ts).
+  - Registracija časa - dogovor: interval = časovno okno z NATANKO eno statistiko in VRSTO (014): Prihod (okno prihoda,
+    čas od prihoda do izhoda gre v statistiko), Izhod (okno izhoda) - oba brez tipke, samodejno ob prislonu kartice -
+    in Tipka (obvezna tipka; malica, odmor, poslovni, privatni ...). En urnik = intervali vseh treh vrst (Režija ima
+    ločen Prihod in Izhod 00:00-23:59). Brez toleranc. Dogodek = štempljanje (čas, tipka ali brez, vir: Krmilnik, Ročni
+    popravek, Online aplikacija - `VIRI` v cas.ts).
     Delo čez polnoč se VEDNO šteje v dan začetka (prihoda): časi > 1440 min v dnevu prihoda; okno intervala
     `cas_do < cas_od` = čez polnoč (`cezPolnoc()`).
+  - `011_pravila_obveznost.sql` (migrations, zaženi po 014): pravila knjiženja v `fos_intervali`
+    po vrsti - prihod: `zacetek_ne_prej`, `zacetek_zaokrozi`, `zacetek_korak`; izhod: `konec_ne_pozneje`, `konec_zaokrozi`,
+    `konec_korak`, `presezek`, `presezek_korak`; tipka: `trajanje_max` (seštej trajanje, min na dan) +
+    `id_statistike_prekoracitve` (npr. Zamuda) + `ln_fos_urniki_dnevi` (obveznost urnika po dnevih v minutah, piše se prek `fos_nastavi_obveznost`).
+    Dokler ni zagnan, aplikacija pravila / obveznost bere ločeno (`naloziPravila`) in pade na testne (`virPravil` = "test",
+    samo v brskalniku) - urniki iz 010 delajo naprej.
+  - Knjiženje (`src/lib/knjizenje.ts`, čista funkcija `knjizi`): krmilnik VEDNO zapiše dejanski čas, knjižen čas je izračun.
+    Smer žiga samodejna (odsoten -> prihod, prisoten -> izhod); `Zig` = čas, `id_tipke` (null = brez), vir. Izmena = prihod
+    brez tipke do izhoda brez tipke. Interval prihoda = prvi interval vrste Prihod (vrstni red), ki velja na dan in v okno
+    katerega pade prihod; izven oken = dejanski čas + napaka, izmena se šteje normalno (najbližje okno). Izhod brez tipke =
+    prvi interval vrste Izhod z oknom, ki vsebuje izhod (pravila konca + presežka); izven = dejanski čas + napaka.
+    Žig s tipko -> interval urnika s to tipko -> njegova statistika do naslednjega žiga; OBA žiga v oknu, sicer napaka;
+    tipka brez intervala = napaka (čas ni razvrščen). Seštej trajanje: odseki tipke v dnevu skupaj do `trajanje_max`,
+    preostanek v `id_statistike_prekoracitve`. Napake: `NapakaKnjizenja` (rdeča oznaka). KASNEJE: Dovolilnice - izničijo
+    napake in pravila (velja dejanski čas). Dnevni saldo = delo - obveznost (presežek in manjko gresta v saldo, vse
+    presežke štejemo enako); presežek PO IZMENAH: izmene po vrsti seštevajo delo, presežek, ki ga ustvari izmena, se
+    prizna po pravilu NJENEGA izhoda (npr. delo od doma brez zaokroževanja - kot stari sistem). Dan se VEDNO računa po
+    trenutnih nastavitvah (preračun za nazaj kasneje z gumbom).
+  - `012_saldo.sql` (migrations): `fos_saldo_zacetno` (en viden zapis na zaposlenega: `saldo_min`, `datum` = od tega dne se
+    štejejo dnevni saldi) in `fos_saldo_meseci` (zaposleni + `mesec` 1. v mesecu: `izplacilo_min`, `zaznamki`); piše se prek
+    `fos_nastavi_zacetni_saldo` / `fos_nastavi_mesec_salda`. Brskalnik: `src/lib/saldo.ts` (`useSaldo`, `shraniSaldo`).
+    Prenos iz prejšnjega obdobja = začetno stanje + dnevni saldi od datuma do začetka obdobja - izplačila preteklih mesecev
+    (računa RegistracijaCasa); stanje na koncu = prenos + saldo obdobja - izplačilo meseca.
+  - 4-izmensko delo (obveznost v ciklu namesto po dnevih v tednu) - ZAENKRAT NE; obveznost je po dnevih v tednu.
+  - `013_krmilnik.sql` (migrations, uporabnik zažene): `fos_tipke` (`tipka` 1 ... N enolična med vidnimi, `besedilo` = napis na
+    krmilniku) + `fos_intervali.id_tipke`. Tipka je DEL INTERVALA (statistika je samo za izračun v ozadju); interval brez
+    tipke = prihod / izhod, samodejno ob prislonu kartice; vsi ostali intervali imajo tipko (ista tipka je lahko v več
+    intervalih). Nastavitve -> Krmilnik (`Krmilnik.tsx`, `shraniTipke`), izbira v podrobnostih intervala (`IzbiraTipke`).
+  - `014_vrsta_intervala.sql` (migrations): `fos_intervali.vrsta` ('prihod' / 'izhod' / 'tipka'; tipka obvezna natanko pri
+    'tipka'), `fos_tipke.prikaz` (text[]: 'krmilnik', 'fin_me'; prazno = nikjer), `fos_tipke.funkcija` ('info', 'preklici'
+    ali null = tipka za interval). Tipke, ki jo uporablja interval, ni mogoče skriti ne ji dati funkcije.
+    Brez 013 so tipke testne; brez 014 se 013 prebere, vrsta se ugiba (kot v migraciji), `virTipk` = "test" (samo brskalnik).
+  - `016_prihod_izhod_s_tipko.sql`: tipka je obvezna pri vrsti 'tipka', pri 'prihod' / 'izhod' NEOBVEZNA = drug prihod / izhod,
+    ki ga izbere tipka (npr. 3 Izredno: nadure brez napake, dejanski čas, presežek 15 min). Knjiženje: žig s tipko -> po
+    smeri prihod / izhod s to tipko, sicer odsotnost (vrsta Tipka). Samodejni prihod / izhod = intervali BREZ tipke.
+    Izredno je začasno (navodilo zaposlenim) - kasneje ga nadomestijo Dovolilnice (potrjene nadure izničijo napako).
+  - `017_uvoz_zaposlenih.sql`: enkraten uvoz iz poročila oktober 2026 - kartice 15 obstoječim (Drinić = Drnić, Muzar = Mužar,
+    Živanič = Živanić), 24 novih zaposlenih z oddelkom, urnik samo tistim brez urnika. Izpuščen Prokhorov (Nezaposleni);
+    serviserji brez urnika (urnika "Gibljivo 24 ur servis" v bazi ni). Pri uvozu dogodkov izpusti Napaka, Nedovoljen vhod, Test.
   - `001_zaposleni.sql`: `fos_oddelek` (id, ime_oddelka), `fos_zaposleni` (id, ime, priimek, st_kartice, id_oddelek, id_vodja).
     Kartica je enolična med vidnimi zaposlenimi.
   - `002_vodje.sql`: `fos_vodje` (id, id_zaposlenega) = kdo je vodja; `ln_fos_zaposleni_vodja` (id_zaposlenega, id_vodja -> fos_vodje.id)
@@ -84,6 +125,20 @@
 - `src/app/globals.css` - barvni žetoni + FinOS razredi (`fos-glass`, `fos-text-grad`, `fos-text-fines`, `fos-fines-fill`, `fos-shine`, `fos-border-anim`, `fos-grid`, `fos-noise`).
 - `src/components/ui/` - standardne komponente (Button, IconButton, Modal) v FinOS slogu.
 - `src/components/` - Intro, Ozadje, Glava, Znak, Ura, VstopKartica, Moduli, Domov.
+- Široke strani (veliko nastavitev): `SIROKE_STRANI` / `sirinaStrani()` v nav.ts (Okvir in Glava) - nova = nov vnos.
+- Dogodki (štempljanja): `src/lib/dogodki.ts` - `useDogodki(oseba, od, do)` bere `fos_dogodki` po osebi in obdobju
+  (RegistracijaCasa: od začetnega stanja salda do konca obdobja), `podatkiDne` = dogodki dneva (brez baze testna
+  štempljanja), `dodajDogodek` (vir rocno) in `spregledaj` (`fos_spreglej_dogodek`), po zapisu ponovno branje.
+  Izračun spregledanih ne vidi (`izracunajDan`). Dogodka se ne briše in ne ureja. Dan z ročnim / spregledanim = oznaka popravek.
+  `015_dogodki.sql` (`fos_dogodki`: cas = dejanski trenutek, datum = dan prihoda, id_tipke, vir krmilnik / online / rocno /
+  uvoz, st_kartice; update samo stolpcev spregleda). Čas v aplikaciji = minute od polnoči dneva `datum` (> 1440 = naslednji dan).
+  `018_uvoz_dogodkov_oktober.sql`: 2429 žigov iz poročila starega sistema (data/fullreport xlsx oktober.xlsx) - rekonstrukcija:
+  vrstica = par začetek-konec z imenom intervala, "(*HH:MM)" = dejanski čas; "Zamuda" vrstice = izračunan del odmora;
+  Izhod + Vhod ob istem času brez (*) = izračunana razdelitev izmene (ni žigov); Napaka / Nedovoljen / Test izpuščeni.
+  `019_uvoz_delo_od_doma.sql`: uvoženim koncem dela od doma (10) doda tipko 101 - delo od doma je Prihod + Izhod s tipko
+  101 (izhod: presežek šteje ves), kot v starem sistemu.
+  Primerjava z izračunom starega sistema (oktober, po 019 in nastavitvah delo od doma): delovni čas enak na 656 / 671 dneh;
+  razlike = nadure brez tipke Izredno (stari sistem: dovolilnice / popravki), servis (Kosi), praznik 31.10., samo vhod.
 - Registracija časa (`src/components/cas/`, skupno Administraciji in kasneje FIN:ME):
   - `RegistracijaCasa` (prop `obseg`: Administracija `{nacin: "vsi"}`, FIN:ME `{nacin: "moji", idZaposlenega}` = sebe + vse
     podrejene, `vidniZaposleni()` v zaposleni.ts), `IzbiraOseb`, `Koledar` (vrstica dneva), `CasovnaLinija`, `DanOkno`, `Povzetek`.
@@ -93,6 +148,9 @@
   - `src/lib/casNastavitve.ts` - statistike (009) in urniki (010) iz baze: branje (`naloziStatistike`, `naloziUrnike`),
     pisanje (vse funkcije async, po zapisu ponovno branje). Brez tabel pade na testne podatke (`vir` / `virUrnikov` = "test",
     značka na strani). `imePraznika()` = poseben ali standarden, `urnikZaposlenega()`. `src/lib/casTest.ts` - testna štempljanja.
+  - `src/lib/knjizenje.ts` - smer žigov, izmene, pravila intervalov, presežek / saldo (`knjizi`, `preizkusi` za Preizkus pravil).
+  - `SaldoPanel` (okno Saldo + `useSaldoOsnutek`, SaveBar na strani), `Povzetek` (prenos, izplačilo, stanje na koncu).
+  - Nastavitve še: `PravilaKnjizenja` (v podrobnostih intervala), `Obveznost` (Delovna obveznost urnikov po dnevih).
   - `src/lib/prazniki.ts` - slovenski dela prosti dnevi (izračun; kasneje tabela praznikov).
   - Barve in ikone stanj na koledarju dajejo statistike (ni trdo kodirano); osnovna stanja (Prisoten, Ni vnosa, Prost dan ...) so v `STANJA`.
 - `src/components/finesek/` - maskota Finesek (`Finesek` = lik iz delov, `ZnakPrizor` = prizor s stikalom ob znaku FIN:OS).
@@ -127,5 +185,10 @@
 - 5.02: interval = okno od-do z obvezno statistiko, Prazniki (standardni + posebni), migracija 009 statistike.
 - 5.05: urniki, intervali, prazniki v bazi (010); Urniki zaposlenih (zaposleni -> urnik). Štempljanja še testna.
 - 5.04: Urniki - povleci in spusti za vrstni red intervalov (`@dnd-kit/sortable`, `preurediIntervale`), glavno ime v seznamih.
+- 5.06: samodejna smer žiga, pravila knjiženja intervalov + Preizkus, Delovna obveznost, dnevni saldo (osnutek 011, testno);
+  okno Saldo (začetno stanje, izplačilo, zaznamki) in prenos salda v povzetku (osnutek 012, testno). En interval na izmeno
+  (npr. REZIJA_DELO 00:00-23:59) z začetkom in koncem - ločenih intervalov za prihod / izhod ni; okno izhoda in napake.
+- 5.07: Nastavitve -> Krmilnik (tipke, 013), vrsta intervala Prihod / Izhod / Tipka (014), knjiženje tipk (okno za oba
+  žiga, seštej trajanje + prekoračitev), Kopiraj interval.
 - 5.03: Statistike v bazi; delo čez polnoč v dan prihoda; Urniki = seznam vseh intervalov s + v urnik; koledar bolj zbit.
 - Moj Fines še ne vodi nikamor.

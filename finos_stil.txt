@@ -20,6 +20,8 @@ PRAVILA
    - Vse se ob prikazu pojavi z animacijo (vzmet / spring, zamik po vrsti - stagger), nič ne "skoči" na stran.
    - Spoštuj prefers-reduced-motion (animacije se izklopijo).
    - Na telefonu (360 px) mora vse delovati; animacije ne smejo raztegniti strani.
+   - Strani z veliko podatki in nastavitvami (Registracija časa, Urniki, Statistike, Krmilnik, Delovna obveznost) so ŠIROKE: vsebina in glava čez celo
+     širino zaslona z odmikom 32-40 px od roba (SIROKE_STRANI / sirinaStrani v nav.ts), ostale 1280 px.
 
 2. Barve in prelivi (en vir: :root v globals.css)
    - --fos-grad-fines: #f19a66 -> #ee7a3a -> #ca5010 -> #8f380b (135°) - glavni oranžni preliv.
@@ -209,25 +211,53 @@ PRAVILA
 21. Registracija časa (/administracija/registracija, RegistracijaCasa - isti pogled bo v FIN:ME)
    - Ploščica je PRVA v Administraciji, z zobnikom za nastavitve. V glavi strani rumena značka "Testni podatki"
      (dokler baza ni potrjena) in bel gumb Nastavitve.
-   - Postavitev: levo ozek izbor oseb (15 rem; iskanje, oddelek, seznam z drsečim oranžnim poljem; na telefonu zložen),
-     na sredini koledar (~60 %), desno povzetek (na tablici pod koledarjem). Ena oseba (FIN:ME brez podrejenih) = brez izbora.
+   - Postavitev (široka stran): levo izbor oseb (20 / 24 rem; vrstica osebe v ENI vrsti ~26 px: kvadratek 18 px,
+     začetnice 20 px, priimek ime 13 px, desno oddelek 11 px sivo; iskanje po imenu, oddelku, vodji; v eni vrsti filtra Oddelek in
+     Vodja = neposredni podrejeni, s številom; "Ponastavi" ob številu, ko je filter vklopljen; seznam z drsečim oranžnim
+     poljem; filtri se ne krčijo, drsi samo seznam; na telefonu zložen). Pod filtri vrstica "Označi vse (prikazane)" s
+     kvadratkom (delno = bled z vodoravno črto), desno "N označenih" in "Počisti"; pri vsaki osebi levo kvadratek - označene
+     osebe (za izvoze) so neodvisne od izbrane osebe na koledarju in ostanejo, ko jih filter skrije,
+     na sredini koledar, desno Saldo in povzetek (18 / 21,5 rem; na tablici pod koledarjem). Ena oseba = brez izbora.
+     Desni stolpec ZBIT po višini: paneli z manjšim odmikom, Opravljeno + odstotek v eni vrsti, malice / prevozi kot
+     nizki vrstici, Dnevi v dveh stolpcih; Saldo: začetno stanje (saldo + datum) in Izplačilo v eni vrsti, pojasnila v hover tekstu.
+   - KOMPAKTNO (zahteva 2026-11-01: vse ~30 % manjše): glava koledarja z avatarjem 32 px, imenom 16 px, gumbi 32 px,
+     preklop Mesec / Teden 28 px; vrstica meseca ~26 px.
    - Koledar: preklop Mesec / Teden (drseče oranžno polje), puščici levo / desno (mesec ali teden), "Danes" ko nisi v
      tekočem obdobju. Stanje v naslovu (?oseba=&datum=&pogled=).
-   - Vrstica dneva: ikona stanja v krogu (barva stanja), datum v dveh vrsticah (13 px "31.10", pod njim 10 px "SOB";
+   - Levo od vsake vrstice puščica (>, obrne se navzdol) = RAZPIS dogodkov pod vrstico (brez okna): vsak dogodek - smer,
+     knjižen čas in "(dej. 06:20)", vloga (Prihod / Izhod / Tipka / Povratek) + interval (mono), statistika odseka, komentar,
+     rdeč trikotnik napake, vir; spregledan prečrtan z ikono preškrtanega očesa; spodaj čipi upoštevanih odsekov
+     (koda, od-do, trajanje). Puščica v glavi razpre / zapre vse. Dan brez dogodkov = bleda puščica.
+   - Vrstica dneva: ikona stanja v krogu 20 px (barva stanja), datum v dveh vrsticah (11 px "31.10", pod njim 8,5 px "SOB";
      oranžno "DANES" / praznik, danes še oranžna obroba), časovna linija 00-24 čim širša (mreža ur, odseki v barvi
      statistike s prelivom in sijem; celodnevna odsotnost = poševne črte + ikona; delo čez polnoč = puščica >> na
      koncu; danes oranžna črta "zdaj"), stanje z besedo v barvi stanja (pri prazniku ime praznika), prostor za oznake
      (ročni popravek, komentar ...), čisto desno malice in prevozi eno pod drugim (ikona + število, 0 = bledo).
      Vikend / praznik = črtkano ozadje. Tedni so ločeni s tanko sivo črto; os ur je lepljiva nad vrsticami.
      Teden: višja linija, časi na robovih, žigi kot čipi. Delo čez polnoč šteje v dan prihoda (čas "01:00 +1").
+   - Smer žiga je samodejna (odsoten -> prihod, prisoten -> izhod). Na koledarju je KNJIŽEN čas (po pravilih intervala),
+     dejanski je prečrtan ob njem in v hover tekstu. Pod besedo stanja dnevni saldo (+0:15 zeleno, -0:07 rdeče; 0 se ne
+     izpiše); saldo ima samo zaključen dan z urnikom. Oznaki "Napaka" (rdeč trikotnik: prihod / izhod izven okna,
+     dan brez intervala - opis v hover tekstu) in "Manjka odhod" (rdeča). Kasneje jih izničijo Dovolilnice.
    - Stanja: Prisoten, Na delu, Odsoten (danes še ni prihoda), Ni vnosa (pretečen delovni dan brez vsega), Prost dan,
      Praznik; vse ostalo (Bolniška, Delo od doma ...) = ime, barva in ikona statistike.
-   - Klik na dan = okno: stanje, linija, delovni čas / malice / prevozi, urnik dneva, štempljanja (smer, čas, statistika, vir).
-   - Povzetek: opravljeno / obveznost s trakom, malice, prevozi, ure po statistikah (barvni trakovi), dnevi po stanjih.
+   - Klik na dan = okno (široko): stanje, linija, delovni čas / obveznost / dnevni saldo / malice / prevozi, urnik dneva,
+     štempljanja (smer, knjižen čas, dejanski prečrtan, vloga · interval, statistika, komentar, vir), nepriznan presežek.
+     ROČNI POPRAVKI (samo Administracija): dogodka se NE briše in NE ureja. Pri vsakem kvadratek "Spreglej" (izračun ga
+     ne upošteva; vrstica prečrtana, bleda, ikona preškrtanega očesa). Spodaj zelena črtkana kartica "Dodaj dogodek":
+     Datum, Čas, Tipka (Brez tipke = prihod / izhod po zaporedju; tipke brez funkcije), Komentar, Dodaj (zelen); vir = ročni
+     popravek. Dokler baza dogodkov (osnutek 015) ni potrjena, samo v brskalniku.
+   - Desno na vrhu okno SALDO (ikona denarnice): Začetno stanje (saldo +12:30 / -3:15 in datum, od kdaj se štejejo dnevni
+     saldi), Prenos v izplačilo · mesec (ure), Mesečni zaznamki · mesec (besedilo). Ureja samo Administracija (FIN:ME samo
+     ogled), spremembe -> SaveBar; ob menjavi osebe / meseca z neshranjenim vprašanje.
+   - Povzetek: opravljeno / obveznost (urnik, zaključeni dnevi) s trakom, Presežek / Manjko / Saldo (oranžno obrobljen),
+     nato kartica: Prenos iz prejšnjega obdobja (ali Začetno stanje, če se začne v obdobju), Saldo obdobja, Prenos v
+     izplačilo (samo mesec), oranžna črta, Stanje na koncu obdobja (krepko). Zeleno +, rdeče -, brez začetnega stanja "-"
+     z razlago. Spodaj malice, prevozi, ure po statistikah (barvni trakovi), dnevi po stanjih.
 
 22. Urniki (/administracija/registracija/nastavitve/urniki)
    - Levo: Urniki (ikona koledarja v naslovu URNIKI, + zelen; vrstica: ročaj za povleci in spusti - vrstni red urnikov,
-     celo ime brez "..." in brez ikone, pod njim "N intervalov · M oseb"; izbran = drseče oranžno polje) in "Intervali v urniku" (pika statistike, ime, čas, zelena pika = velja danes).
+     celo ime brez "..." in brez ikone, pod njim "N intervalov · M oseb"; izbran = drseče oranžno polje) in "Intervali v urniku" (pika statistike, ime, čas).
    - Glava strani desno: značka Testni podatki (samo, če baze 010 ni), gumb Prazniki (oranžen) -> okno praznikov,
      desno od njega Urniki zaposlenih (oranžen) -> okno.
    - Urniki zaposlenih (okno, široko): dve iskalni polji (ime / priimek in oddelek) in izbor Vsi / Brez urnika / urnik
@@ -240,14 +270,37 @@ PRAVILA
    - Levo spodaj "V urniku": ime in opis izbranega urnika (svinčnik = uredi), njegovi intervali z X za odstranitev.
    - Imena intervalov se NIKOLI ne skrajšajo s "..." (dolga se prelomijo) - ime je edini pregled nad intervali.
      V seznamih je glavno ime (mono, npr. PRIHOD_PISARNA); prikazno ime (Prihod) je za krmilnik in FIN:ME.
-   - Sredina: VEDNO seznam VSEH intervalov ("Vsi intervali" brez podnaslova, Nov interval zelen), iskanje in preklop
+   - Sredina: VEDNO seznam VSEH intervalov ("Vsi intervali" brez podnaslova, Nov interval zelen, levo od njega Kopiraj =
+     oranžen krog: nov interval z vsemi nastavitvami izbranega, ime IME_KOPIJA (_2, _3 ...), naslov "Kopija intervala",
+     v urnik se doda posebej s +), iskanje in preklop
      Vsi / V urniku / Ostali. Vrstica: ročaj (povleci in spusti za vrstni red - prihodi na vrh, izhodi na konec; med
      vlečenjem oranžna obroba in sij), pika statistike + glavno ime (SAMO ime, brez podatkov pod njim - ostalo je
      v podrobnostih desno); Od / Do eno pod drugim (+1 = čez polnoč); dnevi;
      na koncu "+" (doda v izbran urnik) ali zelena kljukica (hover rdeča = odstrani). Brez razpiranja vrstic.
      Stolpci se nikoli ne prekrivajo; na telefonu čas in dnevi v drugi vrsti.
-   - Desno: Podrobnosti intervala (oranžna črta zgoraj): Ime, Prikazno ime, Opis, Čas od / do (obvezno), Velja od / do,
-     Dnevi (gumbi), Statistika (obvezno ena; spustno okno z ikono in kodo, brez prazne izbire). Spremembe -> SaveBar.
+   - Desno: Podrobnosti intervala (oranžna črta zgoraj): Ime, Prikazno ime, Vrsta (preklop Prihod / Izhod / Tipka z
+     drsečim oranžnim poljem, opis pod njim), Tipka (pri vrsti Tipka obvezna; pri Prihodu / Izhodu neobvezna, prva izbira
+     "Brez tipke - samodejno ob prislonu", s tipko = drug prihod / izhod, npr. Izredno; spustno okno: številka v oranžnem
+     kvadratku, besedilo, desno kje se pokaže - KRMILNIK · FIN:ME; brez tipk s funkcijo; povezava na Krmilnik), Opis,
+     okno od / do (obvezno), Dnevi (gumbi), Statistika (obvezno ena; spustno okno z ikono in kodo, brez prazne izbire).
+     Prikazno ime je za FIN:ME - na krmilniku se izpiše besedilo tipke. Spremembe -> SaveBar.
+     Interval nima veljavnosti (velja od / do): vedno je v uporabi - neuporaben se izbriše ali odstrani iz urnika.
+   - Spustna okna (npr. izbira statistike) se odprejo nad vsem (portal), ob dnu zaslona navzgor - nikoli jih ne poreže okvir.
+   - Okno se imenuje po vrsti: "Prihod od / do", "Izhod od / do", pri tipki "Žig od / do" (oba žiga v oknu).
+   - Podrobnosti intervala na širokem zaslonu (2xl) v dveh stolpcih: levo osnovni podatki, desno pravila knjiženja
+     (podrobnosti so 40-50 rem široke, manj drsenja).
+   - Na vrhu pravil kartica "KAKO DELUJE": trak 00-24 (zeleno = dejanski čas, oranžno = knjiži se ob meji "ne prej /
+     ne pozneje kot", rdeče črtkano = izven okna -> napaka), oznake ur, legenda in stavki iz nastavitev ("Prihod med
+     00:00 in 06:30 se knjiži ob 06:30." ...). Če "ne prej / ne pozneje kot" nima učinka (meja izven okna), rdeče
+     opozorilo, kako popraviti. Primer pod mejo je vedno pravilen (žig 8 min pred / 6 min po meji).
+   - Pod statistiko "PRAVILA KNJIŽENJA" (PravilaKnjizenja), kartice z ikono v oranžnem prelivu PO VRSTI:
+     Prihod = Začetek (Dejanski čas / Ne prej kot + čas; Zaokroževanje + korak);
+     Izhod = Konec (Dejanski čas / Ne pozneje kot; Zaokroževanje) in Presežek nad obveznostjo (Šteje ves / Zaokroži
+     navzdol na N min / Ne šteje); Tipka = Trajanje (Brez omejitve / Seštej trajanje: Skupaj največ 00:30, Štej
+     prekoračitev intervala v = statistika, obvezno). Preklopi z drsečim oranžnim poljem. Spodaj "Preizkus pravil"
+     (črtkana oranžna obroba) za vrsto: Prihod -> knjižen prihod; Izhod: prihod, odhod, obveznost -> knjižen odhod
+     (dejanski prečrtan), delo, saldo; Tipka: žig s tipko, vrnitev -> trajanje, v statistiki, prekoračitev (rdeče).
+     Žig izven okna = rdeča napaka (knjiži se dejanski čas). Značka Testni podatki, dokler 011 ni v bazi.
    - Prazniki (okno): leto s puščicama, seznam (datum, dan - oranžen, če pade na delovni dan, ime, "Zakon" s
      ključavnico ali "Poseben" z brisanjem), spodaj Dodaj poseben dela prost dan (datum, ime, opis).
 
@@ -257,6 +310,24 @@ PRAVILA
      "Na koledarju" (predogled odseka in celodnevne odsotnosti), "Uporaba" (intervali).
    - Okno: Koda (mono, velike črke), Ime, Opis, Barva (16 predlogov + prosta), Ikona (mreža), Kaj se šteje (kvadratki), predogled.
    - Brisanje = skrij (visible), opozorilo, če jo uporabljajo intervali.
+
+24. Delovna obveznost (/administracija/registracija/nastavitve/obveznost, Obveznost)
+   - Ploščica v nastavitvah registracije za Statistikami. Tabela (steklo, temna glava): vrstica = urnik (ime, N oseb),
+     stolpci Pon ... Ned, Praz (vikend in Praz sivo v glavi), Teden (vsota Pon-Ned, oranžno).
+   - Celica = vnosno polje ur ("8", "8:00", "7:30", "7,5"), ob izhodu se zapiše kot 8:00; 0 = prost dan (bledo);
+     spremenjena rumena obroba, napačna rdeča. Spremembe -> SaveBar. Na telefonu tabela drsi vodoravno v kartici.
+
+25. Krmilnik - tipke (/administracija/registracija/nastavitve/krmilnik, Krmilnik)
+   - Ploščica v nastavitvah registracije, razdelek NAPRAVE, število = tipk. Glava: Testni podatki (dokler 013 / 014 nista
+     v bazi), Dodaj tipko (zelen).
+   - Panel TIPKE: glava stolpcev Tipka | Besedilo | Prikaz | Funkcija | Intervali. Prva vrstica je črtkana in zaklenjena:
+     "Prihod / Izhod - brez tipke, samodejno ob prislonu kartice".
+   - Vrstica tipke: številka (vnosno polje, velika oranžna pisava), besedilo (vnosno polje), Prikaz = kvadratka Krmilnik in
+     FIN:ME (nobeden = "Nikjer"), Funkcija = izbira Interval / Info - stanje in saldo / Prekliči zadnji pritisk (funkcija
+     oranžno), čipi intervalov s to tipko (mono ime; "Ni v nobenem intervalu" / "Funkcija krmilnika" bledo), X (rdeč) =
+     odstrani (skrije). Tipke, ki jo uporablja interval, ni mogoče odstraniti (X bled, hover pove zakaj) in ne more dobiti
+     funkcije. Spremenjena / nova vrstica rumena; napaka (številka 1 ali več, enolična; besedilo obvezno) rdeče pod poljem.
+     Spremembe -> SaveBar. Do lg so prikaz, funkcija in intervali vsak v svoji vrsti.
 
 15. Prijava (Prijava, Seja, Zaklep)
    - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
@@ -345,3 +416,44 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-10-31 - Urniki zaposlenih: razvrščanje ASC / DESC po imenu in po oddelku, iskanje za oboje. -> razdelek 22, UrnikiZaposlenih.
 2026-10-31 - Urniki zaposlenih: gumbi na dnu okna (prej so prekrivali tabelo). Urniki levo: povleci in spusti za vrstni red,
              ime nikoli skrajšano, brez ikone pri urniku (ikona v naslovu URNIKI). -> razdelek 22, Urniki, UrnikiZaposlenih, 010.
+2026-11-01 - Urniki: Velja od / do pri intervalu ni pomemben - interval je vedno v uporabi (sicer se izbriše). Spustno okno
+             statistike na dnu podrobnosti se je odrezalo (vidna ena vrstica) -> portal, odpre se navzgor. -> razdelek 22, Urniki, IntervalOkna.
+2026-11-01 - Smer žiga samodejna (odsoten = prihod, prisoten = izhod); izhod s tipko (malica, službeni, zasebni) se zaključi
+             z naslednjim žigom. Pravila intervala: proizvodnja prihod do 6:30 se knjiži od 6:30, režija presežek nad 8 h
+             zaokroži navzdol na 15 min. Dan vedno po trenutnih nastavitvah. Dnevni presežek / manjko = dnevni saldo, vse
+             presežke štejemo enako (saldo). Obveznost po urniku v svoji nastavitvi (kvadratek Delovna obveznost).
+             -> razdelki 21, 22, 24, knjizenje.ts, PravilaKnjizenja, Obveznost, Koledar, DanOkno, Povzetek, osnutek 011.
+2026-11-01 - Skupni saldo: v povzetku "Prenos iz prejšnjega obdobja"; zgoraj manjše okno z Začetnim stanjem (saldo pred
+             sistemom), Prenosom salda v izplačilo (ure na mesec) in Mesečnimi zaznamki. 4-izmensko zaenkrat ne.
+             En interval (npr. Režija - delo) z začetkom in koncem namesto ločenih prihod / izhod.
+             -> razdelek 21, SaldoPanel, Povzetek, saldo.ts, osnutek 012.
+2026-11-01 - Režija: en interval 00:00-23:59 + zaokroževanje nad obveznostjo. Proizvodnja: prihod 00:00-6:30 dejanski,
+             kasneje dejanski + ikona napake; izhod dovoljen po 14:30 in se knjiži 14:30. Dovolilnice kasneje.
+             -> razdelka 21, 22, knjizenje.ts (okno izhoda, napake), PravilaKnjizenja, cas.ts (OZNAKE.napaka), osnutek 011.
+2026-11-01 - Tipka je del intervala (statistika je samo za izračun v ozadju). Vhod in izhod nimata tipke (samodejno ob
+             prislonu čipa), vsi ostali intervali imajo tipko 1 ... N. V nastavitvah kvadratek "Krmilnik" s seznamom
+             Tipka / Besedilo, tabela v bazi, tipke v spustnem oknu intervala. -> razdelka 22, 25, Krmilnik, IntervalOkna
+             (IzbiraTipke), Urniki, casNastavitve.ts, nav.ts, 013_krmilnik.sql.
+2026-11-01 - Gumb "Kopiraj interval". -> razdelek 22, Urniki (kopiraj).
+2026-11-01 - Polje vrsta intervala (Prihod / Izhod / Tipka). Odmor: oba žiga med 09:55 in 10:35, sicer napaka; "seštej
+             trajanje" (00:30) in "štej prekoračitev intervala v" (npr. Zamuda - minus ure). Tipka: kje se pokaže
+             (krmilnik, FIN:ME; nobeno = nikjer) in funkcija (Info, Prekliči). Prihod izven pogojev dela normalno + napaka.
+             -> razdelka 22, 25, knjizenje.ts, PravilaKnjizenja, Krmilnik, IntervalOkna, Urniki, casTest.ts, cas.ts,
+             014_vrsta_intervala.sql, osnutek 011.
+2026-11-01 - Osebe še širše (20 / 24 rem), vrstica osebe čim nižja (ena vrsta). -> razdelek 21, IzbiraOseb, Polja (Kvadratek majhen).
+2026-11-01 - Kvadratki za označevanje oseb in "Označi vse" (kasneje za izvoze). -> razdelek 21, IzbiraOseb, Polja (Kvadratek delno).
+2026-11-01 - Osebe še širše (18 / 20 rem), filtra po oddelku in po vodji. -> razdelek 21, IzbiraOseb, RegistracijaCasa.
+2026-11-01 - Osebe +10 %, desni stolpec +20 % širine, desni paneli čim nižji. -> razdelek 21, RegistracijaCasa, Povzetek, SaldoPanel.
+2026-11-01 - Registracija čez celo širino (stranska stolpca 15 / 18 rem na velikem zaslonu); izbor oseb: filter oddelkov je
+             prekrival seznam (blok filtrov se ne krči, drsi samo seznam). Presežek po izmenah; delo od doma = prihod + izhod
+             s tipko 101. -> razdelka 1, 21, nav.ts, IzbiraOseb, RegistracijaCasa, knjizenje.ts, 019.
+2026-11-01 - Dokončaj dogodke: koledar bere fos_dogodki, ročni popravki v bazo, uvoz oktobra iz starega sistema (018).
+             -> razdelek 21, dogodki.ts, RegistracijaCasa, DanOkno, 015, 018.
+2026-11-01 - Izredno (nadure do Dovolilnic) = prihod / izhod s tipko, ne odsotnost; uvoz zaposlenih in kartic iz poročila;
+             Napaka, Nedovoljen vhod, Test in dovolilnice se pri uvozu izpustijo. -> razdelek 22, knjizenje.ts, 016, 017.
+2026-11-01 - Pomoč pod "ne prej / ne pozneje kot" ni bila logična (primer na napačni strani meje); pravila naj bodo
+             razumljiva -> trak "Kako deluje" s stavki in opozorilom. Strani z veliko nastavitvami čez celo širino,
+             podrobnosti intervala širše (dva stolpca). Registracija: vse ~30 % manjše, puščica levo razpre dogodke
+             dneva, klik na vrstico = okno z ročnimi popravki (Spreglej, Dodaj dogodek: datum, čas, tipka, komentar).
+             -> razdelki 1, 21, 22, PravilaKnjizenja (KakoDeluje), Urniki, nav.ts, Okvir, Glava, Koledar, DanOkno,
+             dogodki.ts, osnutek 015.
