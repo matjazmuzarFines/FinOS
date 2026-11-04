@@ -7,7 +7,7 @@ import { IKONE_STATISTIK, type Statistika } from "@/lib/casNastavitve";
 /** Značka "Testni podatki": prikaz še ni povezan z bazo (rumena, hover pove zakaj). */
 export function TestniPodatki({ opis = "Prikaz uporablja testne podatke - baza še ni potrjena. Spremembe se ob osvežitvi strani ponastavijo." }: { opis?: string }) {
   return (
-    <span title={opis} className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-warn-500/40 bg-warn-500/10 px-2.5 text-[11px] font-bold uppercase tracking-wider text-warn-500">
+    <span data-testni title={opis} className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-warn-500/40 bg-warn-500/10 px-2.5 text-[11px] font-bold uppercase tracking-wider text-warn-500">
       <FlaskConical className="h-3.5 w-3.5" aria-hidden />
       Testni podatki
     </span>

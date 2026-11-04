@@ -111,13 +111,18 @@ export function MeKrog({
     () => true,
     () => false,
   );
-  // samo za preizkus prikaza (zacetno): oblaček izbrane ikone ob nalaganju
+  // samo za preizkus prikaza in promo video (zacetno): izbrana ikona in njen oblaček sledita lastnosti
+  const [prejZacetno, setPrejZacetno] = useState(zacetno);
+  if (zacetno !== prejZacetno) {
+    setPrejZacetno(zacetno);
+    if (zacetno !== null) setAktiven(zacetno);
+  }
   useEffect(() => {
     if (!zacetno) return;
     const i = vstopi.findIndex((v) => v.href === zacetno);
     const el = document.querySelector(`[data-vstop="${zacetno}"]`);
     const kot = (KOTI[i % KOTI.length] * Math.PI) / 180;
-    const t = setTimeout(() => el && setMesto(izracunajMesto(el.getBoundingClientRect(), Math.cos(kot) < 0, Math.sin(kot) < 0)), 300);
+    const t = setTimeout(() => el && setMesto(izracunajMesto(el.getBoundingClientRect(), Math.cos(kot) < 0, Math.sin(kot) < 0)), 40);
     return () => clearTimeout(t);
   }, [zacetno, vstopi]);
   // ob drsenju se oblaček skrije (je pritrjen na zaslon)

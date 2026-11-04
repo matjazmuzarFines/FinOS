@@ -192,6 +192,11 @@
 - 3.01: Nastavitve -> Podatki baze (fos_oddelek, fos_aplikacije): dodaj / uredi vrstico, uvoz in izvoz CSV, navodila.
 - FIN:ME: politike za lastne podatke in ekipo so v osnutku 020 (dokler ni zagnan, ima račun zaposlenega brez Super Admina
   dostop do ničesar - FIN:ME preizkusi Super Admin z "Ogled kot").
+- Promo video "Moj Fines" (teaser za zaposlene, 42 s, 16:9, špica 38-42 s): stran `/promo` (`src/components/promo/Promo.tsx`,
+  vse gibanje izračunano iz časa t; izmišljeni podatki - klici baze na tej strani vrnejo napako -> testni podatki).
+  Posnetek: `npm run build`, `next start -p 3010`, `node scripts/promo/posnemi.mjs` (playwright-core + nameščen Edge,
+  zamrznjena ura, 30 sl./s; glasba data/*.mp3 - začetek do 34,2 s + konec skladbe, zaključni udarec na 38 s; ffmpeg)
+  -> `promo-izvoz/MojFines_teaser.mp4` (mapa v .gitignore). `CASI=1000,5000` = samo vzorčne sličice.
 - 7.01: produkcija - 020 in 021 v migrations (osnutkov ni). `021_krmilnik_naprave.sql`: `fos_krmilniki` (ključ samo kot
   sha256, ustvari `fos_nova_naprava` / `fos_nov_kljuc_naprave` - pokaže se enkrat), `fos_dogodki.id_krmilnika` +
   `lokalni_id` (enoličen - ponovno poslan žig se ne podvoji), `fos_krmilnik_zig` / `fos_krmilnik_info` (samo

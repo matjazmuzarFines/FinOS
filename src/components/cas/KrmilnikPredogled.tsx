@@ -17,14 +17,16 @@ const ZASLONI = [
 const DNEVI = ["nedelja", "ponedeljek", "torek", "sreda", "četrtek", "petek", "sobota"];
 const FINES = "linear-gradient(135deg, #f19a66, #ee7a3a 30%, #ca5010 70%, #8f380b)";
 
-type Potrdilo = { barva: string; ikona: string; naslov: string; opis: string; zigi?: string[] };
+export type Potrdilo = { barva: string; ikona: string; naslov: string; opis: string; zigi?: string[] };
+/** Vodenje od zunaj (promo video): izbrana tipka, potrdilo, stanje zveze. */
+export type NadzorPredogleda = { izbrana: number | null; potrdilo: Potrdilo | null; brezPovezave: boolean };
 
 /**
  * Predogled zaslona krmilnika (Raspberry Pi, krmilnik/ui) - enake mere in barve kot na napravi, izrisan v izbrani
  * ločljivosti in pomanjšan na širino panela. Tipke iz osnutka (prikaz "Krmilnik"); klik na tipko jo izbere kot na
  * napravi, "Prisloni kartico" pokaže potrdilo žiga. Ko spremeniš krmilnik/ui, uskladi tudi ta predogled.
  */
-export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; ime: string }) {
+export function KrmilnikPredogled({ tipke, ime, samoZaslon, nadzor }: { tipke: TipkaPredogleda[]; ime: string; /** samo naprava (brez panela in gumbov) */ samoZaslon?: boolean; nadzor?: NadzorPredogleda }) {
   const [zaslon, setZaslon] = useState<(typeof ZASLONI)[number]>(ZASLONI[0]);
   const [sirina, setSirina] = useState(0);
   const [zdaj, setZdaj] = useState(() => new Date());
@@ -49,11 +51,14 @@ export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; im
     return () => clearTimeout(t);
   }, [potrdilo]);
 
+  const izbranaT = nadzor ? nadzor.izbrana : izbrana;
+  const potrdiloT = nadzor ? nadzor.potrdilo : potrdilo;
+  const brezT = nadzor ? nadzor.brezPovezave : brezPovezave;
   const { w: W, h: H } = zaslon;
   const vh = (x: number) => (H * x) / 100;
   const vw = (x: number) => (W * x) / 100;
   const merilo = sirina ? sirina / W : 0;
-  const tipka = tipke.find((t) => t.tipka === izbrana) ?? null;
+  const tipka = tipke.find((t) => t.tipka === izbranaT) ?? null;
   const dv = (n: number) => String(n).padStart(2, "0");
   const ura = `${dv(zdaj.getHours())}:${dv(zdaj.getMinutes())}`;
 
@@ -66,29 +71,8 @@ export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; im
     setPotrdilo({ barva: "#22c55e", ikona: "✓", naslov: t ? "Nasvidenje, Matej!" : "Dober dan, Matej!", opis: `${ura} · ${t ? t.besedilo : "Prihod"}` });
   };
 
-  return (
-    <Panel
-      naslov={
-        <span className="flex items-center gap-1.5">
-          <MonitorSmartphone className="h-3.5 w-3.5" aria-hidden />
-          Predogled krmilnika
-        </span>
-      }
-      desno={
-        <select
-          value={zaslon.id}
-          onChange={(e) => setZaslon(ZASLONI.find((z) => z.id === e.target.value) ?? ZASLONI[0])}
-          title="Velikost zaslona krmilnika"
-          className="h-8 cursor-pointer rounded-[8px] border border-white/10 bg-white/[0.05] px-2 text-xs text-ink-200 [&>option]:bg-ink-900"
-        >
-          {ZASLONI.map((z) => (
-            <option key={z.id} value={z.id}>
-              {z.ime}
-            </option>
-          ))}
-        </select>
-      }
-    >
+  const naprava = (
+    <>
       {/* ohišje naprave */}
       <div className="rounded-[22px] bg-[linear-gradient(160deg,#3a3a3f,#1c1c1f)] p-3 shadow-[0_24px_50px_-20px_rgb(0_0_0/0.9),inset_0_1px_0_rgb(255_255_255/0.1)]">
         <div ref={okvir} className="relative overflow-hidden rounded-[10px] bg-black" style={{ aspectRatio: `${W} / ${H}` }}>
@@ -114,9 +98,9 @@ export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; im
                   <span className="font-semibold text-[#9a9aa1]" style={{ fontSize: vh(2.4) }}>
                     {ime || "Krmilnik"}
                   </span>
-                  <span className="ml-auto flex items-center font-semibold" style={{ gap: vw(0.8), fontSize: vh(2.3), color: brezPovezave ? "#f59e0b" : "#9a9aa1" }}>
-                    <i className="block rounded-full" style={{ width: vh(1.4), height: vh(1.4), background: brezPovezave ? "#f59e0b" : "#22c55e", boxShadow: `0 0 10px ${brezPovezave ? "#f59e0b" : "#22c55e"}` }} />
-                    {brezPovezave ? "Brez povezave · čaka 2" : "Na zvezi"}
+                  <span className="ml-auto flex items-center font-semibold" style={{ gap: vw(0.8), fontSize: vh(2.3), color: brezT ? "#f59e0b" : "#9a9aa1" }}>
+                    <i className="block rounded-full" style={{ width: vh(1.4), height: vh(1.4), background: brezT ? "#f59e0b" : "#22c55e", boxShadow: `0 0 10px ${brezT ? "#f59e0b" : "#22c55e"}` }} />
+                    {brezT ? "Brez povezave · čaka 2" : "Na zvezi"}
                   </span>
                 </div>
 
@@ -146,7 +130,7 @@ export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; im
 
                   <div className="grid min-h-0" style={{ gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: vh(1.6) }}>
                     {tipke.map((t) => {
-                      const izbr = t.tipka === izbrana;
+                      const izbr = t.tipka === izbranaT;
                       const s: CSSProperties = {
                         gap: vw(1.2),
                         padding: `0 ${vw(1.2)}px`,
@@ -173,19 +157,19 @@ export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; im
               </div>
 
               {/* potrdilo žiga */}
-              {potrdilo && (
+              {potrdiloT && (
                 <div className="absolute inset-0 grid place-items-center bg-[rgb(18_18_20/0.86)]">
-                  <div className="text-center" style={{ minWidth: vw(55), maxWidth: vw(88), padding: `${vh(4)}px ${vw(4)}px`, borderRadius: 28, background: "linear-gradient(160deg,#2b2b2f,#18181b)", border: `2px solid ${potrdilo.barva}`, boxShadow: `0 0 60px -10px ${potrdilo.barva}` }}>
-                    <div style={{ fontSize: vh(12), lineHeight: 1, color: potrdilo.barva }}>{potrdilo.ikona}</div>
+                  <div className="text-center" style={{ minWidth: vw(55), maxWidth: vw(88), padding: `${vh(4)}px ${vw(4)}px`, borderRadius: 28, background: "linear-gradient(160deg,#2b2b2f,#18181b)", border: `2px solid ${potrdiloT.barva}`, boxShadow: `0 0 60px -10px ${potrdiloT.barva}` }}>
+                    <div style={{ fontSize: vh(12), lineHeight: 1, color: potrdiloT.barva }}>{potrdiloT.ikona}</div>
                     <div className="font-extrabold" style={{ marginTop: vh(1.5), fontSize: vh(6) }}>
-                      {potrdilo.naslov}
+                      {potrdiloT.naslov}
                     </div>
                     <div className="text-[#dcdcdf]" style={{ marginTop: vh(1), fontSize: vh(3.4) }}>
-                      {potrdilo.opis}
+                      {potrdiloT.opis}
                     </div>
-                    {potrdilo.zigi && (
+                    {potrdiloT.zigi && (
                       <div className="flex flex-wrap justify-center" style={{ marginTop: vh(2), gap: `${vh(1)}px ${vw(1)}px`, fontSize: vh(3) }}>
-                        {potrdilo.zigi.map((z) => (
+                        {potrdiloT.zigi.map((z) => (
                           <span key={z} className="rounded-full bg-white/10" style={{ padding: `${vh(0.6)}px ${vw(1.2)}px` }}>
                             {z}
                           </span>
@@ -200,6 +184,33 @@ export function KrmilnikPredogled({ tipke, ime }: { tipke: TipkaPredogleda[]; im
         </div>
       </div>
 
+    </>
+  );
+  if (samoZaslon) return naprava;
+  return (
+    <Panel
+      naslov={
+        <span className="flex items-center gap-1.5">
+          <MonitorSmartphone className="h-3.5 w-3.5" aria-hidden />
+          Predogled krmilnika
+        </span>
+      }
+      desno={
+        <select
+          value={zaslon.id}
+          onChange={(e) => setZaslon(ZASLONI.find((z) => z.id === e.target.value) ?? ZASLONI[0])}
+          title="Velikost zaslona krmilnika"
+          className="h-8 cursor-pointer rounded-[8px] border border-white/10 bg-white/[0.05] px-2 text-xs text-ink-200 [&>option]:bg-ink-900"
+        >
+          {ZASLONI.map((z) => (
+            <option key={z.id} value={z.id}>
+              {z.ime}
+            </option>
+          ))}
+        </select>
+      }
+    >
+      {naprava}
       <div className="flex flex-wrap items-center gap-2">
         <Button hint="Pokaži, kaj se izpiše, ko zaposleni prisloni kartico" variant="neutral" icon={CreditCard} onClick={kartica} className="!h-9 !text-xs">
           Prisloni kartico (preizkus)

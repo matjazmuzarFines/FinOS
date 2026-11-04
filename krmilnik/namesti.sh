@@ -52,7 +52,8 @@ elif [[ ! -f "$NAST/config.json" ]]; then
     exit 1
   fi
   echo
-  read -r -p "Naslov FIN:OS (npr. https://finos.vercel.app): " STREZNIK
+  read -r -p "Naslov FIN:OS [https://finos-mu.vercel.app]: " STREZNIK
+  STREZNIK="${STREZNIK:-https://finos-mu.vercel.app}"
   read -r -p "Ključ naprave (FIN:OS -> Registracija časa -> Nastavitve -> Krmilnik -> Naprave, začne se s fk_): " KLJUC
   read -r -p "Ime krmilnika na zaslonu (npr. Vhod proizvodnja): " IME
   python3 - "$NAST/config.json" "$STREZNIK" "$KLJUC" "$IME" <<'PY'

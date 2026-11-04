@@ -21,7 +21,7 @@ const DNEVI = ["nedelja", "ponedeljek", "torek", "sreda", "četrtek", "petek", "
  * Tipka Info pokaže današnje žige in ure, Prekliči umakne zadnji online žig. Deluje samo z vklopljenim "Virtualno
  * beleženje delovnega časa" (list zaposlenega -> FIN:ME). Čas žiga v bazi določi strežnik (fos_zig_online).
  */
-export function DelovnaUra({ j }: { j: Jaz }) {
+export function DelovnaUra({ j, demo }: { j: Jaz; /** promo video: brez testnih žigov (prazen dan) */ demo?: boolean }) {
   const n = useCasNastavitve();
   const fm = useFinMe();
   const zh = useZahtevki();
@@ -35,7 +35,7 @@ export function DelovnaUra({ j }: { j: Jaz }) {
   const id = j.jaz.id;
   const dog = useDogodki(id, danes, danes);
   const urnik = testniUrnik(id, n);
-  const d = izracunajDan(danes, zZahtevki(id, danes, podatkiDne(id, danes, () => testniDan(id, danes, n, danes, zdajMin), dog), zh.zahtevki, n, urnik), n, danes, zdajMin, urnik);
+  const d = izracunajDan(danes, zZahtevki(id, danes, podatkiDne(id, danes, () => (demo ? { zigi: [], odsotnost: null, oznake: [] } : testniDan(id, danes, n, danes, zdajMin)), dog), zh.zahtevki, n, urnik), n, danes, zdajMin, urnik);
 
   const [info, setInfo] = useState(false);
   const [potrdilo, setPotrdilo] = useState<{ besedilo: string; ok: boolean; kljuc: number } | null>(null);
