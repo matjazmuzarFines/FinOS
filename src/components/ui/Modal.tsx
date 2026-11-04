@@ -38,7 +38,7 @@ export function Modal({ open, title, onClose, children, noga, siroko }: Props) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 backdrop-blur-md sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -48,7 +48,7 @@ export function Modal({ open, title, onClose, children, noga, siroko }: Props) {
             role="dialog"
             aria-modal
             aria-label={title}
-            className={`fos-glass flex h-full w-full flex-col overflow-hidden bg-ink-900/80 sm:h-auto sm:max-h-[85vh] sm:rounded-[20px] ${siroko ? "sm:max-w-4xl" : "sm:max-w-xl"}`}
+            className={`fos-popup flex h-full w-full flex-col overflow-hidden sm:h-auto sm:max-h-[85vh] sm:rounded-[20px] ${siroko ? "sm:max-w-4xl" : "sm:max-w-xl"}`}
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}

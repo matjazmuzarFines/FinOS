@@ -4,12 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Info, LogOut } from "lucide-react";
+import { FlaskConical, Info, LogOut } from "lucide-react";
 import { Button, IconButton } from "./ui/Button";
 import { Modal } from "./ui/Modal";
 import { AnimacijeStikalo } from "./ui/AnimacijeStikalo";
 import { TemaStikalo } from "./ui/TemaStikalo";
-import { odjava, useSeja } from "./Seja";
+import { odjava, useDostop, useSeja } from "./Seja";
+import { nastaviTestniPogled, useTestniPogled } from "@/lib/testniPogled";
 import { Znak } from "./Znak";
 import { usePathname } from "next/navigation";
 import { APP_VERSION, VERZIJE } from "@/lib/verzije";
@@ -23,6 +24,8 @@ export function Glava() {
   const [info, setInfo] = useState(false);
   const seja = useSeja();
   const pot = usePathname();
+  const admin = useDostop();
+  const testni = useTestniPogled();
 
   return (
     <>
@@ -43,7 +46,7 @@ export function Glava() {
           </Link>
           <span aria-hidden className="mx-1 hidden h-7 w-px bg-white/15 sm:block" />
           <span className="hidden sm:block">
-            <Znak className="text-2xl" />
+            <Znak pripona={pot.startsWith("/moj-fines") ? "ME" : "OS"} className="text-2xl" />
           </span>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2.5">
@@ -54,6 +57,15 @@ export function Glava() {
               <span className="hidden max-w-48 truncate text-xs text-ink-400 lg:inline" title="Prijavljen uporabnik">
                 {seja.user.email}
               </span>
+            )}
+            {admin && pot.startsWith("/moj-fines") && (
+              <IconButton
+                hint={testni ? "Izklopi testni pogled - FIN:ME kot ti" : "Testni pogled: FIN:ME kot drug zaposleni"}
+                icon={FlaskConical}
+                onClick={() => nastaviTestniPogled(!testni)}
+                aria-pressed={testni}
+                className={testni ? "!border-warn-500/60 !bg-warn-500/15 !text-warn-500 shadow-[0_0_16px_-4px_rgb(245_158_11/0.8)]" : ""}
+              />
             )}
             <TemaStikalo />
             <IconButton hint="Prikaži verzije in spremembe aplikacije" icon={Info} onClick={() => setInfo(true)} />

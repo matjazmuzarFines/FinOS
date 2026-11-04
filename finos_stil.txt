@@ -64,8 +64,11 @@ PRAVILA
    - Lepljiva, steklena (ink-950/55 + blur). Logo na beli ploščici (logo je siv, na temnem se sicer ne vidi).
    - Spodaj 4 px oranžna črta s prelivom in bleščico, ki potuje po njej.
 
-9. Okna (Modal)
-   - Steklo na temnem, zaobljeno 20 px, pojavi se z vzmetjo (dvig + povečava), oranžna črta s prelivom pod naslovom.
+9. Okna (Modal) in vsi popupi
+   - Okna, meniji (desni klik), spustni seznami, oblački in obvestila so SKORAJ NEPROSOJNI: razred fos-popup v globals.css
+     (temen preliv 97-98 %, blur, globoka senca; v svetli temi bel) - besedilo pod njimi se ne sme prekrivati in motiti.
+     Ozadje pod oknom temneje zatemnjeno (ink-950/80). Nov popup = fos-popup, ne fos-glass s prosojnim ozadjem.
+   - Zaobljeno 20 px, pojavi se z vzmetjo (dvig + povečava), oranžna črta s prelivom pod naslovom.
 
 10. Naslovi razdelkov
    - Oranžen (fines-400), 11 px, VELIKE ČRKE, širok razmik, desno tanka črta z oranžnim prelivom, ki pojenja.
@@ -121,7 +124,14 @@ PRAVILA
      v dve vrstici, ni primeren (v razvoju opozorilo v konzoli) - skrajšaj ga; naslovi ploščic so kratki (nadzorni pregled).
      Mreža 2 / 3 / 4 / 5 v vrsti. Ploščice so združene pod naslovom razdelka (npr. LJUDJE).
    - Seznam (npr. Zaposleni) - ni standardna tabela:
-     * desno zgoraj samo glavno dejanje (npr. "Dodaj zaposlenega", zelen) - gumba Osveži ni.
+     * desno zgoraj glavno dejanje (npr. "Dodaj zaposlenega", zelen) - gumba Osveži ni; levo od njega IZVOZI (oranžen).
+   - Izvozi (komponenta Izvoz, VELJA NAMESTO "Gumbi izvoza" iz skupnih navodil): en oranžen gumb "Izvozi" odpre okno s
+     seznamom vseh izvozov strani (drsi; od 7 izvozov naprej iskanje). Vrstica: ikona, ime in opis, desno spustni seznam
+     TIPA (ikona v barvi tipa + ime + končnica: Excel .xlsx zelen, PDF .pdf rdeč, Word .docx moder, Besedilo .txt siv,
+     CSV, ZIP, E-mail .eml) in gumb Izvozi (oranžen), ki se omogoči šele, ko je tip izbran. Brskalnik si zapomni zadnji tip
+     vsakega izvoza. Nov izvoz = nov vnos v seznamu `izvozi` (id, ime, opis, tipi).
+   - Zaposleni -> "Izvoz pravic po uporabnikih" (Excel, src/lib/xlsx.ts brez knjižnice: temna glava, zamrznjena, filter;
+     DA zeleno, NE rdeče; list "Opis pravic"). Nova pravica = nov stolpec v izvozPravic.ts.
      * hitri filtri v stekleni kartici: Iskanje (delno, vse besede), izbirni filter (Vodja), čipi (Oddelki) s
        številom v oznaki; "Ponastavi" (bel) samo, ko je filter vklopljen. Filtri ostanejo ob vrnitvi s lista.
      * glava seznama = razvrščanje (lepljiva pod glavo): klik naraščajoče, ponovni klik padajoče; prazne
@@ -146,8 +156,12 @@ PRAVILA
    - Dodajanje: okno (Modal) z istimi polji kot list (ena komponenta polj), Prekliči + Shrani v nogi,
      napaka rdeče pod polji; po shranjevanju se odpre list novega zapisa. Uspeh / napaka = obvestilo (Obvestila).
 
-17. Nastavitve zaposlenega - Pravice (samo pregled)
-   - Prvi na vrhu zavihka Nastavitve: razdelek PRAVICE (desno gumb "Uredi pravice", bel -> Pravice in dostopi s ?zaposleni=),
+17. Pravice zaposlenega (samo pregled) in zavihek FIN:ME
+   - Zavihki lista: Podatki, Zaposlitev, Dostopi, FIN:ME (znak namesto ikone). Podatki: Osnovni podatki, Prijava v FIN:ME,
+     ODDELEK IN VODJA (polja, trenutni vodja, podrejeni - ni svoj zavihek), Osebni podatki ...
+   - Zavihek FIN:ME: razdelek DELOVNI ČAS, kartica s kvadratkom "Virtualno beleženje delovnega časa" (vklop = oranžna ikona,
+     obroba in sij; spremenjeno = rumen obroč) -> SaveBar. Nove nastavitve FIN:ME gredo sem.
+   - Prvi na vrhu zavihka Dostopi: razdelek PRAVICE (desno gumb "Uredi pravice", bel -> Pravice in dostopi s ?zaposleni=),
      kartica za vsako funkcijo: ikona, ime, značka Ima (zelena) / Nima, opis. Ima: ikona v oranžnem prelivu, oranžna obroba in sij.
      V glavi osebe oznaka "Super Admin". Brez računa rumeno opozorilo, kaj najprej narediti.
    - Funkcij se tu NE ureja - samo v Pravicah in dostopih (razdelek 20).
@@ -318,6 +332,14 @@ PRAVILA
      spremenjena rumena obroba, napačna rdeča. Spremembe -> SaveBar. Na telefonu tabela drsi vodoravno v kartici.
 
 25. Krmilnik - tipke (/administracija/registracija/nastavitve/krmilnik, Krmilnik)
+   - Stran je RAZPOLOVLJENA (xl): levo panel Tipke, desno (lepljivo) Predogled krmilnika in pod njim Naprave.
+   - Predogled (KrmilnikPredogled): ohišje (siv preliv, zaobljeno) in v njem zaslon naprave v izbrani ločljivosti (7"
+     800 × 480, 7" HD 1024 × 600, 10" 1280 × 800 - izbira desno v glavi panela), pomanjšan na širino; enak izris kot
+     krmilnik/ui (ob spremembi uskladi oba). Tipke iz osnutka s prikazom Krmilnik. Pod njim (bela) "Prisloni kartico
+     (preizkus)" = potrdilo žiga in "Brez povezave" = rumeno stanje zveze.
+   - Vrstica tipke (flex, fiksne širine - brez mreže): levo številka (56 px, velika oranžna), na sredini 1. besedilo +
+     funkcija (208 px, cela besedila "Prekliči zadnji pritisk"), 2. kvadratka Krmilnik / FIN:ME (majhna), tanka črta,
+     čipi intervalov; desno X. Na telefonu funkcija pod besedilom.
    - Ploščica v nastavitvah registracije, razdelek NAPRAVE, število = tipk. Glava: Testni podatki (dokler 013 / 014 nista
      v bazi), Dodaj tipko (zelen).
    - Panel TIPKE: glava stolpcev Tipka | Besedilo | Prikaz | Funkcija | Intervali. Prva vrstica je črtkana in zaklenjena:
@@ -328,6 +350,71 @@ PRAVILA
      odstrani (skrije). Tipke, ki jo uporablja interval, ni mogoče odstraniti (X bled, hover pove zakaj) in ne more dobiti
      funkcije. Spremenjena / nova vrstica rumena; napaka (številka 1 ali več, enolična; besedilo obvezno) rdeče pod poljem.
      Spremembe -> SaveBar. Do lg so prikaz, funkcija in intervali vsak v svoji vrsti.
+
+26. FIN:ME - Moj Fines (/moj-fines, src/components/me/, ME_VSTOPI v nav.ts)
+   - Za zaposlene (preprost uporabnik, tudi z osnovno šolo): NI sistem nastavitev. Malo gumbov, velike ikone, kratke
+     točne besede ("Pošlji vodji", "Grem ven", "Delam dlje"), koraki oštevilčeni (1 Kaj? 2 Kdaj? 3 Opomba). Kasneje video navodila.
+   - Glava: znak FIN:ME. Prijava kot Administracija (pripona ME); račun brez zaposlenega -> rdeče prazno stanje.
+     Super Admin: v glavi (samo na /moj-fines) ikona epruvete = TESTNI POGLED (vklop rumena s sijem); vklopljen pokaže
+     rumen trak "Ogled kot" (izbira zaposlenega) nad vsebino, izklopljen = svoj FIN:ME kot vsak zaposleni (zapomni si
+     brskalnik). Super Admin brez lastnega zaposlenega ima trak vedno.
+   - Vstop (MeKrog): brez glave strani - krog je osrednja funkcija in je ČISTO ZGORAJ; v sredini kroga "Živijo, {ime}!",
+     znak FIN:ME in "KLIKNI IKONO". Desno od kroga DELOVNA URA (na telefonu pod njim). VELIK KROG (34 rem, na telefonu čez širino) s tanko prekinjeno oranžno črto
+     (počasi se vrti - dodatna animacija), notranji pikčast krog in oranžen sij. Na sredini znak FIN:ME + "MOJ FINES".
+     Na krožnici v enakomernem razmiku (diagonalno) okrogle ikone strani (80 px, oranžen preliv, temen obroč, sij) in ob
+     njih naslov (navzven; na telefonu pod ikono), številka v kotu ikone = čaka / za potrditev.
+     Miška na ikoni: ikona se strese, poveča in zasuka levo-desno; OB STRANI (Odsotnosti, Dovolilnice desno od naslova;
+     Moj čas, Popravki levo), pri zgornjih ikonah poravnan zgoraj, pri spodnjih spodaj (raste navzgor - nikoli drsenja),
+     pritrjen na zaslon (portal), širok 240 px; ob premalo prostora gre na drugo stran. Oblaček fos-popup: naslov, stavek,
+     "TUKAJ LAHKO" s 4 ključnimi besedami z ikonami, značke čakajočih; na SREDINI namesto znaka prizor Fineseka (samo z
+     vklopljenimi animacijami, MePrizori.tsx, Finesek ~ velikost povečane ikone): Moj čas = naslonjen na staro uro, ki
+     tiktaka (pravi čas), pogleda uro / ekran; Odsotnosti = počiva na otoku s palmo in sončnimi očali (morje, sonce, z-z-z);
+     Dovolilnice = hodi s palico in culico (pot teče, kažipot); Popravki = premišljeno gleda posnetek registracije v
+     oranžnem okvirju (vrstica z napako utripa), oblaček misli. Miška na znaku: znak se strese, oblaček s podatki
+     (oddelek, vodja, ekipa, kaj čaka - pod znakom v krogu). Na širokem zaslonu je krog desno v svojem stolpcu (ob
+     Delovni uri), da je levo prostor za oblačke. Spodaj "Moji zadnji zahtevki".
+   - Delovna ura (DelovnaUra, kasneje enaka na krmilniku): kartica z oranžno črto; ZASLON (temen, vrstice kot LCD) - dan in
+     datum, "Fines d.o.o.", velika oranžna sijoča ura HH:MM + sekunde, pod njo stanje s piko (Danes še nisi prišel / Na delu
+     od 07:02 zeleno / Odmor od 10:02 rumeno / Odšel ob ...) ali za 4 s potrdilo žiga (zelena kljukica "10:02 · Odmor").
+     Pod zaslonom velik gumb 64 px: Prihod (zelen preliv, LogIn) ali Odhod (oranžen, LogOut) - smer samodejna; nato tipke
+     s prikazom FIN:ME v dveh stolpcih (številka v oranžnem kvadratku + besedilo; Info / Prekliči z ikono). Info razpre
+     današnje žige in ure. Brez "Virtualno beleženje" rumeno opozorilo nad gumbi, gumbi zatemnjeni.
+   - Zahtevki: pri oddanih in potrjenih odsotnostih / dovolilnicah gumba Uredi (oranžen) in Izbriši (rdeč; pri oddanih Umakni).
+     Uredi napolni obrazec ("Sprememba odsotnosti", oranžno pojasnilo, Prekliči bel), oddaja = nov zahtevek "Sprememba"
+     (oranžna značka, "Prej:" prečrtano). Izbriši = okno z obveznim razlogom -> zahtevek "Izbris" (rdeča značka, naslov
+     prečrtan). Pri čakajoči spremembi rumeno "Sprememba čaka na potrditev vodje" in brez gumbov. Statusa Spremenjeno /
+     Izbrisano sta siva (samo v filtru Vse).
+   - Moj čas = isti pogled kot Registracija časa (zaposleni: brez izbora oseb; vodja: jaz + ekipa). Svoj dan: klik = podrobnosti
+     z razdelkom "Popravek dneva" (zelen črtkan: manjka žig, Ne upoštevaj pri žigu, Cel dan sem bil ... čipi statistik,
+     Zakaj? obvezno, v nogi Oddaj popravek (N) zelen). Dan podrejenega: vodja ureja kot Administracija. Saldo / Dopust samo ogled.
+   - Desni klik na dan = meni dneva (MeniDneva, steklo ob kazalcu): Oddaj popravek, Najavi odsotnost, Dovolilnica, Podrobnosti
+     (pri podrejenem Uredi dan); vsaka postavka ikona v oranžnem prelivu + ime + kratek opis.
+   - Zahtevki (Odsotnosti, Dovolilnice, Popravki - ena stran za vsako, vse v enem oknu): vodja ima zgoraj velik preklop
+     Moji | Ekipa (drseče oranžno polje, števec čakajočih). Moji: levo obrazec (oranžna črta zgoraj, koraki s številko v krogu,
+     ploščice razlogov 2 v vrsti z ikono statistike - izbrana oranžna s kljukico; polja 48 px), spodaj velik zelen gumb čez
+     celo širino; desno seznam. Popravki: levo 4 koraki z ikonami + izbira dneva + Popravi (zelen) -> Moj čas z odprtim dnem.
+     Vodja v obrazcu "Za koga?" - za podrejenega je zahtevek takoj potrjen ("Vpiši in potrdi").
+   - Seznam: čipi Vse / Oddano / Potrjeno / Zavrnjeno s številom (ekipa privzeto Oddano), vrstica = steklena kartica z barvno
+     črto levo v barvi statusa, ikona, (ekipa: avatar + ime), naslov, kdaj (obdobje + delovni dnevi / od-do + ure), postavke
+     popravka kot čipi, opomba v narekovajih, "Oddano ... · potrjeno: ime, čas", razlog zavrnitve rdeče; desno značka statusa
+     (Oddano rumena peščena ura, Potrjeno zelena, Zavrnjeno rdeča, Preklicano siva). Ekipa: Zavrni (rdeč -> okno z obveznim
+     razlogom) in Potrdi (zelen); moji oddani: Umakni (rdeč).
+   - Okno Dopust {leto} v Registraciji časa pod "Po statistikah": Dopust in Lanski dopust - porabljeno / vse dni (Administracija
+     vpiše "vse" v polje), modri trak porabe + rumeno črtkan del, ki čaka na potrditev, "Ostane N", "Čaka N".
+
+27. Krmilnik - naprave in zaslon krmilnika
+   - Nastavitve -> Krmilnik pod tipkami panel NAPRAVE (ikona procesorja): Dodaj napravo (zelen) -> okno ime + lokacija ->
+     okno "Ključ naprave" (ključ v mono pisavi, Kopiraj oranžen, rumeno "samo zdaj"). Vrstica: krog wifi (zelen = na zvezi
+     v zadnjih 3 min, siv = ne), ime, lokacija · na zvezi / zadnji stik "pred 5 min" · program 1.0.0; Nov ključ (oranžen),
+     Onemogoči (rdeč) / Omogoči (zelen); onemogočen bled.
+   - Zaslon krmilnika (krmilnik/ui, 800 × 480 in več, brez kazalca): glava = znak FIN:OS, ime naprave, desno stanje zveze
+     (zelena pika Na zvezi / rumena Brez povezave · čaka N); spodaj oranžna črta. Levo temen "LCD" zaslon: dan in datum,
+     velika oranžna sijoča ura z utripajočim dvopičjem in sekundami, "Prisloni kartico" z utripajočo ikono kartice
+     (izbrana tipka: oranžno "Odmor - prisloni kartico", velja 10 s). Desno tipke 2 v vrsti (številka v oranžnem
+     kvadratku, Info "i", Prekliči "↶"), izbrana oranžno obrobljena s sijem.
+   - Potrdilo čez cel zaslon 3,5 s s piskom: zeleno ✓ "Dober dan, Matej!" / "Nasvidenje, Matej!" + čas · tipka; brez
+     povezave "Zabeleženo - poslano bo, ko bo povezava"; rumeno "Kartica ni dodeljena"; modro Info (današnji žigi kot
+     čipi); rumeno "Zadnji žig je preklican"; rdeče napaka z nizkim piskom.
 
 15. Prijava (Prijava, Seja, Zaklep)
    - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
@@ -457,3 +544,32 @@ DNEVNIK POPRAVKOV UPORABNIKA
              dneva, klik na vrstico = okno z ročnimi popravki (Spreglej, Dodaj dogodek: datum, čas, tipka, komentar).
              -> razdelki 1, 21, 22, PravilaKnjizenja (KakoDeluje), Urniki, nav.ts, Okvir, Glava, Koledar, DanOkno,
              dogodki.ts, osnutek 015.
+2026-11-04 - Na osebo okno "Podatki za leto" -> Dopust {leto}: dopust in lanski dopust porabljeno / vse + vnos (mesečne /
+             letne omejitve prenosa, negativni prenos in rok lanskega dopusta NE). FIN:ME: pogled zaposlenega (samo pregled
+             in zahtevki) in vodje (ekipa po hierarhiji, ureja podrejene, ne sebe, potrjuje); Moj čas = pogled registracije;
+             Odsotnosti, Dovolilnice, Popravki v enem oknu vsak (statusi oddano / potrjeno / zavrnjeno); popravek z desnim
+             klikom na dan; vstopni gumbi kot "Moj Fines" z oblačkom ključnih besed nad gumbom; preprosto za uporabnika.
+             Dostopi tabel premišljeni (osnutek 020). -> razdelki 21, 26, src/components/me/, zahtevki.ts, dopust.ts,
+             DopustPanel, MeniDneva, DanOkno (predlog), RegistracijaCasa, nav.ts, Glava, Domov, osnutek 020.
+2026-11-04 - Vstop FIN:ME bolj moderen: krog s prekinjeno črto, znak FIN:ME na sredini, ikone na krožnici z naslovom, hover =
+             tresenje + oblaček; prizori Fineseka (ura, otok, palica s culico, posnetek registracije). Popupi čez cel projekt
+             premalo temni -> fos-popup. Komentar pri odsotnostih in dovolilnicah obvezen. Odsotnost od 6:30 (6:30-14:30).
+             -> razdelka 9, 26, MeKrog, MePrizori, Finesek (roki, rokaStran, vRoki, dodatek, poza potuje), globals.css,
+             Modal, MeniDneva, IntervalOkna, Obvestila, Zahtevki, zahtevki.ts, osnutek 020.
+2026-11-04 - Moj Fines: brez glave, pozdrav v sredino kroga, krog čim višje; desno Delovna ura (krmilnik z uro in tipkami).
+             Potrjene odsotnosti / dovolilnice se lahko uredijo (ponovno v potrditev) ali izbrišejo (vodja potrdi izbris).
+             List zaposlenega: Oddelek in vodja v Podatke, Pravice v Dostope, zavihek FIN:ME z "Virtualno beleženje".
+             Zaposleni: izvoz pravic po uporabnikih (Excel, vse pravice DA / NE). -> razdelki 14, 17, 26, MeKrog, DelovnaUra,
+             Zahtevki, zahtevki.ts, dogodki.ts (zigOnline), finme.ts, ListZaposlenega, SeznamZaposlenih, Izvoz, xlsx.ts,
+             izvozPravic.ts, osnutek 020.
+2026-11-04 - Izvozov bo veliko: gumb "Izvozi" odpre okno s seznamom izvozov (drsi), desno ob imenu spustni seznam tipa
+             (ikona + končnica) in gumb Izvozi, ki se omogoči, ko je tip izbran. -> razdelek 14, Izvoz, SeznamZaposlenih.
+2026-11-04 - Tabela tipk krmilnika: desni stolpec preozek, tabela prevelika -> stran razpolovljena (tipke / predogled),
+             vrstica v dveh vrstah; vizualni konfigurator krmilnika (predogled zaslona). -> razdelek 25, Krmilnik,
+             KrmilnikPredogled.
+2026-11-04 - Testni pogled (Ogled kot) skrit za ikono epruvete v glavi (Super Admin); oblački ikon na krogu ob strani
+             (desno / levo), brez odpiranja navzdol. -> razdelek 26, testniPogled.ts, Glava, Jaz, MeKrog.
+2026-11-04 - Tabela tipk še vedno slabo zložena (mreža je premešala celice) -> vrstica s fiksnimi mesti (flex),
+             širša izbira funkcije. -> razdelek 25, Krmilnik.
+2026-11-04 - Zaključi bazo za produkcijo (test); krmilnik na Raspberry Pi (wifi podjetja) - vse za prvo verzijo in razlaga
+             za začetnika. -> razdelek 27, migracije 020 + 021, /api/krmilnik, Naprave, mapa krmilnik/ (README).

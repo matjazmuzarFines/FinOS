@@ -44,7 +44,7 @@ export function Obvestila() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             role="status"
-            className={`pointer-events-auto flex max-w-md items-center gap-2 overflow-hidden rounded-[14px] border border-l-4 border-white/10 bg-ink-900/95 px-4 py-3 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl text-sm font-semibold text-white ${
+            className={`pointer-events-auto flex max-w-md items-center gap-2 overflow-hidden fos-popup rounded-[14px] border-l-4 px-4 py-3 text-sm font-semibold text-white ${
               o.vrsta === "ok" ? "border-l-ok-500" : "border-l-nok-500"
             }`}
           >

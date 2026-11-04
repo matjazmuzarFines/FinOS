@@ -20,14 +20,14 @@ export type SaldoObdobja = {
   od: string | null;
 };
 
-type Props = { dnevi: DanIzracun[]; statistike: Statistika[]; obdobje: string; saldo: SaldoObdobja; zgoraj?: ReactNode };
+type Props = { dnevi: DanIzracun[]; statistike: Statistika[]; obdobje: string; saldo: SaldoObdobja; zgoraj?: ReactNode; /** Pod "Po statistikah" (npr. okno Dopust). */ podStatistikami?: ReactNode };
 
 /**
  * Povzetek obdobja (mesec / teden): na vrhu okno Saldo (zgoraj), opravljene ure proti obveznosti (urnik), saldo obdobja
  * (presežek, manjko), prenos iz prejšnjega obdobja -> izplačilo -> stanje na koncu, malice, prevozi, ure po statistikah,
  * dnevi po stanjih. Obveznost in saldo štejejo samo zaključeni dnevi (od začetnega stanja naprej).
  */
-export function Povzetek({ dnevi, statistike, obdobje, saldo: sal, zgoraj }: Props) {
+export function Povzetek({ dnevi, statistike, obdobje, saldo: sal, zgoraj, podStatistikami }: Props) {
   const preteceni = dnevi.filter((d) => !d.prihodnji);
   const zakljuceni = dnevi.filter((d) => d.saldo != null && (!sal.od || d.datum >= sal.od));
   const konec = sal.prenos == null ? null : sal.prenos + zakljuceni.reduce((v, d) => v + d.saldo!, 0) - (sal.izplacilo ?? 0);
@@ -125,6 +125,8 @@ export function Povzetek({ dnevi, statistike, obdobje, saldo: sal, zgoraj }: Pro
           <p className="text-xs text-ink-500">Ni štempljanj v tem obdobju.</p>
         )}
       </Panel>
+
+      {podStatistikami}
 
       <Panel naslov="Dnevi" className={ZBITO}>
         <ul className="grid grid-cols-2 gap-x-3 gap-y-1">

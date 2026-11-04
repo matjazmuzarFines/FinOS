@@ -82,7 +82,7 @@ function Spustno({
                   exit={{ opacity: 0, y: mesto.vrh != null ? -6 : 6, scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 420, damping: 32 }}
                   style={{ left: mesto.levo, width: mesto.sirina, top: mesto.vrh, bottom: mesto.dno, maxHeight: mesto.visina }}
-                  className="fixed z-[61] flex flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-[14px] border border-white/10 bg-ink-900/95 p-1.5 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl"
+                  className="fixed z-[61] flex flex-col gap-0.5 overflow-y-auto overscroll-contain fos-popup rounded-[14px] p-1.5"
                 >
                   {!obvezno && (
                   <li>

@@ -95,9 +95,10 @@ export function Domov() {
                 naslov="Moj Fines"
                 pripona="ME"
                 opis="Tvoj osebni prostor: ure, dopusti, prosti dnevi in bolniška na enem mestu."
-                hint="Odpri osebni portal FIN:ME (kmalu)"
+                hint="Odpri osebni portal FIN:ME"
+                href="/moj-fines"
                 icon={UserRound}
-                funkcije={["Moje ure", "Dopust", "Prosti čas", "Bolniška", "Moja kartica"]}
+                funkcije={["Moj čas", "Odsotnosti", "Dovolilnice", "Popravki"]}
                 zamik={0.65}
               />
             </nav>

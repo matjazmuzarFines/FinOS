@@ -11,7 +11,7 @@ import { Znak } from "./Znak";
 import { SLOGAN } from "./Intro";
 
 /** Prijavno okno za zaklenjen del (Administracija, FIN:ME) - v okvirju podstrani. Prijava z e-mailom ali uporabniškim imenom. */
-export function Prijava({ naslov }: { naslov: string }) {
+export function Prijava({ naslov, pripona = "OS" }: { naslov: string; pripona?: string }) {
   const [email, setEmail] = useState("");
   const [geslo, setGeslo] = useState("");
   const [pokaziGeslo, setPokaziGeslo] = useState(false);
@@ -58,7 +58,7 @@ export function Prijava({ naslov }: { naslov: string }) {
             <Image src="/fines-logo.png" alt="FINES d.o.o. logotip" width={136} height={36} priority className="h-auto w-[110px]" />
           </span>
           <div className="flex flex-col items-center gap-1 text-center">
-            <Znak className="text-4xl" />
+            <Znak pripona={pripona} className="text-4xl" />
             <p className="font-display text-lg font-bold text-white">{naslov}</p>
             <p className="text-xs text-ink-400">{SLOGAN}</p>
           </div>
@@ -95,7 +95,7 @@ export function Prijava({ naslov }: { naslov: string }) {
               {napaka}
             </p>
           )}
-          <Button type="submit" hint="Prijavi se v FIN:OS" icon={LogIn} size="lg" disabled={prijavljam} className="mt-1">
+          <Button type="submit" hint={`Prijavi se v FIN:${pripona}`} icon={LogIn} size="lg" disabled={prijavljam} className="mt-1">
             {prijavljam ? "Prijavljam ..." : "Prijava"}
           </Button>
         </motion.form>

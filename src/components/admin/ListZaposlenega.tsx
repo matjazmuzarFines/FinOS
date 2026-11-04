@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, Briefcase, DatabaseZap, KeyRound, LockKeyhole, ShieldCheck, Building2, ChevronRight, CreditCard, DoorOpen, Eye, IdCard, Network, Settings2, UserRound, UserRoundX, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Briefcase, DatabaseZap, KeyRound, LockKeyhole, ShieldCheck, Building2, ChevronRight, CreditCard, DoorOpen, Eye, IdCard, MonitorSmartphone, Network, Settings2, UserRound, UserRoundX, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { GlavaStrani, NaslovRazdelka } from "@/components/ui/GlavaStrani";
 import { Avatar } from "@/components/ui/Avatar";
@@ -18,16 +18,18 @@ import { PoljaKadrovsko } from "./PoljaKadrovsko";
 import { useLahkoUreja } from "@/lib/pravice";
 import { IKONE, useFunkcije } from "@/lib/funkcije";
 import { useFunkcija } from "@/components/Seja";
+import { Kvadratek } from "@/components/cas/Polja";
+import { finMeZa, shraniFinMe, useFinMe, type FinMeNastavitve } from "@/lib/finme";
 import { RAZDELKI, preveriKadrovsko, shraniKadrovsko, spremembKadrovsko, useKadrovsko, VRSTE_POGODBE, type Kadrovsko, type KadrovskoVnos } from "@/lib/kadrovsko";
 import { polnoIme, preveriVnos, type Aplikacija, shraniZaposlenega, useZaposleni, vnosIz, zacetnice, type Zaposleni, type ZaposleniPodatki, type ZaposleniVnos } from "@/lib/zaposleni";
 
 /** Razdelki lista zaposlenega - en vir (zavihki). Nov razdelek = nov vnos tukaj + komponenta. */
 const ZAVIHKI = [
-  { id: "podatki", ime: "Podatki", icon: IdCard, hint: "Osnovni podatki zaposlenega" },
-  { id: "organizacija", ime: "Oddelek in vodja", icon: Network, hint: "Oddelek, vodja in podrejeni zaposleni" },
+  { id: "podatki", ime: "Podatki", icon: IdCard, hint: "Osnovni podatki, prijava, oddelek in vodja, osebni podatki" },
   { id: "zaposlitev", ime: "Zaposlitev", icon: Briefcase, hint: "Pogodba, delovni čas, dopust in izobrazba" },
-  { id: "dostopi", ime: "Dostopi", icon: DoorOpen, hint: "Kartica in dostopi do prostorov" },
-  { id: "nastavitve", ime: "Nastavitve", icon: Settings2, hint: "Nastavitve zaposlenega" },
+  { id: "dostopi", ime: "Dostopi", icon: DoorOpen, hint: "Pravice, aplikacije, kartica in dostopi do prostorov" },
+  // ime se izpiše kot znak FIN:ME
+  { id: "finme", ime: "FIN:ME", icon: Settings2, hint: "Nastavitve Mojega Finesa: virtualno beleženje delovnega časa" },
 ] as const satisfies readonly { id: string; ime: string; icon: LucideIcon; hint: string }[];
 type ZavihekId = (typeof ZAVIHKI)[number]["id"];
 
@@ -103,6 +105,12 @@ function Urejanje({
   const izberi = (t: ZavihekId) => router.replace(t === "podatki" ? pot : `${pot}?zavihek=${t}`, { scroll: false });
 
   const ureja = useLahkoUreja();
+  // FIN:ME nastavitve zaposlenega (fos_zaposleni_finme) - v istem osnutku / SaveBar
+  const fm = useFinMe();
+  const fmPrej = finMeZa(fm, z.id);
+  const [fmVnos, setFmVnos] = useState<FinMeNastavitve | null>(null);
+  const fmTrenutno = fmVnos ?? fmPrej;
+  const fmSprememb = fmVnos && fmVnos.virtualno_belezenje !== fmPrej.virtualno_belezenje ? 1 : 0;
   const prej = vnosIz(z);
   const [vnos, setVnos] = useState<ZaposleniVnos>(prej);
   const [shranjujem, setShranjujem] = useState(false);
@@ -113,7 +121,7 @@ function Urejanje({
   const napakeK = preveriKadrovsko(kVnos);
   const [pokaziNapake, setPokaziNapake] = useState(false);
   const kSprememb = kPrej ? spremembKadrovsko(kVnos, kPrej) : 0;
-  const sprememb = (Object.keys(prej) as (keyof ZaposleniVnos)[]).filter((k) => JSON.stringify(prej[k]) !== JSON.stringify(vnos[k])).length + kSprememb;
+  const sprememb = (Object.keys(prej) as (keyof ZaposleniVnos)[]).filter((k) => JSON.stringify(prej[k]) !== JSON.stringify(vnos[k])).length + kSprememb + fmSprememb;
 
   const shrani = async () => {
     const stNapak = Object.keys(napakeK).length;
@@ -126,6 +134,10 @@ function Urejanje({
     try {
       // kadrovski podatki najprej: po shranjevanju zaposlenega se list znova naloži
       if (kadrovsko && kSprememb) await shraniKadrovsko(z.id, kadrovsko, kVnos);
+      if (fmVnos && fmSprememb) {
+        await shraniFinMe(z.id, fmVnos);
+        setFmVnos(null);
+      }
       await shraniZaposlenega(z.id, vnos, prej);
       if (kSprememb) osveziKadrovsko();
       obvesti(`Shranjeno: ${vnos.ime.trim()} ${vnos.priimek.trim()}.`);
@@ -223,8 +235,14 @@ function Urejanje({
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
-                <t.icon className="relative h-4 w-4" aria-hidden />
-                <span className="relative">{t.ime}</span>
+                {t.id === "finme" ? (
+                  <Znak pripona="ME" className="relative text-sm" />
+                ) : (
+                  <>
+                    <t.icon className="relative h-4 w-4" aria-hidden />
+                    <span className="relative">{t.ime}</span>
+                  </>
+                )}
               </button>
             );
           })}
@@ -233,11 +251,10 @@ function Urejanje({
 
       <AnimatePresence mode="wait">
         <motion.div key={zavihek} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
-          {zavihek === "podatki" && <Podatki z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} {...k} />}
+          {zavihek === "podatki" && <Podatki z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} podrejeni={podrejeni} podatki={podatki} {...k} />}
           {zavihek === "zaposlitev" && <Zaposlitev ureja={ureja} {...k} />}
-          {zavihek === "organizacija" && <Organizacija z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} podrejeni={podrejeni} podatki={podatki} />}
           {zavihek === "dostopi" && <Dostopi z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} aplikacije={podatki.aplikacije} />}
-          {zavihek === "nastavitve" && <Nastavitve z={z} />}
+          {zavihek === "finme" && <FinMe z={z} v={fmTrenutno} prej={fmPrej} nastavi={(x) => setFmVnos({ ...fmTrenutno, ...x })} ureja={ureja} vir={fm.vir} />}
         </motion.div>
       </AnimatePresence>
 
@@ -246,6 +263,7 @@ function Urejanje({
         shranjujem={shranjujem}
         onShrani={shrani}
         onPreklici={() => {
+          setFmVnos(null);
           setVnos(prej);
           setKVnos(kPrej ?? {});
           setPokaziNapake(false);
@@ -255,7 +273,7 @@ function Urejanje({
   );
 }
 
-function Podatki({ z, vnos, nastavi, ureja, ...k }: { z: Zaposleni } & UrejanjeProps & KadrovskoProps) {
+function Podatki({ z, vnos, nastavi, ureja, podrejeni, podatki, ...k }: { z: Zaposleni; podrejeni: Zaposleni[]; podatki: ZaposleniPodatki } & UrejanjeProps & KadrovskoProps) {
   return (
     <section className="flex flex-col gap-4">
       <NaslovRazdelka>Osnovni podatki</NaslovRazdelka>
@@ -276,6 +294,7 @@ function Podatki({ z, vnos, nastavi, ureja, ...k }: { z: Zaposleni } & UrejanjeP
           Geslo se shrani zaščiteno (Supabase Auth) in ga ni mogoče prebrati - lahko ga samo zamenjaš. Zaposleni se prijavi z e-mailom ali uporabniškim imenom.
         </p>
       </div>
+      <Organizacija z={z} vnos={vnos} nastavi={nastavi} ureja={ureja} podrejeni={podrejeni} podatki={podatki} />
       <KadrovskiRazdelki zavihek="podatki" ureja={ureja} {...k} />
     </section>
   );
@@ -388,7 +407,7 @@ function Organizacija({ z, vnos, nastavi, ureja, podrejeni, podatki }: { z: Zapo
   const vOddelku = vnos.id_oddelek != null ? podatki.zaposleni.filter((p) => p.id_oddelek === vnos.id_oddelek).length : 0;
   const vodja = z.vodja ? podatki.poId.get(z.vodja.id) : undefined;
   return (
-    <section className="flex flex-col gap-4">
+    <>
       <NaslovRazdelka>Oddelek in vodja</NaslovRazdelka>
       <div className="fos-glass grid gap-4 rounded-[18px] p-4 sm:grid-cols-3 sm:p-5">
         <PoljaOrganizacije vnos={vnos} nastavi={nastavi} ureja={ureja} podatki={podatki} idZaposlenega={z.id} />
@@ -418,16 +437,16 @@ function Organizacija({ z, vnos, nastavi, ureja, podrejeni, podatki }: { z: Zapo
       ) : (
         <p className="px-1 text-sm text-ink-500">{polnoIme(z)} ni vodja nobenemu zaposlenemu.</p>
       )}
-    </section>
+    </>
   );
 }
 
-/** Nastavitve zaposlenega: na vrhu pravice (funkcije - samo pregled, urejajo se v Nastavitve -> Pravice in dostopi). */
-function Nastavitve({ z }: { z: Zaposleni }) {
+/** Pravice zaposlenega (funkcije - samo pregled, urejajo se v Nastavitve -> Pravice in dostopi); na vrhu zavihka Dostopi. */
+function Pravice({ z }: { z: Zaposleni }) {
   const router = useRouter();
   const { funkcije } = useFunkcije();
   return (
-    <section className="flex flex-col gap-4">
+    <>
       <NaslovRazdelka
         desno={
           <Button hint="Uredi funkcije zaposlenega v Pravicah in dostopih" variant="neutral" icon={KeyRound} onClick={() => router.push(`/administracija/nastavitve/pravice?zaposleni=${z.id}`)}>
@@ -458,9 +477,33 @@ function Nastavitve({ z }: { z: Zaposleni }) {
         })}
       </div>
       {!z.id_uporabnika && <p className="text-xs text-warn-500">Zaposleni še nima računa - funkcije lahko dobi, ko mu v razdelku Podatki vpišeš e-mail in geslo (Prijava v FIN:ME).</p>}
+    </>
+  );
+}
 
-      <NaslovRazdelka>Ostale nastavitve</NaslovRazdelka>
-      <PraznoStanje icon={Settings2} naslov="Kmalu" opis="Tu bodo ostale nastavitve zaposlenega (npr. delovni čas)." />
+/** Zavihek FIN:ME: nastavitve Mojega Finesa za zaposlenega (spremembe -> SaveBar). */
+function FinMe({ z, v, prej, nastavi, ureja, vir }: { z: Zaposleni; v: FinMeNastavitve; prej: FinMeNastavitve; nastavi: (p: Partial<FinMeNastavitve>) => void; ureja: boolean; vir: string }) {
+  const spremenjeno = v.virtualno_belezenje !== prej.virtualno_belezenje;
+  return (
+    <section className="flex flex-col gap-4">
+      <NaslovRazdelka desno={vir === "test" ? <span className="text-xs font-semibold text-warn-500" title="Tabela fos_zaposleni_finme še ni v bazi (zaženi migracijo 020) - nastavitev velja v tem brskalniku">Testni podatki</span> : undefined}>
+        Delovni čas
+      </NaslovRazdelka>
+      <label
+        className={`fos-glass flex cursor-pointer items-start gap-4 rounded-[18px] p-4 sm:p-5 ${v.virtualno_belezenje ? "border-fines-400/50 shadow-[0_0_40px_-18px_rgb(238_122_58/0.8)]" : ""} ${spremenjeno ? "ring-1 ring-warn-500/60" : ""} ${ureja ? "" : "cursor-default"}`}
+      >
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${v.virtualno_belezenje ? "fos-fines-fill text-snow" : "bg-white/[0.06] text-ink-400"}`}>
+          <MonitorSmartphone className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="font-display text-lg font-bold text-white">Virtualno beleženje delovnega časa</span>
+          <span className="text-sm text-ink-400">
+            {polnoIme(z)} lahko štemplja v Mojem Finesu (Delovna ura: prihod, odhod in tipke) - npr. delo od doma ali na terenu. Brez tega štemplja samo na krmilniku.
+          </span>
+          {!z.id_uporabnika && <span className="mt-1 text-xs text-warn-500">Zaposleni še nima računa za FIN:ME (Podatki → Prijava v FIN:ME).</span>}
+        </span>
+        <Kvadratek vklop={v.virtualno_belezenje} onChange={ureja ? (x) => nastavi({ virtualno_belezenje: x }) : undefined} hint={v.virtualno_belezenje ? "Onemogoči virtualno beleženje" : "Omogoči virtualno beleženje"} disabled={!ureja} />
+      </label>
     </section>
   );
 }
@@ -470,6 +513,7 @@ function Dostopi({ z, vnos, nastavi, ureja, aplikacije }: { z: Zaposleni; aplika
     nastavi({ aplikacije: (vklop ? [...vnos.aplikacije, id] : vnos.aplikacije.filter((a) => a !== id)).sort((a, b) => a - b) });
   return (
     <section className="flex flex-col gap-4">
+      <Pravice z={z} />
       <NaslovRazdelka desno={<span className="text-xs tabular-nums text-ink-400">{vnos.aplikacije.length + (z.super_admin ? 1 : 0)}</span>}>Aplikacije</NaslovRazdelka>
       <div className="fos-glass flex flex-col gap-3 rounded-[18px] p-4 sm:p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

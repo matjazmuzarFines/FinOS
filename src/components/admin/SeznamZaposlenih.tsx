@@ -9,6 +9,10 @@ import { DodajZaposlenega } from "./ZaposleniObrazec";
 import { useLahkoUreja } from "@/lib/pravice";
 import { Button } from "@/components/ui/Button";
 import { GlavaStrani } from "@/components/ui/GlavaStrani";
+import { Izvoz } from "@/components/ui/Izvoz";
+import { useFunkcije } from "@/lib/funkcije";
+import { useFinMe } from "@/lib/finme";
+import { izvoziPravice } from "@/lib/izvozPravic";
 import { IskalnoPolje, POLJE, PoljeNaslov } from "@/components/ui/Polje";
 import { Avatar } from "@/components/ui/Avatar";
 import { PraznoStanje } from "@/components/ui/PraznoStanje";
@@ -42,6 +46,8 @@ export function SeznamZaposlenih() {
   const lahkoUreja = useLahkoUreja();
   const [dodaj, setDodaj] = useState(false);
   const router = useRouter();
+  const { funkcije } = useFunkcije();
+  const finme = useFinMe();
   const [f, setF] = useState<Filtri>(spomin);
   const nastavi = (p: Partial<Filtri>) =>
     setF((s) => {
@@ -88,6 +94,19 @@ export function SeznamZaposlenih() {
         opis={podatki ? `${zaposleni.length} zaposlenih v ${oddelki.length} oddelkih. Klikni zaposlenega za njegov list.` : "Seznam vseh zaposlenih in njihovih podatkov."}
         akcije={
           <>
+            {podatki && (
+              <Izvoz
+                spomin="zaposleni"
+                izvozi={[
+                  {
+                    id: "pravice",
+                    ime: "Izvoz pravic po uporabnikih",
+                    opis: `Vse pravice in dostopi (DA / NE) za ${prikazani.length} prikazanih zaposlenih: račun, funkcije, FIN:ME, aplikacije.`,
+                    tipi: [{ tip: "xlsx", izvozi: () => izvoziPravice(prikazani, podatki, funkcije, finme) }],
+                  },
+                ]}
+              />
+            )}
             <Button hint="Odpri drevo vodij in podrejenih" variant="neutral" icon={Network} onClick={() => router.push("/administracija/zaposleni/hierarhija")}>
               Prikaz hierarhije
             </Button>

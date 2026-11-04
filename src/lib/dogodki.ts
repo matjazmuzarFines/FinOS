@@ -70,6 +70,9 @@ async function naloziDogodke(id: number, od: string, doo: string) {
  * Dogodki osebe za obdobje od-do (YYYY-MM-DD): ob prvem klicu in razširitvi obdobja se preberejo iz baze.
  * Vrne stanje (vir: nalagam / baza / test).
  */
+/** Vir dogodkov (baza / test) - npr. potrjen popravek v testnem načinu se izvede v brskalniku. */
+export const virDogodkov = () => stanje.vir;
+
 export function useDogodki(idZaposlenega: number | null, od: string, doo: string): Stanje {
   const s = useSyncExternalStore(narocnina, () => stanje, () => stanje);
   const n = idZaposlenega != null ? s.nalozeno.get(idZaposlenega) : undefined;
@@ -81,7 +84,8 @@ export function useDogodki(idZaposlenega: number | null, od: string, doo: string
   return s;
 }
 
-/** Ponovno branje naloženega obdobja osebe (po ročnem dogodku / spregledu). */
+/** Ponovno branje naloženega obdobja osebe (po ročnem dogodku / spregledu ali potrjenem popravku v bazi). */
+export const osveziDogodke = (id: number) => osvezi(id);
 const osvezi = (id: number) => {
   const n = stanje.nalozeno.get(id);
   return n ? naloziDogodke(id, n.od, n.do) : Promise.resolve();
@@ -103,6 +107,36 @@ export async function dodajDogodek(v: NovDogodek) {
     .insert({ id_zaposlenega: v.idZaposlenega, cas: cas.toISOString(), datum: v.datum, id_tipke: v.idTipke, vir: "rocno", komentar: v.komentar.trim() });
   if (error) throw new Error(error.message);
   await osvezi(v.idZaposlenega);
+}
+
+/**
+ * Žig iz Mojega Finesa (Delovna ura, virtualno beleženje): čas = zdaj, vir = online. V bazi čas določi strežnik
+ * (fos_zig_online - ne da se ponarediti), brez baze samo v brskalniku.
+ */
+export async function zigOnline(idZaposlenega: number, idTipke: number | null) {
+  const zdaj = new Date();
+  if (stanje.vir !== "baza") {
+    const z: Rocni = { id_zaposlenega: idZaposlenega, datum: isoDatum(zdaj), zig: { id: `online|${Date.now()}|${++zaporedje}`, cas: zdaj.getHours() * 60 + zdaj.getMinutes(), id_tipke: idTipke, vir: "online" } };
+    return spremeni((s) => ({ ...s, rocni: [...s.rocni, z] }));
+  }
+  const { error } = await getSupabase().rpc("fos_zig_online", { p_id_tipke: idTipke });
+  if (error) throw new Error(error.message);
+  await osvezi(idZaposlenega);
+}
+
+/** Prekliči zadnji pritisk (tipka s funkcijo "preklici"): zadnji online žig danes se spregleda. Vrne čas preklicanega ali null. */
+export async function prekliciZadnjiOnline(idZaposlenega: number, zigiDanes: Zig[]): Promise<number | null> {
+  const zadnji = [...zigiDanes].reverse().find((z) => z.vir === "online" && !z.spregledan);
+  if (!zadnji) return null;
+  if (stanje.vir !== "baza") {
+    if (zadnji.id.startsWith("online|")) spremeni((s) => ({ ...s, rocni: s.rocni.filter((r) => r.zig.id !== zadnji.id) }));
+    else await spregledaj(idZaposlenega, zadnji.id, true);
+    return zadnji.cas;
+  }
+  const { error } = await getSupabase().rpc("fos_preklici_zadnji_zig");
+  if (error) throw new Error(error.message);
+  await osvezi(idZaposlenega);
+  return zadnji.cas;
 }
 
 /** Spregleda dogodek (ali prekliče spregled). Dogodek ostane, izračun ga ne upošteva. */

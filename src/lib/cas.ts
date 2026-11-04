@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarOff, CircleAlert, CircleDashed, LogOut, MessageSquare, Moon, Pencil, TriangleAlert, UserCheck, UserX, type LucideIcon } from "lucide-react";
+import { CalendarOff, CircleAlert, CircleDashed, LogOut, MessageSquare, Moon, Pencil, Send, TicketCheck, TriangleAlert, UserCheck, UserX, type LucideIcon } from "lucide-react";
 import { idDneva, ikonaStatistike, imePraznika as praznikNa, type CasNastavitve, type Interval, type Statistika, type Urnik } from "./casNastavitve";
 import { imaLastnost, knjizi, type NapakaKnjizenja, type ZigKnjizen } from "./knjizenje";
 
@@ -95,6 +95,8 @@ export const OZNAKE = {
   komentar: { ime: "Komentar", ikona: MessageSquare, barva: "#60a5fa" },
   napaka: { ime: "Napaka", ikona: TriangleAlert, barva: "#ef4444" },
   manjka: { ime: "Manjka odhod", ikona: LogOut, barva: "#ef4444" },
+  zahtevek: { ime: "Zahtevek čaka", ikona: Send, barva: "#f59e0b" },
+  dovolilnica: { ime: "Dovolilnica", ikona: TicketCheck, barva: "#22c55e" },
 } satisfies Record<string, { ime: string; ikona: LucideIcon; barva: string }>;
 
 // ---------------------------------------------------------------------------------------------------------------

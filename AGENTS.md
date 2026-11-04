@@ -72,6 +72,16 @@
   - `017_uvoz_zaposlenih.sql`: enkraten uvoz iz poročila oktober 2026 - kartice 15 obstoječim (Drinić = Drnić, Muzar = Mužar,
     Živanič = Živanić), 24 novih zaposlenih z oddelkom, urnik samo tistim brez urnika. Izpuščen Prokhorov (Nezaposleni);
     serviserji brez urnika (urnika "Gibljivo 24 ur servis" v bazi ni). Pri uvozu dogodkov izpusti Napaka, Nedovoljen vhod, Test.
+  - `020_fin_me.sql` (migrations): FIN:ME - `fos_zahtevki` (vrsta odsotnost / dovolilnica / popravek,
+    status oddano / potrjeno / zavrnjeno / preklicano, id_oddal, id_odlocil, razlog zavrnitve) + `fos_zahtevki_postavke`
+    (popravek: dodaj žig, spreglej žig, cel dan v statistiki); pišejo SAMO funkcije `fos_oddaj_zahtevek` (zase = oddano,
+    vodja za podrejenega = potrjeno), `fos_odloci_zahtevek` (vodja za ekipo, sebe ne; zavrnitev z razlogom; potrjen popravek
+    doda / spregleda dogodke), `fos_preklici_zahtevek`. `fos_dopust_leta` (dni letnega in lanskega dopusta po letih,
+    `fos_nastavi_dopust_leta`). Lastnosti `celodnevna_odsotnost`, `dovolilnica`, `letni_dopust`; statistiki OCE, KUR.
+    DOSTOPI po hierarhiji: `fos_moj_zaposleni()`, `fos_moja_ekipa()` (posredni podrejeni), `fos_moji_vidni()` (jaz + ekipa),
+    `fos_ureja_fin_os()` (Super Admin / račun brez zaposlenega); `fos_ima_dostop` odpre tabele `fos_finme_tabele()` vsem
+    zaposlenim, omejevalne politike `fos_finme_*` omejijo vrstice (osebne: jaz + ekipa) in pisanje (skupne: samo Admin;
+    dogodki: Admin ali vodja za ekipo). NOVA FIN:ME TABELA = dodaj jo v `fos_finme_tabele()` in v ustrezen seznam politik.
   - `001_zaposleni.sql`: `fos_oddelek` (id, ime_oddelka), `fos_zaposleni` (id, ime, priimek, st_kartice, id_oddelek, id_vodja).
     Kartica je enolična med vidnimi zaposlenimi.
   - `002_vodje.sql`: `fos_vodje` (id, id_zaposlenega) = kdo je vodja; `ln_fos_zaposleni_vodja` (id_zaposlenega, id_vodja -> fos_vodje.id)
@@ -180,7 +190,31 @@
 - 4.01: Pravice in dostopi - funkcije Super Admin in Kadrovanje, osebni podatki samo s Kadrovanjem (008).
 - 3.02: kadrovski podatki na listu zaposlenega (Podatki: osebno, prebivališče, izplačilo, kontakt v sili; zavihek Zaposlitev).
 - 3.01: Nastavitve -> Podatki baze (fos_oddelek, fos_aplikacije): dodaj / uredi vrstico, uvoz in izvoz CSV, navodila.
-- FIN:ME: ko bo narejen, dodaj politike za lastne podatke zaposlenega (zdaj ima račun zaposlenega brez Super Admina dostop do ničesar).
+- FIN:ME: politike za lastne podatke in ekipo so v osnutku 020 (dokler ni zagnan, ima račun zaposlenega brez Super Admina
+  dostop do ničesar - FIN:ME preizkusi Super Admin z "Ogled kot").
+- 7.01: produkcija - 020 in 021 v migrations (osnutkov ni). `021_krmilnik_naprave.sql`: `fos_krmilniki` (ključ samo kot
+  sha256, ustvari `fos_nova_naprava` / `fos_nov_kljuc_naprave` - pokaže se enkrat), `fos_dogodki.id_krmilnika` +
+  `lokalni_id` (enoličen - ponovno poslan žig se ne podvoji), `fos_krmilnik_zig` / `fos_krmilnik_info` (samo
+  service_role; kartica brez vodilnih ničel, neznana kartica se zapiše s st_kartice, preklic 5 min, dan prihoda).
+  `/api/krmilnik` (Bearer ključ naprave): GET nastavitve + tipke s prikazom krmilnik, POST žigi (paket do 200).
+  Nastavitve -> Krmilnik -> `Naprave.tsx` in `KrmilnikPredogled.tsx` (isti izris kot krmilnik/ui - ob spremembi uskladi oba). Mapa `krmilnik/` = program za Raspberry Pi (Python brez paketov:
+  SQLite čakalna vrsta, lokalni zaslon http://127.0.0.1:8080, Chromium kiosk, `namesti.sh`, README za začetnika).
+  Nova verzija programa = `VERZIJA` v fines_krmilnik.py (vidna v Napravah).
+- 6.03: Delovna ura (`src/components/me/DelovnaUra.tsx`: `zigOnline` / `prekliciZadnjiOnline` v dogodki.ts, tipke s
+  prikazom `fin_me`); FIN:ME nastavitve zaposlenega `src/lib/finme.ts` (zavihek FIN:ME na listu); zahtevki imajo `akcija`
+  (nov / sprememba / izbris) in `id_prejsnji`; izvoz Excel brez knjižnice `src/lib/xlsx.ts`, komponenta `Izvoz` (ui: gumb Izvozi -> okno s seznamom `IzvozDef`
+  {id, ime, opis, tipi: [{tip: xlsx/pdf/docx/txt/csv/zip/eml, izvozi}]}),
+  `izvozPravic.ts` (nova pravica = nov stolpec). Zavihki lista zaposlenega: Podatki (z Oddelkom in vodjo), Zaposlitev,
+  Dostopi (s Pravicami), FIN:ME.
+- 6.02: vstop FIN:ME = krog (`MeKrog`), prizori Fineseka `src/components/finesek/MePrizori.tsx` (Finesek ima zdaj `roki`,
+  `rokaStran`, `vRoki`, `dodatek`, pozo `potuje`), popupi `fos-popup` (globals.css). POZOR: `next dev` sam doda blok
+  "nextjs-agent-rules" na konec AGENTS.md - pred commitom ga odstrani (za preizkus raje `next build` + `next start`).
+- 6.01: FIN:ME (Moj Fines, `/moj-fines`): `ME_VSTOPI` v nav.ts, `JazOkvir` / `useJaz()`
+  (`src/components/me/Jaz.tsx`: zaposleni računa, ekipa = posredni podrejeni, vodja, Super Admin "Ogled kot"),
+  Moj čas = `RegistracijaCasa` z `idJaz` (svoj dan = predlog popravka v `DanOkno` nacin "predlog", dan podrejenega =
+  urejanje, desni klik = `MeniDneva`, `?odpri=` odpre dan), zahtevki `ZahtevkiStran` (`src/components/me/Zahtevki.tsx`,
+  `src/lib/zahtevki.ts`: `zZahtevki` vnese potrjene odsotnosti v koledar), okno Dopust (`DopustPanel`, `src/lib/dopust.ts`).
+  Zahtevki brez baze v localStorage (`fos_zahtevki_test`).
 - 5.01: Registracija časa - koledar (testni podatki), nastavitve Urniki in Statistike (testni podatki), osnutek baze.
 - 5.02: interval = okno od-do z obvezno statistiko, Prazniki (standardni + posebni), migracija 009 statistike.
 - 5.05: urniki, intervali, prazniki v bazi (010); Urniki zaposlenih (zaposleni -> urnik). Štempljanja še testna.
@@ -191,4 +225,6 @@
 - 5.07: Nastavitve -> Krmilnik (tipke, 013), vrsta intervala Prihod / Izhod / Tipka (014), knjiženje tipk (okno za oba
   žiga, seštej trajanje + prekoračitev), Kopiraj interval.
 - 5.03: Statistike v bazi; delo čez polnoč v dan prihoda; Urniki = seznam vseh intervalov s + v urnik; koledar bolj zbit.
-- Moj Fines še ne vodi nikamor.
+- FIN:ME: preprost uporabnik - velike ikone, kratke jasne besede, malo gumbov (ne kot nastavitve FIN:OS). Video navodila kasneje.
+  Prisotnost in Povzetek odsotnosti (pregleda za vodje) zaenkrat NE. Omejitev prenosa salda (mesečna / letna), dovoli
+  negativni prenos (vedno dovoljeno) in rok za lanski dopust - NE (dogovor 2026-11-04).

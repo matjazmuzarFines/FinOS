@@ -217,22 +217,27 @@ const LASTNOSTI: Lastnost[] = [
   { id: 2, koda: "prevozi", ime: "Štej prevoze", opis: "Dan s to statistiko prinese povračilo za prevoz na delo (1 na delovni dan v podjetju)." },
   { id: 3, koda: "malice", ime: "Štej malice", opis: "Čas v tej statistiki se šteje v ure za malico (nad 4 h 1 malica, nad 12 h 2)." },
   { id: 4, koda: "lanski_dopust", ime: "Štej lanski dopust", opis: "Odsotnost se najprej odšteje od lanskega (prenesenega) dopusta." },
+  { id: 5, koda: "celodnevna_odsotnost", ime: "Celodnevna odsotnost", opis: "Razlog se ponudi v FIN:ME -> Odsotnosti (cel dan ali več dni)." },
+  { id: 6, koda: "dovolilnica", ime: "Razlog dovolilnice", opis: "Razlog se ponudi v FIN:ME -> Dovolilnice (izhod med delom)." },
+  { id: 7, koda: "letni_dopust", ime: "Štej letni dopust", opis: "Dan se odšteje od letnega dopusta (okno Dopust v registraciji časa)." },
 ];
 
 const s = (id: number, koda: string, ime: string, barva: string, ikona: string, lastnosti: number[], opis: string): Statistika => ({ id, koda, ime, opis, barva, ikona, lastnosti, visible: true });
 const STATISTIKE: Statistika[] = [
   s(1, "DELO", "Delo po urniku", "#22c55e", "briefcase", [1, 2, 3], "Standardni prihod in odhod na delo v podjetju."),
   s(2, "DOM", "Delo od doma", "#14b8a6", "house", [1, 3], "Delo od doma - štempljanje prek FIN:ME, brez prevoza."),
-  s(3, "SLP", "Službena pot", "#3b82f6", "plane", [1, 3], "Službena pot po potnem nalogu."),
-  s(4, "SLO", "Službena odsotnost", "#8b5cf6", "building", [1, 2, 3], "Službeni izhod med delovnim časom (stranka, banka, pošta ...)."),
-  s(5, "ZAS", "Zasebna odsotnost", "#ef4444", "door-open", [], "Zasebni izhod med delovnim časom - ne šteje v delovni čas."),
+  s(3, "SLP", "Službena pot", "#3b82f6", "plane", [1, 3, 5], "Službena pot po potnem nalogu."),
+  s(4, "SLO", "Službena odsotnost", "#8b5cf6", "building", [1, 2, 3, 6], "Službeni izhod med delovnim časom (stranka, banka, pošta ...)."),
+  s(5, "ZAS", "Zasebna odsotnost", "#ef4444", "door-open", [6], "Zasebni izhod med delovnim časom - ne šteje v delovni čas."),
   s(6, "MAL", "Malica", "#eab308", "utensils", [1, 3], "Odmor za malico (plačan, šteje v delovni čas)."),
-  s(7, "BOL", "Bolniška", "#b91c1c", "thermometer", [1], "Bolniška odsotnost (nadomestilo plače)."),
-  s(8, "DOP", "Redni dopust", "#0ea5e9", "tree-palm", [1], "Letni dopust tekočega leta."),
-  s(9, "LDOP", "Lanski dopust", "#38bdf8", "sun", [1, 4], "Preneseni dopust iz prejšnjega leta."),
-  s(10, "IZD", "Izredni dopust", "#f59e0b", "calendar-heart", [1], "Izredni plačani dopust (poroka, selitev, smrt v družini ...)."),
-  s(11, "POR", "Porodniški dopust", "#ec4899", "baby", [], "Porodniški in starševski dopust."),
-  s(12, "IZS", "Izredno stanje", "#f97316", "siren", [1], "Izredne razmere (naravna nesreča, višja sila)."),
+  s(7, "BOL", "Bolniška", "#b91c1c", "thermometer", [1, 5], "Bolniška odsotnost (nadomestilo plače)."),
+  s(8, "DOP", "Redni dopust", "#0ea5e9", "tree-palm", [1, 5, 7], "Letni dopust tekočega leta."),
+  s(9, "LDOP", "Lanski dopust", "#38bdf8", "sun", [1, 4, 5], "Preneseni dopust iz prejšnjega leta."),
+  s(10, "IZD", "Izredni dopust", "#f59e0b", "calendar-heart", [1, 5], "Izredni plačani dopust (poroka, selitev, smrt v družini ...)."),
+  s(11, "POR", "Porodniški dopust", "#ec4899", "baby", [5], "Porodniški in starševski dopust."),
+  s(12, "IZS", "Izredno stanje", "#f97316", "siren", [1, 5], "Izredne razmere (naravna nesreča, višja sila)."),
+  s(13, "OCE", "Očetovski dopust", "#6366f1", "baby", [5], "Očetovski dopust (nadomestilo plače)."),
+  s(14, "KUR", "Koriščenje ur", "#64748b", "hourglass", [5], "Prost dan iz salda ur - ne šteje v delovno obveznost (saldo se zmanjša)."),
 ];
 
 const DNEVI: Dan[] = [
@@ -248,13 +253,13 @@ const DNEVI: Dan[] = [
 
 const t = (id: number, tipka: number, besedilo: string, prikaz: MestoTipke[] = ["krmilnik"], funkcija: FunkcijaTipke | null = null): Tipka => ({ id, tipka, besedilo, prikaz, funkcija, visible: true });
 const TIPKE: Tipka[] = [
-  t(1, 1, "Poslovni izhod"),
-  t(2, 2, "Privatni izhod"),
-  t(3, 4, "Info", ["krmilnik"], "info"),
-  t(4, 5, "Odmor"),
-  t(5, 9, "Prekliči", ["krmilnik"], "preklici"),
+  t(1, 1, "Poslovni izhod", ["krmilnik", "fin_me"]),
+  t(2, 2, "Privatni izhod", ["krmilnik", "fin_me"]),
+  t(3, 4, "Info", ["krmilnik", "fin_me"], "info"),
+  t(4, 5, "Odmor", ["krmilnik", "fin_me"]),
+  t(5, 9, "Prekliči", ["krmilnik", "fin_me"], "preklici"),
   t(6, 101, "Delo od doma", ["fin_me"]),
-  t(7, 3, "Izredno"),
+  t(7, 3, "Izredno", ["krmilnik", "fin_me"]),
 ];
 
 const i = (id: number, vrsta: VrstaIntervala, ime: string, prikazno_ime: string, cas_od: string, cas_do: string, dnevi: number[], stat: number, opis = "", dodatno: Partial<Interval> = {}): Interval => ({

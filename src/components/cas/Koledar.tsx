@@ -15,13 +15,13 @@ import { CasovnaLinija, OsUr } from "./CasovnaLinija";
 const MREZA =
   "grid grid-cols-[1.25rem_2.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 [grid-template-areas:'i_d_s_o_c'_'t_t_t_t_t'] sm:grid-cols-[1.25rem_2.25rem_minmax(0,1fr)_6rem_2rem_1.75rem] sm:gap-x-2.5 sm:[grid-template-areas:'i_d_t_s_o_c']";
 
-type Props = { dnevi: DanIzracun[]; statistike: Statistika[]; velik: boolean; zdajMin: number; onOdpri: (d: DanIzracun) => void };
+type Props = { dnevi: DanIzracun[]; statistike: Statistika[]; velik: boolean; zdajMin: number; onOdpri: (d: DanIzracun) => void; /** Desni klik na dan (meni dneva, FIN:ME). */ onMeni?: (d: DanIzracun, x: number, y: number) => void };
 
 /**
  * Koledar dni (mesec ali teden): vrstica za vsak dan, os ur zgoraj (lepljiva), tedni ločeni s tanko sivo črto.
  * Puščica levo razpre dogodke dneva (interval, knjižen in dejanski čas, statistika); klik na vrstico odpre okno dneva.
  */
-export function Koledar({ dnevi, statistike, velik, zdajMin, onOdpri }: Props) {
+export function Koledar({ dnevi, statistike, velik, zdajMin, onOdpri, onMeni }: Props) {
   const [razprti, setRazprti] = useState<ReadonlySet<string>>(new Set());
   const preklopi = (datum: string) =>
     setRazprti((r) => {
@@ -59,7 +59,7 @@ export function Koledar({ dnevi, statistike, velik, zdajMin, onOdpri }: Props) {
         {dnevi.map((d, i) => (
           <Fragment key={d.datum}>
             {i > 0 && danVTednu(d.datum) === 1 && <li aria-hidden className="mx-1 my-1 h-px bg-[linear-gradient(90deg,transparent,rgb(154_154_161/0.35)_8%,rgb(154_154_161/0.35)_92%,transparent)]" />}
-            <DanVrstica d={d} statistike={statistike} velik={velik} zdajMin={zdajMin} zamik={i * 0.014} razprt={razprti.has(d.datum)} onRazpri={() => preklopi(d.datum)} onOdpri={onOdpri} />
+            <DanVrstica d={d} statistike={statistike} velik={velik} zdajMin={zdajMin} zamik={i * 0.014} razprt={razprti.has(d.datum)} onRazpri={() => preklopi(d.datum)} onOdpri={onOdpri} onMeni={onMeni} />
           </Fragment>
         ))}
       </ul>
@@ -67,9 +67,9 @@ export function Koledar({ dnevi, statistike, velik, zdajMin, onOdpri }: Props) {
   );
 }
 
-type VrsticaProps = { d: DanIzracun; statistike: Statistika[]; velik: boolean; zdajMin: number; zamik: number; razprt: boolean; onRazpri: () => void; onOdpri: (d: DanIzracun) => void };
+type VrsticaProps = { d: DanIzracun; statistike: Statistika[]; velik: boolean; zdajMin: number; zamik: number; razprt: boolean; onRazpri: () => void; onOdpri: (d: DanIzracun) => void; onMeni?: Props["onMeni"] };
 
-function DanVrstica({ d, statistike, velik, zdajMin, zamik, razprt, onRazpri, onOdpri }: VrsticaProps) {
+function DanVrstica({ d, statistike, velik, zdajMin, zamik, razprt, onRazpri, onOdpri, onMeni }: VrsticaProps) {
   const S = d.stanje.ikona;
   const stat = (id: number | null) => statistike.find((s) => s.id === id);
   const ozadje = d.danes
@@ -95,7 +95,15 @@ function DanVrstica({ d, statistike, velik, zdajMin, zamik, razprt, onRazpri, on
         <button
           type="button"
           onClick={() => onOdpri(d)}
-          title={`Podrobnosti in urejanje dneva ${oznakaDneva(d.datum)}`}
+          onContextMenu={
+            onMeni
+              ? (e) => {
+                  e.preventDefault();
+                  onMeni(d, e.clientX, e.clientY);
+                }
+              : undefined
+          }
+          title={onMeni ? `Podrobnosti dneva ${oznakaDneva(d.datum)} - desni klik: popravek, odsotnost` : `Podrobnosti in urejanje dneva ${oznakaDneva(d.datum)}`}
           className={`${MREZA} min-w-0 flex-1 rounded-[10px] border px-2 text-left transition-all duration-300 hover:border-fines-400/40 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fines-400 ${velik ? "py-2" : "py-1"} ${ozadje} ${razprt ? "border-fines-400/30" : ""}`}
         >
           {/* stanje z ikono */}

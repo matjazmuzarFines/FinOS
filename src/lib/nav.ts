@@ -1,4 +1,4 @@
-import { CalendarClock, CalendarRange, Database, Hourglass, Keyboard, KeyRound, Settings, Tags, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, CalendarClock, CalendarPlus, CalendarRange, Clock, ClockPlus, Database, DoorOpen, EyeOff, FilePenLine, Hourglass, Keyboard, KeyRound, LogIn, MousePointerClick, Scale, Settings, Stethoscope, Tags, TicketCheck, TreePalm, Users, type LucideIcon } from "lucide-react";
 
 /**
  * Navigacija FIN:OS - en vir za ploščice, drobtine in gumb nazaj.
@@ -107,13 +107,75 @@ export const REGISTRACIJA_NASTAVITVE: { naslov: string; ploscice: Ploscica[] }[]
   },
 ];
 
+export const MOJ_FINES = { href: "/moj-fines", naslov: "Moj Fines" };
+
+/**
+ * Vstopi v FIN:ME (Moj Fines): velike kartice za preprostega uporabnika - malo besed, jasne ikone. Ob hoverju se nad
+ * kartico pokaže oblaček s ključnimi besedami (kaj tu narediš). Nov razdelek = nov vnos.
+ */
+export type MeVstop = { href: string; naslov: string; opis: string; hint: string; icon: LucideIcon; kljucne: { ikona: LucideIcon; besedilo: string }[] };
+export const ME_VSTOPI: MeVstop[] = [
+  {
+    href: "/moj-fines/cas",
+    naslov: "Moj čas",
+    opis: "Kdaj si prišel in odšel ter koliko ur imaš.",
+    hint: "Odpri pregled svojega delovnega časa",
+    icon: CalendarClock,
+    kljucne: [
+      { ikona: LogIn, besedilo: "Prihodi in odhodi po dnevih" },
+      { ikona: Scale, besedilo: "Saldo ur: plus ali minus" },
+      { ikona: TreePalm, besedilo: "Koliko dopusta ti ostane" },
+      { ikona: MousePointerClick, besedilo: "Desni klik na dan = popravek" },
+    ],
+  },
+  {
+    href: "/moj-fines/odsotnosti",
+    naslov: "Odsotnosti",
+    opis: "Dopust, bolniška in drugi celi dnevi.",
+    hint: "Odpri odsotnosti: najava in pregled",
+    icon: CalendarPlus,
+    kljucne: [
+      { ikona: TreePalm, besedilo: "Dopust in lanski dopust" },
+      { ikona: Stethoscope, besedilo: "Bolniška, očetovski, koriščenje ur" },
+      { ikona: CalendarRange, besedilo: "En dan ali več dni skupaj" },
+      { ikona: BadgeCheck, besedilo: "Vodja potrdi ali zavrne" },
+    ],
+  },
+  {
+    href: "/moj-fines/dovolilnice",
+    naslov: "Dovolilnice",
+    opis: "Izhod med delom ali delo izven urnika.",
+    hint: "Odpri dovolilnice: izhod ali nadure",
+    icon: TicketCheck,
+    kljucne: [
+      { ikona: DoorOpen, besedilo: "Grem ven med delom" },
+      { ikona: ClockPlus, besedilo: "Nadure - delo izven urnika" },
+      { ikona: Clock, besedilo: "En dan, od ure do ure" },
+      { ikona: BadgeCheck, besedilo: "Vodja potrdi ali zavrne" },
+    ],
+  },
+  {
+    href: "/moj-fines/popravki",
+    naslov: "Popravki",
+    opis: "Pozabil si žig? Predlagaj popravek.",
+    hint: "Odpri popravke delovnega časa",
+    icon: FilePenLine,
+    kljucne: [
+      { ikona: LogIn, besedilo: "Manjka prihod ali odhod" },
+      { ikona: EyeOff, besedilo: "Žig, ki ne velja" },
+      { ikona: MousePointerClick, besedilo: "Desni klik na dan v Mojem času" },
+      { ikona: BadgeCheck, besedilo: "Vodja potrdi ali zavrne" },
+    ],
+  },
+];
+
 /**
  * Strani z veliko podatki in nastavitvami: vsebina čez celo širino zaslona (do roba z odmikom), ne standardnih 1280 px.
  * Nova taka stran = nov vnos. SIROKE_STRANI veljajo tudi za podstrani, SIROKE_TOCNO samo za to pot (npr. registracija -
  * njene nastavitve s ploščicami ostanejo standardne).
  */
 const SIROKE_STRANI = ["/administracija/registracija/nastavitve/urniki", "/administracija/registracija/nastavitve/statistike", "/administracija/registracija/nastavitve/krmilnik", "/administracija/registracija/nastavitve/obveznost"];
-const SIROKE_TOCNO = ["/administracija/registracija"];
+const SIROKE_TOCNO = ["/administracija/registracija", "/moj-fines/cas"];
 export const jeSiroka = (pot: string) => SIROKE_TOCNO.includes(pot) || SIROKE_STRANI.some((s) => pot === s || pot.startsWith(`${s}/`));
 /** Širina vsebine in glave: standardna ali čez celo širino z odmikom od roba. */
 export const sirinaStrani = (pot: string) => (jeSiroka(pot) ? "max-w-none sm:px-8 2xl:px-10" : "max-w-7xl");
@@ -129,6 +191,8 @@ export function nadrejena(pot: string): { href: string; hint: string } | undefin
     ...ADMIN_PLOSCICE,
     ...[...NASTAVITVE_RAZDELKI, ...REGISTRACIJA_NASTAVITVE].flatMap((r) => r.ploscice),
     { href: "/administracija/registracija/nastavitve", naslov: "Nastavitve registracije časa" },
+    MOJ_FINES,
+    ...ME_VSTOPI,
   ];
   const ime = href === "/" ? "domača stran FIN:OS" : (vse.find((p) => p.href === href)?.naslov ?? (href === ADMIN.href ? ADMIN.naslov : "prejšnja stran"));
   return { href, hint: `Nazaj: ${ime}` };

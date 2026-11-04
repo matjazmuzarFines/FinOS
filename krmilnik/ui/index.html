@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="sl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FIN:OS krmilnik</title>
+    <link rel="stylesheet" href="krmilnik.css" />
+  </head>
+  <body>
+    <div class="okvir">
+      <header class="glava">
+        <span class="znak">FIN<span class="pike"><i></i><i></i></span><b>OS</b></span>
+        <span class="naprava" id="naprava">Krmilnik</span>
+        <span class="zveza" id="zveza"><i></i><span>Povezujem ...</span></span>
+      </header>
+
+      <main class="vsebina">
+        <section class="zaslon">
+          <div class="datum" id="datum"></div>
+          <div class="ura"><span id="ure">--</span><span class="dvopicje">:</span><span id="minute">--</span><small id="sekunde">--</small></div>
+          <div class="sporocilo" id="sporocilo">
+            <span class="kartica"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+            <span id="sporocilo-besedilo">Prisloni kartico</span>
+          </div>
+        </section>
+        <section class="tipke" id="tipke"></section>
+      </main>
+    </div>
+
+    <!-- potrdilo žiga čez cel zaslon -->
+    <div class="potrdilo" id="potrdilo" hidden>
+      <div class="potrdilo-kartica">
+        <div class="potrdilo-ikona" id="potrdilo-ikona"></div>
+        <div class="potrdilo-naslov" id="potrdilo-naslov"></div>
+        <div class="potrdilo-opis" id="potrdilo-opis"></div>
+        <ul class="potrdilo-seznam" id="potrdilo-seznam"></ul>
+      </div>
+    </div>
+
+    <script src="krmilnik.js"></script>
+  </body>
+</html>

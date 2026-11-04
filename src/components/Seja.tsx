@@ -26,6 +26,11 @@ export function useDostop() {
   return useContext(DostopKontekst) === true;
 }
 
+/** Dostop do Administracije: undefined = še preverjam (FIN:ME počaka, preden odloči, ali sme "Ogled kot"). */
+export function useDostopStanje() {
+  return useContext(DostopKontekst);
+}
+
 /** true = prijavljen uporabnik ima funkcijo (Nastavitve -> Pravice in dostopi). Zasilni račun nima nobene. */
 export function useFunkcija(koda: string) {
   return useContext(FunkcijeKontekst).includes(koda);
@@ -80,14 +85,15 @@ export function Seja({ children }: { children: ReactNode }) {
  * Zaklep dela aplikacije (Administracija): brez prijave prijavno okno, prijavljen uporabnik brez
  * dostopa (ni Super Admin in ni na zasilnem seznamu NEXT_PUBLIC_FOS_UREDNIKI) dobi "Ni dostopa" z odjavo.
  */
-export function Zaklep({ children, naslov }: { children: ReactNode; naslov: string }) {
+export function Zaklep({ children, naslov, pripona, samoPrijava }: { children: ReactNode; naslov: string; pripona?: string; /** FIN:ME: dovolj je prijava (kdo je kdo, ugotovi JazOkvir). */ samoPrijava?: boolean }) {
   const seja = useContext(SejaKontekst);
   const dostop = useContext(DostopKontekst);
 
   if (!supabaseConfigured)
     return <p className="grid min-h-dvh place-items-center p-6 text-center text-sm text-nok-500">Supabase ni nastavljen (manjkata NEXT_PUBLIC_SUPABASE_URL in NEXT_PUBLIC_SUPABASE_ANON_KEY).</p>;
   if (seja === undefined) return null;
-  if (!seja) return <Prijava naslov={naslov} />;
+  if (!seja) return <Prijava naslov={naslov} pripona={pripona} />;
+  if (samoPrijava) return <>{children}</>;
   if (dostop === undefined) return null;
   if (!dostop)
     return (

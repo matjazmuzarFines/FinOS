@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bus, CalendarRange, Clock, EyeOff, LogIn, LogOut, Plus, Scale, Target, Utensils } from "lucide-react";
+import { Bus, CalendarRange, Clock, EyeOff, LogIn, LogOut, Plus, Scale, Send, Target, Utensils, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { NaslovRazdelka } from "@/components/ui/GlavaStrani";
@@ -11,8 +11,9 @@ import type { ZigKnjizen } from "@/lib/knjizenje";
 import { POLJE } from "@/components/ui/Polje";
 import { obvesti } from "@/components/ui/Obvestila";
 import type { CasNastavitve, Urnik } from "@/lib/casNastavitve";
+import { opisPostavke, razlogiOdsotnosti, type PostavkaPopravka } from "@/lib/zahtevki";
 import { CasovnaLinija } from "./CasovnaLinija";
-import { CipStatistike } from "./Skupno";
+import { CipStatistike, IkonaStatistike } from "./Skupno";
 import { Kvadratek, PoljeObrazca } from "./Polja";
 
 const DNEVI = ["nedelja", "ponedeljek", "torek", "sreda", "četrtek", "petek", "sobota"];
@@ -23,16 +24,52 @@ type Props = {
   urnik: Urnik | null;
   zdajMin: number;
   idZaposlenega: number | null;
-  /** Ročni popravki (dodaj dogodek, spreglej) - samo Administracija. */
-  urejanje: boolean;
+  /**
+   * uredi = ročni popravki takoj (Administracija, vodja za podrejene); predlog = zaposleni sestavi popravek (žigi, ne
+   * upoštevaj, cel dan v statistiki) in ga odda vodji v potrditev (FIN:ME); ogled = brez sprememb.
+   */
+  nacin: "uredi" | "predlog" | "ogled";
+  /** Predlog: oddaj popravek dneva v potrditev. */
+  onOddajPopravek?: (postavke: PostavkaPopravka[], razlog: string) => Promise<void>;
   onClose: () => void;
 };
+
+type Predlog = { datum: string; spregledi: string[]; dodani: Extract<PostavkaPopravka, { akcija: "dodaj" }>[]; odsotnost: number | null; razlog: string };
 
 /**
  * Podrobnosti dneva: stanje, časovna linija, delo / obveznost / saldo, štempljanja (knjižen in dejanski čas), oznake.
  * Ročni popravki: dogodka se ne briše ne ureja - "Spreglej" (izračun ga ne upošteva, prečrtan) in "Dodaj dogodek".
  */
-export function DanOkno({ d, n, urnik, zdajMin, idZaposlenega, urejanje, onClose }: Props) {
+export function DanOkno({ d, n, urnik, zdajMin, idZaposlenega, nacin, onOddajPopravek, onClose }: Props) {
+  const urejanje = nacin === "uredi";
+  const predlaga = nacin === "predlog";
+  // osnutek popravka dneva (samo način predlog); ob menjavi dneva se počisti
+  const prazen = (datum: string): Predlog => ({ datum, spregledi: [], dodani: [], odsotnost: null, razlog: "" });
+  const [pr, setPr] = useState<Predlog>(prazen(""));
+  const p = d && pr.datum === d.datum ? pr : prazen(d?.datum ?? "");
+  const nastaviP = (x: Partial<Predlog>) => setPr({ ...p, ...x });
+  const postavke: PostavkaPopravka[] = d
+    ? [
+        ...p.spregledi.map((id): PostavkaPopravka => ({ akcija: "spreglej", datum: d.datum, cas: d.podatki.zigi.find((z) => z.id === id)?.cas ?? 0, id_dogodka: id })),
+        ...p.dodani,
+        ...(p.odsotnost ? [{ akcija: "odsotnost", datum: d.datum, id_statistike: p.odsotnost } as PostavkaPopravka] : []),
+      ]
+    : [];
+  const [oddajam, setOddajam] = useState(false);
+  const oddaj = async () => {
+    if (!onOddajPopravek || !postavke.length) return;
+    if (!p.razlog.trim()) return obvesti("Napiši, zakaj je popravek potreben.", "napaka");
+    setOddajam(true);
+    try {
+      await onOddajPopravek(postavke, p.razlog.trim());
+      setPr(prazen(""));
+      onClose();
+    } catch (e) {
+      obvesti((e as Error).message, "napaka");
+    } finally {
+      setOddajam(false);
+    }
+  };
   const interval = d?.interval ?? null;
   const naslov = d ? `${DNEVI[izIso(d.datum).getDay()]}, ${Number(d.datum.slice(8))}. ${MESECI[Number(d.datum.slice(5, 7)) - 1]} ${d.datum.slice(0, 4)}` : "";
   const stat = (id: number | null) => n.statistike.find((s) => s.id === id);
@@ -45,9 +82,16 @@ export function DanOkno({ d, n, urnik, zdajMin, idZaposlenega, urejanje, onClose
       title={naslov.charAt(0).toUpperCase() + naslov.slice(1)}
       onClose={onClose}
       noga={
-        <Button hint="Zapri podrobnosti dneva" variant="neutral" onClick={onClose}>
-          Zapri
-        </Button>
+        <>
+          <Button hint="Zapri podrobnosti dneva" variant="neutral" onClick={onClose}>
+            {predlaga && postavke.length ? "Prekliči" : "Zapri"}
+          </Button>
+          {predlaga && (
+            <Button hint="Pošlji popravek vodji v potrditev" variant="success" icon={Send} onClick={oddaj} disabled={!postavke.length || oddajam}>
+              Oddaj popravek{postavke.length ? ` (${postavke.length})` : ""}
+            </Button>
+          )}
+        </>
       }
     >
       {d && (
@@ -148,6 +192,15 @@ export function DanOkno({ d, n, urnik, zdajMin, idZaposlenega, urejanje, onClose
                           <Kvadratek vklop={!!dz.spregledan} hint="Spreglej dogodek" onChange={(v) => idZaposlenega != null && spregledaj(idZaposlenega, dz.id, v).catch((e: Error) => obvesti(e.message, "napaka"))} />
                           Spreglej
                         </label>
+                      ) : predlaga && !dz.spregledan ? (
+                        <label className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-ink-300" title="Predlagaj, da se ta žig ne upošteva (npr. pomotoma prislonjena kartica)">
+                          <Kvadratek
+                            vklop={p.spregledi.includes(dz.id)}
+                            hint="Predlagaj, da se žig ne upošteva"
+                            onChange={(v) => nastaviP({ spregledi: v ? [...p.spregledi, dz.id] : p.spregledi.filter((x) => x !== dz.id) })}
+                          />
+                          Ne upoštevaj
+                        </label>
                       ) : (
                         <span />
                       )}
@@ -160,6 +213,47 @@ export function DanOkno({ d, n, urnik, zdajMin, idZaposlenega, urejanje, onClose
             )}
             {urejanje && idZaposlenega != null && <DodajDogodek key={d.datum} datum={d.datum} idZaposlenega={idZaposlenega} n={n} />}
           </section>
+
+          {predlaga && (
+            <section className="flex flex-col gap-3 rounded-[16px] border border-dashed border-ok-500/40 bg-ok-500/[0.04] p-3">
+              <NaslovRazdelka>Popravek dneva</NaslovRazdelka>
+              <p className="-mt-1 text-xs text-ink-400">Kaj je narobe? Dodaj manjkajoč žig, označi žig, ki ne velja, ali izberi, kje si bil cel dan. Vodja popravek potrdi.</p>
+              {p.dodani.length > 0 && (
+                <ul className="flex flex-col gap-1">
+                  {p.dodani.map((x, i) => (
+                    <li key={i} className="flex items-center gap-2 rounded-[10px] border border-ok-500/30 bg-ok-500/[0.06] px-3 py-1.5 text-sm text-ink-100">
+                      <Plus className="h-4 w-4 shrink-0 text-ok-500" aria-hidden />
+                      <span className="min-w-0 flex-1">{opisPostavke(x, n)}</span>
+                      <button type="button" title="Odstrani ta predlog" onClick={() => nastaviP({ dodani: p.dodani.filter((_, j) => j !== i) })} className="grid h-7 w-7 place-items-center rounded-full text-ink-400 transition-colors hover:bg-nok-500/15 hover:text-nok-500">
+                        <X className="h-4 w-4" aria-hidden />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <DodajDogodek key={d.datum} datum={d.datum} idZaposlenega={idZaposlenega ?? 0} n={n} onDodaj={(x) => nastaviP({ dodani: [...p.dodani, x].sort((a, b) => a.datum.localeCompare(b.datum) || a.cas - b.cas) })} />
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-ink-400">Cel dan sem bil ... (neobvezno)</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {razlogiOdsotnosti(n).map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      title={`Cel dan: ${s.ime}`}
+                      onClick={() => nastaviP({ odsotnost: p.odsotnost === s.id ? null : s.id })}
+                      className={`flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-3 text-xs font-semibold transition-all ${p.odsotnost === s.id ? "border-fines-400/60 bg-fines-500/15 text-white shadow-[0_0_14px_-4px_rgb(238_122_58/0.8)]" : "border-white/10 bg-white/[0.04] text-ink-300 hover:border-white/25"}`}
+                    >
+                      <IkonaStatistike s={s} velikost="sm" className="!h-6 !w-6" />
+                      {s.ime}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <PoljeObrazca naslov="Zakaj?" obvezno>
+                <textarea rows={2} className={`${POLJE} h-auto min-h-12 resize-y py-1.5 text-sm`} value={p.razlog} onChange={(e) => nastaviP({ razlog: e.target.value })} placeholder="npr. pozabil sem kartico" title="Kratko napiši, zakaj je popravek potreben" />
+              </PoljeObrazca>
+            </section>
+          )}
 
           {d.oznake.length > 0 && (
             <section className="flex flex-col gap-2">
@@ -184,8 +278,11 @@ export function DanOkno({ d, n, urnik, zdajMin, idZaposlenega, urejanje, onClose
 const VLOGA: Record<ZigKnjizen["vloga"], string> = { prihod: "Prihod", izhod: "Izhod", tipka: "Tipka", povratek: "Povratek" };
 const CAS = /^\d{2}:\d{2}$/;
 
-/** Ročni dogodek: datum, čas, tipka (brez = prihod / izhod po smeri), komentar. Vir = ročni popravek. */
-function DodajDogodek({ datum, idZaposlenega, n }: { datum: string; idZaposlenega: number; n: CasNastavitve }) {
+/**
+ * Ročni dogodek: datum, čas, tipka (brez = prihod / izhod po smeri), komentar. Vir = ročni popravek.
+ * onDodaj = predlog (FIN:ME): dogodek gre v osnutek popravka, ne v bazo.
+ */
+function DodajDogodek({ datum, idZaposlenega, n, onDodaj }: { datum: string; idZaposlenega: number; n: CasNastavitve; onDodaj?: (p: Extract<PostavkaPopravka, { akcija: "dodaj" }>) => void }) {
   const [dan, setDan] = useState(datum);
   const [cas, setCas] = useState("");
   const [tipka, setTipka] = useState<number | null>(null);
@@ -198,6 +295,14 @@ function DodajDogodek({ datum, idZaposlenega, n }: { datum: string; idZaposleneg
   const dodaj = async () => {
     setPoskus(true);
     if (napaka) return;
+    if (onDodaj) {
+      onDodaj({ akcija: "dodaj", datum: dan, cas: izCasa(cas), id_tipke: tipka, komentar: komentar.trim() });
+      setCas("");
+      setKomentar("");
+      setTipka(null);
+      setPoskus(false);
+      return;
+    }
     setShranjujem(true);
     try {
       await dodajDogodek({ idZaposlenega, datum: dan, cas: izCasa(cas), idTipke: tipka, komentar });
@@ -217,8 +322,8 @@ function DodajDogodek({ datum, idZaposlenega, n }: { datum: string; idZaposleneg
     <div className="mt-1 flex flex-col gap-2 rounded-[14px] border border-dashed border-ok-500/40 bg-ok-500/[0.04] p-3">
       <span className="flex items-center gap-2 text-sm font-bold text-white">
         <Plus className="h-4 w-4 text-ok-500" aria-hidden />
-        Dodaj dogodek
-        <span className="text-[11px] font-normal text-ink-500">ročni popravek - smer določi zaporedje dogodkov</span>
+        {onDodaj ? "Manjka žig" : "Dodaj dogodek"}
+        <span className="text-[11px] font-normal text-ink-500">{onDodaj ? "vpiši čas, ko si prišel / odšel" : "ročni popravek - smer določi zaporedje dogodkov"}</span>
       </span>
       <div className="grid gap-2 sm:grid-cols-[9.5rem_6.5rem_minmax(0,12rem)_minmax(0,1fr)_auto] sm:items-end">
         <PoljeObrazca naslov="Datum" obvezno>
@@ -240,7 +345,7 @@ function DodajDogodek({ datum, idZaposlenega, n }: { datum: string; idZaposleneg
         <PoljeObrazca naslov="Komentar">
           <input className={POLJE} value={komentar} onChange={(e) => setKomentar(e.target.value)} placeholder="npr. pozabil štempljati" title="Komentar ročnega popravka" />
         </PoljeObrazca>
-        <Button hint="Dodaj ročni dogodek" variant="success" icon={Plus} onClick={dodaj} disabled={shranjujem}>
+        <Button hint={onDodaj ? "Dodaj žig v predlog popravka" : "Dodaj ročni dogodek"} variant="success" icon={Plus} onClick={dodaj} disabled={shranjujem}>
           Dodaj
         </Button>
       </div>

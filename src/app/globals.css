@@ -66,6 +66,8 @@
   --fos-glass-bg: linear-gradient(160deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.02));
   --fos-glass-border: rgb(255 255 255 / 0.1);
   --fos-kartica-bg: linear-gradient(160deg, rgb(43 43 47 / 0.92), rgb(18 18 20 / 0.96));
+  --fos-popup-bg: linear-gradient(160deg, rgb(42 42 46 / 0.975), rgb(22 22 25 / 0.985));
+  --fos-popup-senca: 0 1px 0 0 rgb(255 255 255 / 0.07) inset, 0 30px 70px -20px rgb(0 0 0 / 0.95), 0 0 0 1px rgb(0 0 0 / 0.3);
   --fos-ozadje: radial-gradient(ellipse at top, #2b2b2f 0%, #1c1c1f 45%, #121214 100%);
   --fos-grid-crta: rgb(255 255 255 / 0.045);
   --fos-noise-opacity: 0.06;
@@ -102,6 +104,8 @@ html[data-tema="svetla"] {
   --fos-glass-bg: linear-gradient(160deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.55));
   --fos-glass-border: rgb(18 18 20 / 0.08);
   --fos-kartica-bg: linear-gradient(160deg, rgb(255 255 255 / 0.95), rgb(244 244 246 / 0.92));
+  --fos-popup-bg: linear-gradient(160deg, rgb(255 255 255 / 0.985), rgb(246 246 248 / 0.985));
+  --fos-popup-senca: 0 1px 0 0 rgb(255 255 255 / 0.9) inset, 0 24px 60px -22px rgb(18 18 20 / 0.45), 0 0 0 1px rgb(18 18 20 / 0.04);
   --fos-ozadje: radial-gradient(ellipse at top, #ffffff 0%, #f4f4f6 45%, #e9e9ec 100%);
   --fos-grid-crta: rgb(18 18 20 / 0.05);
   --fos-noise-opacity: 0.035;
@@ -131,6 +135,18 @@ body {
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   box-shadow: var(--fos-shadow-card);
+}
+
+/* Okna, meniji, spustni seznami, oblački (popupi): skoraj neprosojni - besedilo pod njimi se ne prekriva (finos_stil 9) */
+@layer components {
+  /* v plasti components: pripomočki (npr. border-l-4 pri obvestilih) jo lahko dopolnijo */
+  .fos-popup {
+    background: var(--fos-popup-bg);
+    border: 1px solid var(--fos-glass-border);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: var(--fos-popup-senca);
+  }
 }
 
 /* Besedilo s prelivom */
@@ -378,5 +394,140 @@ html[data-animacije="off"] .fos-intro {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* =====================================================================
+   FIN:ME - krog na vstopu in prizori Fineseka (MePrizori.tsx)
+   ===================================================================== */
+@keyframes me-vrti {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.me-krog {
+  animation: me-vrti 120s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes me-valovi {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.me-valovi {
+  animation: me-valovi 5s linear infinite;
+}
+@keyframes me-list {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+.me-list {
+  animation: me-list 3.2s ease-in-out infinite;
+}
+@keyframes me-sonce {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.me-sonce {
+  animation: me-sonce 3s ease-in-out infinite;
+}
+@keyframes me-zzz {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(18px, -26px) scale(1.1);
+    opacity: 0;
+  }
+}
+.me-zzz {
+  animation: me-zzz 2.4s ease-out infinite;
+  opacity: 0;
+}
+@keyframes me-cesta {
+  to {
+    background-position: -52px 0;
+  }
+}
+.me-cesta {
+  background: repeating-linear-gradient(90deg, rgb(238 122 58 / 0.7) 0 16px, transparent 16px 26px);
+  animation: me-cesta 0.9s linear infinite;
+}
+@keyframes me-mimo {
+  from {
+    transform: translateX(120%);
+  }
+  to {
+    transform: translateX(-480%);
+  }
+}
+.me-kazipot {
+  animation: me-mimo 5.5s linear infinite;
+}
+@keyframes me-culica {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+.me-culica > svg {
+  animation: me-culica 0.5s ease-in-out infinite;
+  transform-origin: 100px 30px;
+}
+@keyframes me-napaka {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0);
+  }
+  50% {
+    box-shadow: 0 0 10px 1px rgb(239 68 68 / 0.7);
+  }
+}
+.me-napaka {
+  animation: me-napaka 1.2s ease-in-out infinite;
+}
+@keyframes me-misli {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(3deg);
+  }
+  60% {
+    transform: rotate(-1.5deg);
+  }
+}
+.me-misli {
+  animation: me-misli 2.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .me-krog,
+  .me-valovi,
+  .me-list,
+  .me-zzz,
+  .me-cesta,
+  .me-kazipot,
+  .me-culica > svg,
+  .me-napaka,
+  .me-misli {
+    animation: none;
   }
 }

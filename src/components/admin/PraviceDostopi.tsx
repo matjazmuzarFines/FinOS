@@ -241,7 +241,7 @@ export function PraviceDostopi() {
                         className={`border-t border-white/[0.06] transition-colors ${z.id === izbran ? "bg-fines-500/10 shadow-[inset_3px_0_0_#ee7a3a]" : spremenjen ? "bg-warn-500/[0.05]" : "hover:bg-white/[0.03]"}`}
                       >
                         <td className="px-3 py-2.5">
-                          <Link href={`/administracija/zaposleni/${z.id}?zavihek=nastavitve`} title={`Odpri list zaposlenega ${polnoIme(z)}`} className="group flex min-w-0 items-center gap-3">
+                          <Link href={`/administracija/zaposleni/${z.id}?zavihek=dostopi`} title={`Odpri list zaposlenega ${polnoIme(z)}`} className="group flex min-w-0 items-center gap-3">
                             <Avatar besedilo={zacetnice(z)} velikost="sm" />
                             <span className="truncate font-semibold text-white transition-colors group-hover:text-fines-300">{polnoIme(z)}</span>
                             {z.id === jaz?.id_zaposlenega && <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-400">Ti</span>}

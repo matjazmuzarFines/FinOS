@@ -3,20 +3,25 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertTriangle, CalendarRange, ChevronLeft, ChevronRight, Settings, Users } from "lucide-react";
+import { AlertTriangle, CalendarPlus, CalendarRange, ChevronLeft, ChevronRight, Eye, FilePenLine, PencilLine, Settings, TicketCheck, Users } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button, IconButton } from "@/components/ui/Button";
 import { GlavaStrani } from "@/components/ui/GlavaStrani";
 import { PraznoStanje } from "@/components/ui/PraznoStanje";
 import { SaveBar } from "@/components/ui/SaveBar";
+import { obvesti } from "@/components/ui/Obvestila";
 import { dodajDni, dodajMesece, dneviMeseca, dneviTedna, imeMeseca, isoDatum, izracunajDan, kratekDatum, stTedna, useZdaj, zacetekMeseca, zacetekTedna } from "@/lib/cas";
 import { useCasNastavitve } from "@/lib/casNastavitve";
 import { testniDan, testniUrnik } from "@/lib/casTest";
 import { podatkiDne, useDogodki } from "@/lib/dogodki";
 import { izplacilaMed, kljucMeseca, useSaldo } from "@/lib/saldo";
+import { delovniDnevi, jeLanskiDopust, jeLetniDopust, oddajZahtevek, useZahtevki, zZahtevki, type PostavkaPopravka } from "@/lib/zahtevki";
 import type { Drobtina } from "@/lib/nav";
 import { polnoIme, primerjajImena, useZaposleni, vidniZaposleni, zacetnice, type Obseg } from "@/lib/zaposleni";
+import type { DanIzracun } from "@/lib/cas";
 import { DanOkno } from "./DanOkno";
+import { DopustPanel, useDopustOsnutek, type PorabaDopusta } from "./DopustPanel";
+import { MeniDneva, type PostavkaMenija } from "./MeniDneva";
 import { IzbiraOseb } from "./IzbiraOseb";
 import { Koledar } from "./Koledar";
 import { Povzetek, type SaldoObdobja } from "./Povzetek";
@@ -36,6 +41,13 @@ type Props = {
   opis: string;
   /** Pot do nastavitev registracije (gumb v glavi; samo Administracija). */
   nastavitve?: string;
+  /** Naslov strani (privzeto "Registracija časa"; FIN:ME "Moj čas"). */
+  naslov?: string;
+  /**
+   * FIN:ME: prijavljen zaposleni. Svoj dan samo predlaga (popravek v potrditev), dneve podrejenih ureja (vodja);
+   * desni klik na dan odpre meni (popravek, odsotnost, dovolilnica).
+   */
+  idJaz?: number;
 };
 
 /**
@@ -43,7 +55,7 @@ type Props = {
  * desno okno Saldo (začetno stanje, izplačilo, zaznamki - ureja samo Administracija) in povzetek obdobja s prenosom.
  * Stanje v naslovu: ?oseba=&datum=&pogled=. Isti pogled bo v FIN:ME (drug obseg).
  */
-export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
+export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve, naslov = "Registracija časa", idJaz }: Props) {
   const router = useRouter();
   const pot = usePathname();
   const iskalni = useSearchParams();
@@ -53,7 +65,8 @@ export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
   const danes = isoDatum(zdaj);
   const zdajMin = zdaj.getHours() * 60 + zdaj.getMinutes();
   // odprt dan (datum): okno se preračuna ob ročnem dogodku ali spregledu
-  const [odprt, setOdprt] = useState<string | null>(null);
+  // ?odpri=YYYY-MM-DD odpre okno dneva ob prihodu na stran (npr. FIN:ME -> Popravki -> Popravi)
+  const [odprt, setOdprt] = useState<string | null>(() => (/^\d{4}-\d{2}-\d{2}$/.test(iskalni.get("odpri") ?? "") ? iskalni.get("odpri") : null));
   // označene osebe (kvadratki v izboru oseb) - za izvoze
   const [oznaceni, setOznaceni] = useState<ReadonlySet<number>>(new Set());
 
@@ -63,10 +76,16 @@ export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
   const idOsebe = Number(iskalni.get("oseba")) || (obseg.nacin === "moji" ? obseg.idZaposlenega : ljudje[0]?.id);
   const oseba = ljudje.find((z) => z.id === idOsebe) ?? ljudje[0] ?? null;
 
+  const leto = datum.slice(0, 4);
   const saldoOsnutek = useSaldoOsnutek(oseba?.id ?? null, datum);
+  const dopustOsnutek = useDopustOsnutek(oseba?.id ?? null, leto);
+  const zh = useZahtevki();
+  const [meni, setMeni] = useState<{ d: DanIzracun; x: number; y: number } | null>(null);
   const nastavi = (p: { oseba?: number; datum?: string; pogled?: Pogled }) => {
     const drugMesec = p.datum !== undefined && p.datum.slice(0, 7) !== datum.slice(0, 7);
-    if (saldoOsnutek.sprememb && (p.oseba !== undefined || drugMesec) && !confirm("Imaš neshranjene spremembe salda. Jih zavržem?")) return;
+    const drugoLeto = p.datum !== undefined && p.datum.slice(0, 4) !== leto;
+    const izgubi = (saldoOsnutek.sprememb && (p.oseba !== undefined || drugMesec)) || (dopustOsnutek.sprememb && (p.oseba !== undefined || drugoLeto));
+    if (izgubi && !confirm("Imaš neshranjene spremembe salda / dopusta. Jih zavržem?")) return;
     const q = new URLSearchParams(iskalni.toString());
     for (const [k, v] of Object.entries(p)) q.set(k, String(v));
     if (q.get("datum") === danes) q.delete("datum");
@@ -80,18 +99,20 @@ export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
   // saldo: prenos = začetno stanje + dnevni saldi od datuma začetnega stanja do obdobja - izplačila preteklih mesecev
   const s = useSaldo();
   const zac = oseba ? s.zacetna[oseba.id] : undefined;
-  // dogodki osebe od začetnega stanja (prenos) do konca obdobja
-  const dog = useDogodki(oseba?.id ?? null, zac && zac.datum < odObdobja ? zac.datum : odObdobja, doObdobja);
+  // dogodki osebe od začetnega stanja (prenos) oz. začetka leta (dopust) do konca obdobja oz. leta
+  const odDogodkov = [zac && zac.datum < odObdobja ? zac.datum : odObdobja, `${leto}-01-01`].sort()[0];
+  const doDogodkov = [doObdobja, `${leto}-12-31`].sort()[1];
+  const dog = useDogodki(oseba?.id ?? null, odDogodkov, doDogodkov);
 
   const urnik = oseba ? testniUrnik(oseba.id, n) : null;
-  /** Izračun dneva: dogodki iz baze (brez baze testna štempljanja) z ročnimi dogodki in spregledi. */
-  const izracun = (id: number, d: string) => izracunajDan(d, podatkiDne(id, d, () => testniDan(id, d, n, danes, zdajMin), dog), n, danes, zdajMin, urnik);
+  /** Izračun dneva: dogodki iz baze (brez baze testna štempljanja) z ročnimi dogodki in spregledi ter zahtevki (FIN:ME). */
+  const izracun = (id: number, d: string) => izracunajDan(d, zZahtevki(id, d, podatkiDne(id, d, () => testniDan(id, d, n, danes, zdajMin), dog), zh.zahtevki, n, urnik), n, danes, zdajMin, urnik);
   const dnevi = useMemo(() => {
     if (!oseba) return [];
     const datumi = pogled === "mesec" ? dneviMeseca(datum) : dneviTedna(datum);
     return datumi.map((d) => izracun(oseba.id, d));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- izracun je odvisen od naštetih
-  }, [oseba, pogled, datum, n, danes, zdajMin, urnik, dog]);
+  }, [oseba, pogled, datum, n, danes, zdajMin, urnik, dog, zh]);
 
   const premik = (smer: 1 | -1) => nastavi({ datum: pogled === "mesec" ? dodajMesece(datum, smer) : dodajDni(zacetekTedna(datum), 7 * smer) });
   const obdobje = pogled === "mesec" ? imeMeseca(datum) : `T${stTedna(datum)} · ${kratekDatum(tedenOd)} - ${kratekDatum(dodajDni(tedenOd, 6))} ${dodajDni(tedenOd, 6).slice(0, 4)}`;
@@ -104,7 +125,52 @@ export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
     for (let d = zac.datum, k = 0; d < odObdobja && k < 3700; d = dodajDni(d, 1), k++) v += izracun(oseba.id, d).saldo ?? 0;
     return v - izplacilaMed(s, oseba.id, zac.datum.slice(0, 7), odObdobja.slice(0, 7));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- izracun je odvisen od naštetih
-  }, [oseba, zac, odObdobja, doObdobja, n, danes, zdajMin, urnik, s, dog]);
+  }, [oseba, zac, odObdobja, doObdobja, n, danes, zdajMin, urnik, s, dog, zh]);
+
+  // dopust v letu: porabljeni dnevi s koledarja (letni / lanski po kvadratkih statistik) in dnevi v oddanih zahtevkih
+  const poraba = useMemo((): PorabaDopusta => {
+    const p = { dopust: 0, lanski: 0, cakaDopust: 0, cakaLanski: 0 };
+    if (!oseba) return p;
+    const st = (id: number | null) => n.statistike.find((x) => x.id === id);
+    for (let d = `${leto}-01-01`, k = 0; d <= `${leto}-12-31` && k < 370; d = dodajDni(d, 1), k++) {
+      const o = izracun(oseba.id, d).podatki.odsotnost;
+      if (!o) continue;
+      if (jeLanskiDopust(st(o.id_statistike), n)) p.lanski++;
+      else if (jeLetniDopust(st(o.id_statistike), n)) p.dopust++;
+    }
+    for (const z of zh.zahtevki) {
+      if (z.id_zaposlenega !== oseba.id || z.status !== "oddano" || z.vrsta !== "odsotnost" || z.akcija === "izbris") continue;
+      const dni = delovniDnevi([z.datum_od, `${leto}-01-01`].sort()[1], [z.datum_do, `${leto}-12-31`].sort()[0], n, urnik).length;
+      if (jeLanskiDopust(st(z.id_statistike), n)) p.cakaLanski += dni;
+      else if (jeLetniDopust(st(z.id_statistike), n)) p.cakaDopust += dni;
+    }
+    return p;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- izracun je odvisen od naštetih
+  }, [oseba, leto, n, danes, zdajMin, urnik, dog, zh]);
+
+  // FIN:ME: svoj dan = predlog popravka, dan podrejenega = urejanje (vodja); Administracija ureja vse
+  const nacinDneva = idJaz == null ? "uredi" : oseba?.id === idJaz ? "predlog" : "uredi";
+  const oddajPopravek = async (postavke: PostavkaPopravka[], razlog: string) => {
+    if (!oseba || idJaz == null || !odprt) return;
+    const datumi = postavke.map((p) => p.datum).sort();
+    await oddajZahtevek(
+      { vrsta: "popravek", id_zaposlenega: oseba.id, datum_od: [odprt, datumi[0]].sort()[0], datum_do: [odprt, datumi.at(-1)!].sort()[1], cas_od: null, cas_do: null, id_statistike: null, tip_dovolilnice: null, opis: razlog, postavke },
+      idJaz,
+      oseba.id !== idJaz,
+    );
+    obvesti("Popravek je oddan - vodja ga bo potrdil.");
+  };
+  const postavkeMenija = (d: DanIzracun): PostavkaMenija[] => {
+    if (!oseba || idJaz == null) return [];
+    const q = `datum=${d.datum}${oseba.id !== idJaz ? `&oseba=${oseba.id}` : ""}`;
+    const skupne: PostavkaMenija[] = [
+      { ikona: CalendarPlus, besedilo: "Najavi odsotnost", opis: "Dopust, bolniška ... od tega dne", onClick: () => router.push(`/moj-fines/odsotnosti?${q}`) },
+      { ikona: TicketCheck, besedilo: "Dovolilnica", opis: "Izhod med delom ali delo izven urnika", onClick: () => router.push(`/moj-fines/dovolilnice?${q}`) },
+    ];
+    return oseba.id === idJaz
+      ? [{ ikona: FilePenLine, besedilo: "Oddaj popravek", opis: "Manjka žig, napačen žig ali cel dan drugje", onClick: () => setOdprt(d.datum) }, ...skupne, { ikona: Eye, besedilo: "Podrobnosti", opis: "Žigi in ure tega dne", onClick: () => setOdprt(d.datum) }]
+      : [{ ikona: PencilLine, besedilo: "Uredi dan", opis: `Popravi žige - ${oseba.ime}`, onClick: () => setOdprt(d.datum) }, ...skupne];
+  };
   const odprtDan = odprt && oseba ? (dnevi.find((d) => d.datum === odprt) ?? izracun(oseba.id, odprt)) : null;
   const saldo: SaldoObdobja = {
     prenos,
@@ -118,7 +184,7 @@ export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
     <>
       <GlavaStrani
         drobtine={drobtine}
-        naslov="Registracija časa"
+        naslov={naslov}
         opis={opis}
         akcije={
           <>
@@ -199,19 +265,38 @@ export function RegistracijaCasa({ obseg, drobtine, opis, nastavitve }: Props) {
 
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={`${oseba.id}-${pogled}-${pogled === "mesec" ? datum.slice(0, 7) : tedenOd}`} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}>
-                <Koledar dnevi={dnevi} statistike={n.statistike} velik={pogled === "teden"} zdajMin={zdajMin} onOdpri={(d) => setOdprt(d.datum)} />
+                <Koledar dnevi={dnevi} statistike={n.statistike} velik={pogled === "teden"} zdajMin={zdajMin} onOdpri={(d) => setOdprt(d.datum)} onMeni={idJaz != null ? (d, x, y) => setMeni({ d, x, y }) : undefined} />
               </motion.div>
             </AnimatePresence>
           </motion.section>
 
           <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className={`min-w-0 ${ljudje.length > 1 ? "lg:col-start-2 xl:col-start-auto" : ""}`}>
-            <Povzetek dnevi={dnevi} statistike={n.statistike} obdobje={obdobje} saldo={saldo} zgoraj={<SaldoPanel o={saldoOsnutek} mesec={datum} urejanje={obseg.nacin === "vsi"} />} />
+            <Povzetek
+              dnevi={dnevi}
+              statistike={n.statistike}
+              obdobje={obdobje}
+              saldo={saldo}
+              zgoraj={<SaldoPanel o={saldoOsnutek} mesec={datum} urejanje={obseg.nacin === "vsi"} />}
+              podStatistikami={<DopustPanel o={dopustOsnutek} poraba={poraba} leto={leto} urejanje={obseg.nacin === "vsi"} />}
+            />
           </motion.div>
         </div>
       )}
 
-      <SaveBar sprememb={saldoOsnutek.sprememb} shranjujem={saldoOsnutek.shranjujem} onShrani={saldoOsnutek.shrani} onPreklici={saldoOsnutek.preklici} />
-      <DanOkno d={odprtDan} n={n} urnik={urnik} zdajMin={zdajMin} idZaposlenega={oseba?.id ?? null} urejanje={obseg.nacin === "vsi"} onClose={() => setOdprt(null)} />
+      <SaveBar
+        sprememb={saldoOsnutek.sprememb + dopustOsnutek.sprememb}
+        shranjujem={saldoOsnutek.shranjujem || dopustOsnutek.shranjujem}
+        onShrani={async () => {
+          if (saldoOsnutek.sprememb) await saldoOsnutek.shrani();
+          if (dopustOsnutek.sprememb) await dopustOsnutek.shrani();
+        }}
+        onPreklici={() => {
+          saldoOsnutek.preklici();
+          dopustOsnutek.preklici();
+        }}
+      />
+      <DanOkno d={odprtDan} n={n} urnik={urnik} zdajMin={zdajMin} idZaposlenega={oseba?.id ?? null} nacin={nacinDneva} onOddajPopravek={oddajPopravek} onClose={() => setOdprt(null)} />
+      <MeniDneva odprt={meni} naslov={meni ? `${kratekDatum(meni.d.datum)} ${meni.d.datum.slice(0, 4)}` : ""} postavke={meni ? postavkeMenija(meni.d) : []} onClose={() => setMeni(null)} />
     </>
   );
 }

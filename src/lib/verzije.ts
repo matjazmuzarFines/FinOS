@@ -3,6 +3,75 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "7.03",
+    datum: "4. 11. 2026",
+    spremembe: [
+      "Moj Fines: trak »Ogled kot« je privzeto skrit - Super Admin ga vklopi z ikono epruvete v glavi (testni pogled).",
+      "Moj Fines: oblački ikon se odprejo ob strani (Odsotnosti in Dovolilnice desno, Moj čas in Popravki levo), pri spodnjih ikonah rastejo navzgor - brez drsenja.",
+      "Moj Fines: krog je na širokem zaslonu bližje Delovni uri; oblaček znaka FIN:ME je pod znakom v krogu.",
+    ],
+  },
+  {
+    verzija: "7.02",
+    datum: "4. 11. 2026",
+    spremembe: [
+      "Tabela tipk: vsaka stvar ima svoje stalno mesto (številka levo, besedilo in funkcija, pod njima prikaz in intervali, X desno); cela besedila funkcij.",
+      "Nastavitve -> Krmilnik razpolovljeno: levo tipke (zbito, vsaka v dveh vrsticah - prikaz in intervali pod besedilom), desno predogled krmilnika in naprave.",
+      "Predogled krmilnika: zaslon naprave kot na Raspberry Pi (ura, tipke s prikazom Krmilnik - tudi neshranjene), velikost zaslona 7\" / 7\" HD / 10\", klik na tipko, preizkus kartice in brez povezave.",
+    ],
+  },
+  {
+    verzija: "7.01",
+    datum: "4. 11. 2026",
+    spremembe: [
+      "Baza za produkcijo: migracija 020 (FIN:ME - zahtevki, dopust, nastavitve, žig iz Mojega Finesa, dostopi po hierarhiji) in 021 (krmilniki).",
+      "Krmilnik Raspberry Pi (mapa krmilnik/): program z zaslonom na dotik in čitalcem kartic - ura, tipke iz FIN:OS, pozdrav ob žigu, Info in Prekliči; brez wifija žigi počakajo in se pošljejo kasneje.",
+      "Nastavitve -> Krmilnik -> Naprave: dodaj krmilnik (ključ se pokaže enkrat), na zvezi / zadnji stik, verzija programa, nov ključ, onemogoči.",
+      "FIN:OS /api/krmilnik: žigi s krmilnika s ključem naprave; kartica se prepozna tudi z ničlami spredaj, neznana kartica se vseeno zapiše.",
+      "Naprave: Prenesi nastavitve (config.json) - namestitev na Raspberry Pi z dvoklikom, brez tipkanja ukazov.",
+    ],
+  },
+  {
+    verzija: "6.03",
+    datum: "4. 11. 2026",
+    spremembe: [
+      "Moj Fines: pozdrav in znak FIN:ME sta na sredini kroga, krog je čisto zgoraj; desno Delovna ura.",
+      "Delovna ura (virtualni krmilnik): ura in stanje, velik gumb Prihod / Odhod (smer samodejna), tipke s prikazom FIN:ME, Info (današnji žigi in ure), Prekliči zadnji žig. Deluje samo z vklopljenim virtualnim beleženjem.",
+      "Odsotnosti in dovolilnice: Uredi in Izbriši tudi pri potrjenih zahtevkih - sprememba gre ponovno v potrditev, izbris mora potrditi vodja (do takrat star zahtevek velja). Vodja ureja in briše zahtevke ekipe takoj.",
+      "List zaposlenega: Oddelek in vodja (s podrejenimi) je zdaj razdelek v Podatkih (med Prijavo v FIN:ME in Osebnimi podatki).",
+      "List zaposlenega: Pravice so na vrhu zavihka Dostopi; namesto Nastavitev je zavihek FIN:ME s kvadratkom »Virtualno beleženje delovnega časa«.",
+      "Zaposleni: gumb »Izvoz pravic po uporabnikih« - Excel z vsemi pravicami in dostopi (DA / NE) za prikazane zaposlene in list z opisom pravic.",
+      "Izvozi: en gumb odpre okno s seznamom vseh izvozov; ob vsakem izbira tipa datoteke (ikona in končnica) in gumb Izvozi, ki se omogoči, ko je tip izbran.",
+    ],
+  },
+  {
+    verzija: "6.02",
+    datum: "4. 11. 2026",
+    spremembe: [
+      "Moj Fines: namesto štirih kartic velik krog s prekinjeno črto, na sredini znak FIN:ME, na krožnici ikone strani z naslovom.",
+      "Miška na ikoni: ikona se strese in poveča, ob njej oblaček s ključnimi besedami; na sredini prizor Fineseka (z vklopljenimi animacijami): ura, otok s palmo, palica s culico, posnetek registracije.",
+      "Miška na znaku FIN:ME: znak se strese, oblaček s tvojimi podatki (oddelek, vodja, ekipa, kaj čaka).",
+      "Vsa okna, meniji, spustni seznami in obvestila so temnejši (skoraj neprosojni) - besedilo pod njimi ne moti več.",
+      "Odsotnosti in dovolilnice: »Zakaj?« je obvezno.",
+      "Potrjena celodnevna odsotnost je na koledarju od 6:30 (uradni delovni čas 6:30-14:30).",
+    ],
+  },
+  {
+    verzija: "6.01",
+    datum: "4. 11. 2026",
+    spremembe: [
+      "FIN:ME (Moj Fines): vstop z domače strani, prijava zaposlenega; velike kartice Moj čas, Odsotnosti, Dovolilnice, Popravki - ob miški oblaček s ključnimi besedami.",
+      "Moj čas: isti pogled kot Registracija časa - zaposleni vidi sebe, vodja še svojo (posredno) ekipo iz hierarhije in ureja njene dneve (sebe ne).",
+      "Desni klik na dan: Oddaj popravek, Najavi odsotnost, Dovolilnica. Popravek dneva = predlog žigov / žig ne velja / cel dan v statistiki, vodja potrdi.",
+      "Odsotnosti in Dovolilnice: nov zahtevek v treh korakih (kaj, kdaj, opomba) in seznam s statusi Oddano / Potrjeno / Zavrnjeno; vodja v zavihku Ekipa potrdi ali zavrne (z razlogom).",
+      "Potrjena odsotnost se pokaže na koledarju; oddan zahtevek in dovolilnica sta oznaki dneva.",
+      "Registracija časa: okno Dopust (letni in lanski: porabljeno / vse, ostane, čaka) pod Po statistikah; vse dni vpiše Administracija.",
+      "Statistike: novi kvadratki Celodnevna odsotnost, Razlog dovolilnice, Štej letni dopust; testni statistiki Očetovski dopust in Koriščenje ur.",
+      "Osnutek baze 020: zahtevki, dopust po letih in dostopi po hierarhiji (zaposleni samo sebe, vodja ekipo). Do potrditve testni podatki v brskalniku.",
+      "Super Admin: v FIN:ME »Ogled kot« - pogled katerega koli zaposlenega ali vodje (za preizkus).",
+    ],
+  },
+  {
     verzija: "5.09",
     datum: "1. 11. 2026",
     spremembe: [

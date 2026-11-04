@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /**
  * Finesek - maskota Fines, sestavljen iz delov (public/finesek/*.webp).
@@ -8,7 +8,8 @@ import type { CSSProperties } from "react";
  * Vsak ud = zunanji div (položaj + poza s prehodom) > slika (ponavljajoča animacija), oba z isto točko vrtenja.
  */
 export type Pogled = "spredaj" | "stran";
-export type Poza = "tek" | "stoji" | "seze" | "vlece" | "veselje" | "maha";
+/** potuje = hoja s strani z mirno roko (npr. palica s culico v roki - `vRoki`). */
+export type Poza = "tek" | "potuje" | "stoji" | "seze" | "vlece" | "veselje" | "maha";
 
 export const PLATNO = { w: 640, h: 750, teloDesno: 615 };
 
@@ -27,7 +28,7 @@ const ROKA_L: Ud = { src: "/finesek/roka-leva.webp", w: 200, h: 133, px: 188, py
 const ROKA_D: Ud = { src: "/finesek/roka-desna.webp", w: 200, h: 109, px: 11, py: 75 };
 
 // Poze rok spredaj (stopinje): + = v smeri urinega kazalca
-const POZE: Record<Exclude<Poza, "tek">, { l: number; d: number }> = {
+const POZE: Record<Exclude<Poza, "tek" | "potuje">, { l: number; d: number }> = {
   stoji: { l: -60, d: 60 },
   seze: { l: -55, d: -38 },
   vlece: { l: -55, d: 42 },
@@ -37,7 +38,7 @@ const POZE: Record<Exclude<Poza, "tek">, { l: number; d: number }> = {
 
 const TEK = 0.34; // s, pol koraka
 
-function Del({ ud, x, y, rot = 0, anim, z, filter }: { ud: Ud; x: number; y: number; rot?: number; anim?: string; z: number; filter?: string }) {
+function Del({ ud, x, y, rot = 0, anim, z, filter, children }: { ud: Ud; x: number; y: number; rot?: number; anim?: string; z: number; filter?: string; children?: ReactNode }) {
   const izvor = `${ud.px}px ${ud.py}px`;
   const zunaj: CSSProperties = {
     position: "absolute",
@@ -54,15 +55,34 @@ function Del({ ud, x, y, rot = 0, anim, z, filter }: { ud: Ud; x: number; y: num
     <div style={zunaj}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={ud.src} alt="" draggable={false} width={ud.w} height={ud.h} style={{ transformOrigin: izvor, animation: anim ?? "none", filter, display: "block" }} />
+      {children}
     </div>
   );
 }
 
-export function Finesek({ s, pogled, poza }: { s: number; pogled: Pogled; poza: Poza }) {
+type Props = {
+  s: number;
+  pogled: Pogled;
+  poza: Poza;
+  /** Roki spredaj (stopinje) namesto poze. */
+  roki?: { l: number; d: number };
+  /** Roka s strani (stopinje; privzeto 55 = ob telesu). */
+  rokaStran?: number;
+  /** V roki s strani (koordinate slike roke 200 × 109, dlan ~ 150, 55) - npr. palica s culico. */
+  vRoki?: ReactNode;
+  /** Dodatek čez telo spredaj v enotah platna 640 × 750 (npr. sončna očala; oči ~ 240 / 420, 380). */
+  dodatek?: ReactNode;
+  /** Hoja počasneje (potuje): trajanje pol koraka v s. */
+  korak?: number;
+};
+
+export function Finesek({ s, pogled, poza, roki, rokaStran, vRoki, dodatek, korak: polKoraka }: Props) {
+  const hodi = poza === "tek" || poza === "potuje";
   const tek = poza === "tek";
-  const korak = `fz-korak ${TEK}s ease-in-out infinite alternate`;
-  const poskok = tek ? `fz-poskok ${TEK / 2}s ease-in-out infinite alternate` : poza === "stoji" || poza === "maha" ? "fz-diha 2.4s ease-in-out infinite" : "none";
-  const p = tek ? POZE.stoji : POZE[poza];
+  const t = polKoraka ?? TEK;
+  const korak = `fz-korak ${t}s ease-in-out infinite alternate`;
+  const poskok = hodi ? `fz-poskok ${t / 2}s ease-in-out infinite alternate` : poza === "stoji" || poza === "maha" ? "fz-diha 2.4s ease-in-out infinite" : "none";
+  const p = roki ?? (hodi ? POZE.stoji : POZE[poza]);
 
   return (
     <div style={{ width: PLATNO.w * s, height: PLATNO.h * s }} className="relative">
@@ -70,7 +90,7 @@ export function Finesek({ s, pogled, poza }: { s: number; pogled: Pogled; poza: 
         {/* senca na tleh */}
         <div
           className="absolute rounded-[50%] bg-[radial-gradient(closest-side,rgb(0_0_0/0.55),transparent)]"
-          style={{ left: 90, top: 718, width: 460, height: 56, animation: tek ? `fz-senca ${TEK / 2}s ease-in-out infinite alternate` : "none" }}
+          style={{ left: 90, top: 718, width: 460, height: 56, animation: hodi ? `fz-senca ${t / 2}s ease-in-out infinite alternate` : "none" }}
         />
         <div className="absolute inset-0" style={{ animation: poskok, transformOrigin: "320px 748px" }}>
           {/* --- spredaj --- */}
@@ -81,14 +101,17 @@ export function Finesek({ s, pogled, poza }: { s: number; pogled: Pogled; poza: 
             <Del ud={ROKA_D} x={588} y={355} rot={p.d} z={2} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/finesek/telo-spredaj.webp" alt="" draggable={false} width={590} height={520} className="absolute" style={{ left: 25, top: 110, zIndex: 3 }} />
+            {dodatek && <div className="absolute inset-0" style={{ zIndex: 4 }}>{dodatek}</div>}
           </div>
           {/* --- s strani (gleda desno) --- */}
           <div className="absolute inset-0 transition-opacity duration-100" style={{ opacity: pogled === "stran" ? 1 : 0 }}>
-            <Del ud={NOGA_D} x={300} y={592} z={1} anim={tek ? `fz-korak ${TEK}s ease-in-out -${TEK}s infinite alternate` : undefined} filter="brightness(0.7)" />
-            <Del ud={NOGA_D} x={420} y={592} z={2} anim={tek ? korak : undefined} />
+            <Del ud={NOGA_D} x={300} y={592} z={1} anim={hodi ? `fz-korak ${t}s ease-in-out -${t}s infinite alternate` : undefined} filter="brightness(0.7)" />
+            <Del ud={NOGA_D} x={420} y={592} z={2} anim={hodi ? korak : undefined} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/finesek/telo-stran.webp" alt="" draggable={false} width={475} height={520} className="absolute" style={{ left: 82, top: 110, zIndex: 3 }} />
-            <Del ud={ROKA_D} x={214} y={308} rot={55} z={4} anim={tek ? `fz-roka-tek ${TEK}s ease-in-out infinite alternate` : undefined} />
+            <Del ud={ROKA_D} x={214} y={308} rot={rokaStran ?? 55} z={4} anim={tek ? `fz-roka-tek ${TEK}s ease-in-out infinite alternate` : undefined}>
+              {vRoki}
+            </Del>
           </div>
         </div>
       </div>
