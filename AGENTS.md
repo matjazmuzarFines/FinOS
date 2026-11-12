@@ -126,6 +126,8 @@
   `fos_tv_objave` (strani WebP + razmerja, izvor, kdo; zadnja = `fos_tv_zadnje_objave`), okno vrste `vir` (`id_vira`),
   `fos_tv_objavi(koda, strani, razmerja, izvor)` in `fos_tv_vklop_vira` (kliče projekt), košara `fos-tv-viri` (aplikacija fp).
   Nova komponenta = vrstica v `fos_tv_viri` + izvoz PDF v projektu + objava (PDF -> slike strani, kot `pdfStrani.ts`).
+- `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
+  vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`
   (trigger `fos_set_updated_at`), RLS select/insert/update samo `authenticated` (brez delete). Podatke iz tabel z več vrednostmi
   na zapis (npr. dostopi do prostorov) vedno v svoje / povezovalne tabele, ne v stolpce `fos_zaposleni`.
