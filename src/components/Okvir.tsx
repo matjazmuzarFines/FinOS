@@ -7,7 +7,7 @@ import { Ozadje } from "./Ozadje";
 import { Glava } from "./Glava";
 import { Obvestila } from "./ui/Obvestila";
 import { APP_VERSION } from "@/lib/verzije";
-import { sirinaStrani } from "@/lib/nav";
+import { sekcijaPoti, sirinaStrani } from "@/lib/nav";
 
 /**
  * Okvir podstrani (Administracija, kasneje Moj Fines): ozadje, glava, obvestila,
@@ -22,8 +22,9 @@ export function Okvir({ children }: { children: ReactNode }) {
       <Obvestila />
       <div className="flex min-h-dvh flex-col overflow-x-clip">
         <Glava />
+        {/* v sekciji z menijem se ob menjavi strani ne prikaže znova cel okvir (meni ostane) - vsebino animira SekcijaZMenijem */}
         <motion.main
-          key={pot}
+          key={sekcijaPoti(pot)?.koren ?? pot}
           className={`mx-auto flex w-full flex-1 flex-col gap-6 px-3 pb-10 pt-6 sm:gap-8 sm:px-6 sm:pt-10 ${sirinaStrani(pot)}`}
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}

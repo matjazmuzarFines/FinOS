@@ -37,7 +37,7 @@ export function PravilaKnjizenja({ vnos, n, napake, onSpremeni }: Props) {
   const primerPrihod = vnos.zacetek_ne_prej && CAS.test(vnos.zacetek_ne_prej) ? fmtCas((izCasa(vnos.zacetek_ne_prej) - 8 + 1440) % 1440) : "06:22";
   const primerIzhod = vnos.konec_ne_pozneje && CAS.test(vnos.konec_ne_pozneje) ? fmtCas((izCasa(vnos.konec_ne_pozneje) + 6) % 1440) : "14:36";
   return (
-    <section className="flex flex-col gap-3 border-t border-white/10 pt-4 2xl:border-t-0 2xl:pt-0">
+    <section className="flex flex-col gap-3 border-t border-white/10 pt-4 min-[1760px]:border-t-0 min-[1760px]:pt-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <NaslovRazdelka>Pravila knjiženja</NaslovRazdelka>
         {n.virPravil === "test" && <TestniPodatki opis={`Pravil v bazi še ni (zaženi migracijo 011): ${n.napakaPravil ?? ""}. Spremembe veljajo samo v tem brskalniku do osvežitve.`} />}

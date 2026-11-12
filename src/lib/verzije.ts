@@ -3,6 +3,39 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "8.03",
+    datum: "12. 11. 2026",
+    spremembe: [
+      "Administracija: nov vstop - Področja (Registracija časa, FIN:TV, kmalu FIN:DOOR) s stanjem na prvi pogled (na delu zdaj, zahtevki čakajo, neznane kartice, zasloni na zvezi, zadnja objava) in bližnjicami; Ljudje z opozorili (brez urnika, kartice, računa); Sistem kot vrstica povezav.",
+      "Iskanje po vsej Administraciji: Ctrl+K ali gumb Išči - strani, nastavitve in zaposleni; Enter odpre.",
+      "Nastavitve registracije in Nastavitve: meni levo na vseh njihovih straneh (Pregled, Urniki, Statistike ... / Podatki baze, Pravice). Meni se zloži na ikone, brskalnik si zapomni.",
+      "Urniki: podrobnosti intervala v dveh stolpcih šele na zelo širokem zaslonu (od 1760 px), da je ob meniju dovolj prostora.",
+      "Pregled nastavitev: pravokotne, manjše ploščice, ki se ob meniju ne lomijo; naslov menija se ne skrije več pod gumb za zlaganje.",
+    ],
+  },
+  {
+    verzija: "8.02",
+    datum: "12. 11. 2026",
+    spremembe: [
+      "FIN:TV: pred vsakim oknom naslovna stran - prehod 2 s, naslov na sredini 4 s, prehod 2 s na vsebino (vklop / izklop v oknu). Vsi prehodi so počasnejši (2 s).",
+      "FIN:TV: pokončne strani PDF pri »Zapolni zaslon« se pokažejo čez celo širino, razrezane na dele - stran med deli zdrsne navzgor. Pokončen PDF se ob nalaganju nastavi sam.",
+      "FIN:TV: obvestilo ima lahko prilogo (slika, video ali PDF) desno zgoraj; naslov in besedilo sta manjša.",
+      "FIN:TV: panel Komponente - dokumenti iz drugih projektov (Delovni plan - workflow, Delovni plan - pregled), ki jih povlečeš v seznam predvajanja. Na TV-ju se vrti zadnja objava; stikalo komponento vklopi / izklopi na vseh TV-jih. Baza komponent je osnutek (023).",
+    ],
+  },
+  {
+    verzija: "8.01",
+    datum: "12. 11. 2026",
+    spremembe: [
+      "Nov modul FIN:TV (Administracija): zasloni za televizorje v proizvodnji - vsak TV ima svoj seznam predvajanja.",
+      "Seznam predvajanja: slike, videi, PDF (vsaka stran se vrti posebej) in obvestila z besedilom; vrstni red s povleci in spusti, trajanje, prehod (pojemanje, drsenje, povečava, zavesa), velja od-do, vklop / izklop.",
+      "Poveži: več TV-jev kaže isto vsebino in vrti isto okno ob istem času; Odveži da zaslonu kopijo.",
+      "Predvajalnik /tv čez cel zaslon (4K): vsebina se osveži sama v 20 s, datoteke se prenesejo enkrat (wifi), brez povezave vrti zadnje stanje; miška pokaže vrstico Ustavi, Osveži, Pomanjšaj.",
+      "Zaslon: ključ in zagon za Windows (dvoklik = predvajanje čez cel zaslon), Pokaži ime, Osveži TV, stanje na zvezi in kaj se vrti.",
+      "Baza je osnutek (022) - do potrditve FIN:TV dela s testnimi podatki v tem brskalniku.",
+    ],
+  },
+  {
     verzija: "7.03",
     datum: "4. 11. 2026",
     spremembe: [

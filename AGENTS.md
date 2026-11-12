@@ -9,6 +9,8 @@
 - **FIN:OS Admin** - v aplikaciji napisano **"Administracija"**: vodje in kadrovska.
 - **FIN:ME** - v aplikaciji napisano **"Moj Fines"**: portal za zaposlene.
 - **FIN:DOOR** - podprogram za prostore: dostopi do prostorov, urejanje dostopov, kartice zaposlenih.
+- **FIN:TV** - televizorji v proizvodnji (Administracija -> FIN:TV): zasloni, seznami predvajanja, predvajalnik `/tv`.
+  Zasnova in faze: `FIN_TV_zasnova.md` (faza 2 = viri podatkov iz Production z objavo ob "Shrani plan").
 - Funkcije: beleženje delovnega časa, dopusti, prosti čas, bolniška, dostopi do prostorov, urejanje dostopov, kartice zaposlenih.
 - Imena podprogramov se vedno pišejo `FIN:<IME>` (velike črke, dvopičje), v znaku komponenta `Znak` (`src/components/Znak.tsx`).
 - Slogan: **People Bake for People**.
@@ -111,6 +113,19 @@
   - `003_zaposleni_prijava.sql`: `fos_zaposleni.email`, `uporabnisko_ime`, `id_uporabnika` (auth.users). GESLA NI v naših tabelah:
     hrani ga Supabase Auth (bcrypt). Račun ustvari / spremeni samo strežnik (`/api/zaposleni/racun`, ključ service_role);
     aplikacija teh treh stolpcev ne sme pisati (pravice po stolpcih). Nov urejljiv stolpec fos_zaposleni -> dodaj ga v `grant` v 003.
+- FIN:TV - `supabase/migrations/022_fin_tv.sql` (potrjeno 2026-11-12): `fos_tv_seznami` (seznam
+  predvajanja; povezani zasloni = isti seznam), `fos_tv_zasloni` (ključ samo sha256 kot krmilnik, `ukaz` osvezi / ime z
+  `ukaz_st`), `fos_tv_okna` (slika / video / pdf / obvestilo, trajanje, prehod, velja od-do, `datoteka`, `strani` = strani
+  PDF kot slike 4K, `vsebina` jsonb), košara `fos-tv` (zasebna) + vrstica "FIN:TV" v `fos_aplikacije`. Funkcije
+  `fos_tv_nov_zaslon`, `fos_tv_nov_kljuc`, `fos_tv_povezi` (premakne celo skupino), `fos_tv_odvezi` (kopija oken),
+  `fos_tv_ukaz`. Brez 022 vse dela v brskalniku (localStorage `fos_tv_test`, datoteke v IndexedDB, značka Testni podatki).
+  `vsebina` okna: `prilagoditev`, `razmerja` (PDF: višina / širina strani), `uvod` (naslovna stran), `obvestilo` (+ `priloga`
+  slika / video / pdf v `datoteka` / `strani`).
+- FIN:TV komponente - `supabase/migrations/023_fin_tv_komponente.sql` (potrjeno 2026-11-12): `fos_tv_viri` (katalog, ki ga PROGRAMIRAMO v
+  projektih - vrstico doda migracija projekta skupaj z izvozom; `aplikacija` = kdo sme objaviti, `vklopljen`),
+  `fos_tv_objave` (strani WebP + razmerja, izvor, kdo; zadnja = `fos_tv_zadnje_objave`), okno vrste `vir` (`id_vira`),
+  `fos_tv_objavi(koda, strani, razmerja, izvor)` in `fos_tv_vklop_vira` (kliče projekt), košara `fos-tv-viri` (aplikacija fp).
+  Nova komponenta = vrstica v `fos_tv_viri` + izvoz PDF v projektu + objava (PDF -> slike strani, kot `pdfStrani.ts`).
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`
   (trigger `fos_set_updated_at`), RLS select/insert/update samo `authenticated` (brez delete). Podatke iz tabel z več vrednostmi
   na zapis (npr. dostopi do prostorov) vedno v svoje / povezovalne tabele, ne v stolpce `fos_zaposleni`.
@@ -169,7 +184,11 @@
 - `src/lib/verzije.ts` - verzije za okno "i".
 - `src/lib/tema.ts` + `src/components/ui/TemaStikalo.tsx` - svetla / temna tema (`useTema()`, `<html data-tema>`); `src/lib/nastavitev.ts` - skupna shramba nastavitev brskalnika.
 - `src/lib/supabase.ts`, `src/components/Seja.tsx` (zaklep s prijavo, `useSeja()`, `odjava`), `src/components/Prijava.tsx`.
-- `src/lib/nav.ts` - navigacija (ploščice Administracije, gumb nazaj); `src/components/Okvir.tsx` - okvir podstrani.
+- `src/lib/nav.ts` - navigacija (ploščice Administracije, gumb nazaj, `SEKCIJE` = sekcije z menijem levo);
+  `src/components/Okvir.tsx` - okvir podstrani (v sekciji z menijem se ob menjavi strani ne prikaže znova).
+- Vstop v Administracijo = `src/components/admin/AdminPregled.tsx` (področja s stanjem iz baze, ljudje z opozorili,
+  sistem); `IskanjeAdmin.tsx` (Ctrl+K, v administracija/layout.tsx); `MeniSekcije.tsx` (`SekcijaZMenijem` v layout.tsx
+  sekcije: administracija/nastavitve, administracija/registracija/nastavitve). Nova sekcija z mrežo = vnos v SEKCIJE + layout.
 - `src/app/administracija/` - Administracija; `src/components/admin/` (Ploscice, SeznamZaposlenih, ListZaposlenega).
 - `src/lib/zaposleni.ts` - branje zaposlenih in oddelkov (`useZaposleni()`, skupen predpomnilnik), `hierarhija()`, `premakniZaposlenega()`.
 - `src/components/admin/Hierarhija.tsx` - Prikaz hierarhije (drevo, prazna mesta, povleci in spusti).
@@ -181,6 +200,18 @@
   PraznoStanje, SaveBar, Obvestila (`obvesti()`). `src/components/admin/ZaposleniObrazec.tsx` - polja zaposlenega + okno Dodaj.
 
 ## Stanje
+- 8.03: Administracija - vstop je plošča po področjih (Registracija časa, FIN:TV, FIN:DOOR kmalu) s pravimi številkami,
+  Ljudje z opozorili, Sistem; iskanje Ctrl+K; meni levo v sekcijah z mrežo nastavitev. Urniki: 3 stolpci od 1760 px.
+- 8.02: FIN:TV - naslovna stran pred vsakim oknom (prehod 2 s, naslov 4 s, prehod 2 s; `PREHOD_MS` / `NASLOV_MS` v
+  tvPredvajanje.ts), pokončne strani PDF pri "Zapolni" razrezane na ležeče dele (`deliStrani`, stran zdrsne), obvestilo s
+  prilogo desno zgoraj, panel Komponente (povleci v seznam, `VLECI_VIR`), nalaganje v `src/lib/tvNalozi.ts`.
+  Production 35.01: izvoz "PDF - pregled (roki)" (`src/lib/planPregledPdf.ts` v FINES_Production) = prva komponenta za TV.
+- 8.01: FIN:TV faza 1 (osnutek 022). `src/lib/tv.ts` (useTv, pisanje, datoteke), `src/lib/tvPredvajanje.ts` (čista funkcija:
+  diapozitivi, položaj iz URE = povezani zasloni usklajeni), `src/lib/pdfStrani.ts` (pdfjs-dist: PDF -> WebP 3840 px),
+  `src/components/tv/` (FinTv, Mreza, OknoUredi, Diapozitiv = oder 1920 × 1080 isti za TV in sličice, Predvajalnik s prehodi,
+  TvStran). `/tv?k=KLJUČ` = računalnik ob TV-ju (poziv `/api/tv` vsakih 20 s z verzijo vsebine, datoteke v Cache API,
+  zadnje stanje v localStorage, ponovna naložitev ob ~4:00), `/tv?seznam=ID` = predogled (Predvajaj tukaj). Zagon zaslona =
+  prenesen `.cmd` (Edge `--app --start-fullscreen`, ločen profil `%LOCALAPPDATA%\FinTV`), pomanjšanje F11 / vrstica ob miški.
 - 2.01: prijava (Supabase Auth, cela aplikacija), svetla / temna tema, Administracija -> Zaposleni (seznam in list).
 - 2.02: dodajanje in urejanje zaposlenih v aplikaciji (vodje prek fos_vodje + ln_fos_zaposleni_vodja).
 - 2.03: FIN:OS brez prijave, Administracija samo fines@fines.si; prijava zaposlenih v FIN:ME (e-mail / uporabniško ime + geslo).

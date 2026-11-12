@@ -217,7 +217,7 @@ export function Urniki() {
       {n.virUrnikov === "nalagam" ? (
         <div className="fos-glass h-96 animate-pulse rounded-[20px]" aria-label="Nalagam urnike" />
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)_24rem] xl:gap-5 2xl:grid-cols-[16rem_minmax(0,1fr)_minmax(40rem,50rem)]">
+        <div className="grid items-start gap-4 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)_24rem] xl:gap-5 min-[1760px]:grid-cols-[16rem_minmax(0,1fr)_minmax(40rem,50rem)]">
           {/* levo: urniki + intervali urnika */}
           <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} className="flex min-w-0 flex-col gap-4 lg:row-span-2 xl:row-span-1">
             <Panel
@@ -652,7 +652,7 @@ function Podrobnosti({ vnos, nov, n, napake, onSpremeni, kopija, onIzbrisi }: Po
     >
       <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-[linear-gradient(90deg,#f19a66,#ca5010,transparent)]" />
       {/* na širokem zaslonu: levo osnovni podatki, desno pravila knjiženja (manj drsenja) */}
-      <div className="grid items-start gap-x-6 gap-y-4 2xl:grid-cols-2">
+      <div className="grid items-start gap-x-6 gap-y-4 min-[1760px]:grid-cols-2">
       <div className="flex flex-col gap-4">
         <PoljeObrazca naslov="Ime" obvezno napaka={napake.ime} opis="Glavno ime v seznamih (enolično), npr. PRIHOD_PISARNA.">
           <input className={`${POLJE} font-mono`} value={vnos.ime} onChange={(e) => onSpremeni({ ime: e.target.value })} title="Interno ime intervala" autoFocus={nov} />

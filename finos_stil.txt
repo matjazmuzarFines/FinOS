@@ -109,20 +109,32 @@ PRAVILA
    - Canvas (Ozadje) bere temo z useTema().
 
 14. Administracija - navigacija in strani
+   - VSTOP v Administracijo (AdminPregled) = PLOŠČA PO PODROČJIH, ne mreža modulov:
+     * PODROČJA: velike kartice (zaobljeno 24 px, steklo fos-kartica, vrteča obroba ob hoverju, ikona v oranžnem prelivu)
+       za Registracijo časa (dvojna širina), FIN:TV in FIN:DOOR (kmalu, bledo). Na kartici 2-3 številke stanja (velike,
+       Space Grotesk; barvne samo, ko kaj čaka / je narobe - zeleno ok, rumeno čaka, rdeče napaka; brez podatka "–"),
+       spodaj čipi bližnjic do podstrani, desno zgoraj zobnik (nastavitve področja). FIN:xx v imenu = komponenta Znak.
+     * LJUDJE: nizke kartice Zaposleni (število), Hierarhija in opozorila Brez urnika / Brez kartice / Brez računa
+       (rumeno, ko je število > 0, sicer sivo).
+     * SISTEM: tanka vrstica povezav (Podatki baze, Pravice in dostopi, Vse nastavitve) - redko rabljeno.
+     * Desno v glavi gumb "Išči ... Ctrl K" -> ISKANJE (IskanjeAdmin, fos-popup na vrhu, deluje na vseh straneh
+       Administracije s Ctrl+K): strani in nastavitve iz nav.ts + zaposleni; puščici, Enter odpre, Esc zapre.
+   - MENI SEKCIJE (MeniSekcije, SEKCIJE v nav.ts): samo v sekcijah z mrežo več nastavitev (Nastavitve registracije,
+     Nastavitve) - na strani z mrežo in na vseh njenih podstraneh. Levo steklen meni 236 px (lepljiv): naslov sekcije,
+     gumb zloži (60 px, samo ikone; zapomni si brskalnik), Pregled (= mreža), nato razdelki (naslov 10 px, velike črke) s
+     stranmi (ikona + ime, izbrana = drseče oranžno polje). Desno cela obstoječa stran; ob menjavi strani v sekciji meni
+     ostane, vsebina se pojavi z vzmetjo. Na telefonu / tablici vrsta čipov nad stranjo. Drugje (Registracija časa,
+     Zaposleni, FIN:TV) menija NI.
    - Struktura (src/lib/nav.ts, en vir): Administracija -> mreža kvadratnih ploščic (moduli) -> seznam -> list zapisa.
      Nad naslovom strani je vrstica: levo drobtine (FIN:OS > Administracija > ...), ob desnem robu gumb "Nazaj"
      (bel, vodi vedno na nadrejeno stran). V glavi aplikacije gumba nazaj NI.
    - Okvir podstrani (Okvir): ozadje, glava ostane, vsebina se ob menjavi strani pojavi z vzmetjo.
    - Glava strani (GlavaStrani): drobtine, velik naslov s prelivom, opis, desno gumbi.
-   - Ploščice (Ploscice): kvadrat (aspect-square), steklo fos-kartica, ikona v oranžnem prelivu, desno zgoraj
-     število (npr. zaposlenih), spodaj naslov in kratek opis; hover dvig, vrteča obroba, sij in puščica, ki zdrsne
-     ob naslov (v isti vrsti - nikoli čez opis).
-     Modul z nastavitvami (npr. Registracija časa): desno zgoraj steklen krog z zobnikom (hover oranžen, zasuk 90°)
-     -> nastavitve modula; klik kjerkoli drugje na ploščici odpre modul (Ploscica.nastavitve v nav.ts).
-     Naslov ploščice se NIKOLI ne skrajša s "...": če gre v eno vrsto, je velik (18 / 24 px), sicer se prelomi v največ
-     dve vrstici z manjšo pisavo (15 / 18 px, tesen razmik) - NaslovPloscice v Ploscice.tsx izmeri sam. Naslov, ki ne gre
-     v dve vrstici, ni primeren (v razvoju opozorilo v konzoli) - skrajšaj ga; naslovi ploščic so kratki (nadzorni pregled).
-     Mreža 2 / 3 / 4 / 5 v vrsti. Ploščice so združene pod naslovom razdelka (npr. LJUDJE).
+   - Ploščice (Ploscice, pregled nastavitev sekcije): PRAVOKOTNE kartice (zaobljeno 18 px, steklo fos-kartica) - levo
+     ikona 44 px v oranžnem prelivu, desno naslov (16 px, prelomi se po besedah, nikoli "...") s puščico, ki ob hoverju
+     zdrsne ob naslov, desno v isti vrsti število, pod tem opis (največ 2 vrstici, 12 px). Mreža se prilagodi širini
+     (kartica najmanj 18 rem: repeat(auto-fill, minmax(18rem, 1fr))) - ob meniju sekcije se nič ne lomi. Hover: dvig,
+     vrteča obroba, sij. Zobnik (nastavitve modula) kot majhen krog desno zgoraj. Naslovi ploščic so kratki.
    - Seznam (npr. Zaposleni) - ni standardna tabela:
      * desno zgoraj glavno dejanje (npr. "Dodaj zaposlenega", zelen) - gumba Osveži ni; levo od njega IZVOZI (oranžen).
    - Izvozi (komponenta Izvoz, VELJA NAMESTO "Gumbi izvoza" iz skupnih navodil): en oranžen gumb "Izvozi" odpre okno s
@@ -301,7 +313,7 @@ PRAVILA
      Interval nima veljavnosti (velja od / do): vedno je v uporabi - neuporaben se izbriše ali odstrani iz urnika.
    - Spustna okna (npr. izbira statistike) se odprejo nad vsem (portal), ob dnu zaslona navzgor - nikoli jih ne poreže okvir.
    - Okno se imenuje po vrsti: "Prihod od / do", "Izhod od / do", pri tipki "Žig od / do" (oba žiga v oknu).
-   - Podrobnosti intervala na širokem zaslonu (2xl) v dveh stolpcih: levo osnovni podatki, desno pravila knjiženja
+   - Podrobnosti intervala na širokem zaslonu (od 1760 px - ob meniju sekcije) v dveh stolpcih: levo osnovni podatki, desno pravila knjiženja
      (podrobnosti so 40-50 rem široke, manj drsenja).
    - Na vrhu pravil kartica "KAKO DELUJE": trak 00-24 (zeleno = dejanski čas, oranžno = knjiži se ob meji "ne prej /
      ne pozneje kot", rdeče črtkano = izven okna -> napaka), oznake ur, legenda in stavki iz nastavitev ("Prihod med
@@ -415,6 +427,41 @@ PRAVILA
    - Potrdilo čez cel zaslon 3,5 s s piskom: zeleno ✓ "Dober dan, Matej!" / "Nasvidenje, Matej!" + čas · tipka; brez
      povezave "Zabeleženo - poslano bo, ko bo povezava"; rumeno "Kartica ni dodeljena"; modro Info (današnji žigi kot
      čipi); rumeno "Zadnji žig je preklican"; rdeče napaka z nizkim piskom.
+
+28. FIN:TV (/administracija/tv, FinTv; predvajalnik /tv, TvStran)
+   - Ploščica v Administraciji za Zaposlenimi (ikona TV). Široka stran: levo panel ZASLONI (krog wifi zelen / siv, ime,
+     "na zvezi" / zadnji stik, lokacija, pod imenom oranžna veriga z imeni povezanih; izbran = drseče oranžno polje),
+     desno kartica zaslona (oranžna črta zgoraj, ikona TV v oranžnem prelivu, ime + svinčnik, lokacija, stanje, "Zdaj: ...";
+     desno okrogla gumba Nov ključ (oranžen) in Onemogoči (rdeč)); vrsta gumbov Predvajaj tukaj (bel), Pokaži ime (bel),
+     Osveži TV (moder), Poveži (oranžen) / Odveži (bel); povezan zaslon ima oranžno kartico "Povezan z ...".
+   - Poveži (okno): 1. s katerim zaslonom, 2. katero vsebino obdržita (dve kartici "Obdržita" / "Se ne kaže več",
+     privzeto tista z več okni). Odveži = kopija skupne vsebine.
+   - SEZNAM PREDVAJANJA: desno "N oken · krog m:ss", Obvestilo in Naloži (zelena). Mreža kartic 16:9: sličica = ISTI
+     izris kot TV (Oder 1920 × 1080), levo zgoraj številka v oranžnem krogu + vrsta, desno ročaj za povleci in spusti,
+     spodaj ime, trajanje · prehod, oznaka Izklopljeno / Od ... (modro) / Do ... (rumeno) / Poteklo (rdeče, sličica bleda).
+     Na koncu črtkano polje "Povleci sem sliko, video ali PDF" (ob vlečenju datotek oranžna obroba celega panela).
+   - Okno (urejanje, široko): levo predogled + pri obvestilu Naslov in Besedilo; desno Ime okna, (Barva, Ikona), Trajanje
+     (PDF na stran, video samodejno), Prikazano (stikalo), Prehod (Brez / Pojemanje / Drsenje / Povečava / Zavesa, drseče
+     polje), Prilagoditev (Zapolni zaslon / Cela slika z zamegljenim ozadjem), Velja od / do, Kopiraj na drug zaslon;
+     noga: Odstrani (rdeč, levo), Prekliči, Shrani.
+   - Predvajalnik (/tv): črn, kazalec skrit; slika TV-ja je VEDNO temna (stalne barve, ne sledi temi). Ob miški / tipki
+     4 s vrstica fos-popup zgoraj: znak FIN:TV, ime, stanje in "zdaj: ... 2/5 · 0:10", Ustavi / Nadaljuj, Osveži,
+     Pomanjšaj (oranžen; pri Edge --start-fullscreen namig "Pritisni F11"). Brez povezave majhna rumena oznaka desno spodaj.
+     Pokaži ime = 10 s veliko ime in lokacija na sredini. Prazen seznam / brez ključa = znak FIN:TV in stavek.
+   - Obvestilo na TV-ju: sij v barvi obvestila levo zgoraj, mreža, spodaj barvna črta; levo (1040 px) ikona 168 px v
+     barvnem prelivu, naslov 92 px (dolg 76 px, preliv belo-sivo), besedilo 44 px (dolgo 34 px); DESNO ZGORAJ prostor za
+     prilogo 700 × 640 (slika / video / stran PDF, okvir v barvi obvestila s sijem; brez priloge črtkan krog, v urejevalniku
+     črtkano "Prostor za prilogo"). Priloga v oknu obvestila: Naloži ali povleci sem / Zamenjaj / Odstrani.
+   - Prehodi trajajo 2 s. Pred vsakim oknom NASLOVNA STRAN (stikalo v oknu, privzeto vklopljeno, pri obvestilu izklopljeno):
+     prehod 2 s, naslov okna na sredini 4 s (132 px, črtkan krog in sij, oranžna črta pod naslovom, spodaj znak FIN:TV),
+     prehod 2 s na vsebino. Na kartici v mreži oranžna ikona H.
+   - PDF / komponenta pri "Zapolni zaslon": stran čez celo širino; pokončna stran se razreže na ležeče dele (12 %
+     prekrivanja), med deli stran zdrsne navzgor (2 s), spodaj rahla senca = stran se nadaljuje. "Cela slika" = cela stran.
+     Pokončen PDF se ob nalaganju nastavi na Zapolni, ležeč na Cela slika.
+   - KOMPONENTE (panel levo pod Zasloni): vrstica = ikona v oranžnem prelivu, ime, "Production · objava pred 2 h", stikalo
+     (vklop na vseh TV-jih), zelen +; vrstico povlečeš v seznam predvajanja (polje "Spusti komponento sem"). Spodaj črtkana
+     opomba: komponente so programirane v projektih in se pokažejo same. Okno komponente: modra kartica z imenom, opisom in
+     zadnjo objavo; v mreži "Čaka na objavo" (modro) / "Komponenta izklopljena".
 
 15. Prijava (Prijava, Seja, Zaklep)
    - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
@@ -573,3 +620,19 @@ DNEVNIK POPRAVKOV UPORABNIKA
              širša izbira funkcije. -> razdelek 25, Krmilnik.
 2026-11-04 - Zaključi bazo za produkcijo (test); krmilnik na Raspberry Pi (wifi podjetja) - vse za prvo verzijo in razlaga
              za začetnika. -> razdelek 27, migracije 020 + 021, /api/krmilnik, Naprave, mapa krmilnik/ (README).
+2026-11-12 - FIN:TV: v Administraciji, vsak TV posebej + Poveži več TV-jev na isto vsebino, 4K, wifi, PC samo za TV z
+             gumbom za pomanjšanje, PDF z več stranmi se vrti stran za stranjo (Word / Excel kot PDF ali PNG); urejevalnik
+             (mreža, povleci in spusti, trajanje, prehodi) in predvajalnik. -> razdelek 28, src/components/tv/, tv.ts,
+             tvPredvajanje.ts, pdfStrani.ts, /api/tv, /tv, osnutek 022.
+2026-11-12 - FIN:TV: portrait PDF pri Zapolni pretvori v ležeče (razrez + drsenje); obvestilo s prilogo (slika / PDF /
+             video) desno zgoraj, manjši naslov in besedilo; prehodi počasnejši - naslovna stran pred vsakim oknom (2 + 4 + 2 s);
+             predefinirane komponente iz drugih projektov levo pod Zasloni, povleci v seznam. -> razdelek 28, Diapozitiv,
+             Predvajalnik, tvPredvajanje.ts, Mreza, OknoUredi, FinTv (Komponente), osnutek 023.
+2026-11-12 - Administracija: moduli v eni mreži so se mešali (področja, pregledi, nastavitve) -> vstop je plošča po
+             področjih (predlog A: Področja s stanjem in bližnjicami, Ljudje z opozorili, Sistem kot vrstica, Ctrl+K);
+             meni levo (predlog B) samo v sekcijah z mrežo nastavitev in njihovih podstraneh, zložljiv. -> razdelek 14,
+             AdminPregled, IskanjeAdmin, MeniSekcije, nav.ts (SEKCIJE), Okvir.
+2026-11-12 - Ob meniju sekcije so se kvadratne ploščice skrčile in lomile besedilo; ikone in pisava prevelike -> pravokotne,
+             manjše ploščice, mreža po širini (min. 18 rem). Gumb za zlaganje menija je prekril naslov -> naslov se prelomi.
+             FIN:TV na vstopu brez bližnjic (Zasloni / Komponente sta ista stran). -> razdelek 14, Ploscice, MeniSekcije,
+             AdminPregled.

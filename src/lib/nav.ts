@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarClock, CalendarPlus, CalendarRange, Clock, ClockPlus, Database, DoorOpen, EyeOff, FilePenLine, Hourglass, Keyboard, KeyRound, LogIn, MousePointerClick, Scale, Settings, Stethoscope, Tags, TicketCheck, TreePalm, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, CalendarClock, CalendarPlus, CalendarRange, Clock, ClockPlus, Database, DoorOpen, EyeOff, FilePenLine, Hourglass, Keyboard, KeyRound, LogIn, MousePointerClick, Scale, Settings, Stethoscope, Tags, TicketCheck, TreePalm, Tv, Users, type LucideIcon } from "lucide-react";
 
 /**
  * Navigacija FIN:OS - en vir za ploščice, drobtine in gumb nazaj.
@@ -32,6 +32,13 @@ export const ADMIN_PLOSCICE: Ploscica[] = [
     opis: "Seznam vseh zaposlenih z oddelki, vodji in karticami.",
     hint: "Odpri seznam vseh zaposlenih",
     icon: Users,
+  },
+  {
+    href: "/administracija/tv",
+    naslov: "FIN:TV",
+    opis: "Televizorji v proizvodnji: zasloni, slike, videi, PDF in obvestila.",
+    hint: "Odpri FIN:TV - vsebina televizorjev",
+    icon: Tv,
   },
   {
     href: "/administracija/nastavitve",
@@ -107,6 +114,18 @@ export const REGISTRACIJA_NASTAVITVE: { naslov: string; ploscice: Ploscica[] }[]
   },
 ];
 
+/**
+ * Sekcije z menijem levo: tam, kjer je mreža več nastavitev (ploščice), se na tej strani in na vseh njenih podstraneh
+ * pokaže zložljiv meni sekcije (MeniSekcije), vsebina strani je desno. Drugje (Registracija časa, Zaposleni, FIN:TV)
+ * menija ni. Nova sekcija z mrežo nastavitev = nov vnos (koren = stran z mrežo) + layout.tsx s SekcijaZMenijem.
+ */
+export type Sekcija = { koren: string; naslov: string; razdelki: { naslov: string; ploscice: Ploscica[] }[] };
+export const SEKCIJE: Sekcija[] = [
+  { koren: "/administracija/registracija/nastavitve", naslov: "Nastavitve registracije", razdelki: REGISTRACIJA_NASTAVITVE },
+  { koren: "/administracija/nastavitve", naslov: "Nastavitve", razdelki: NASTAVITVE_RAZDELKI },
+];
+export const sekcijaPoti = (pot: string) => SEKCIJE.find((s) => pot === s.koren || pot.startsWith(`${s.koren}/`));
+
 export const MOJ_FINES = { href: "/moj-fines", naslov: "Moj Fines" };
 
 /**
@@ -174,7 +193,7 @@ export const ME_VSTOPI: MeVstop[] = [
  * Nova taka stran = nov vnos. SIROKE_STRANI veljajo tudi za podstrani, SIROKE_TOCNO samo za to pot (npr. registracija -
  * njene nastavitve s ploščicami ostanejo standardne).
  */
-const SIROKE_STRANI = ["/administracija/registracija/nastavitve/urniki", "/administracija/registracija/nastavitve/statistike", "/administracija/registracija/nastavitve/krmilnik", "/administracija/registracija/nastavitve/obveznost"];
+const SIROKE_STRANI = ["/administracija/tv", "/administracija/registracija/nastavitve/urniki", "/administracija/registracija/nastavitve/statistike", "/administracija/registracija/nastavitve/krmilnik", "/administracija/registracija/nastavitve/obveznost"];
 const SIROKE_TOCNO = ["/administracija/registracija", "/moj-fines/cas"];
 export const jeSiroka = (pot: string) => SIROKE_TOCNO.includes(pot) || SIROKE_STRANI.some((s) => pot === s || pot.startsWith(`${s}/`));
 /** Širina vsebine in glave: standardna ali čez celo širino z odmikom od roba. */
