@@ -110,7 +110,24 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
           </motion.div>
         )}
       </AnimatePresence>
+      {d && p && !d.naslovna && <Casovnica key={`${d.kljuc}#${p.krog}`} delez={p.odmikMs / d.trajanjeMs} />}
     </Oder>
+  );
+}
+
+/**
+ * Časovnica čisto spodaj: tanka oranžna črta se polni, dokler je diapozitiv na zaslonu (ne pri naslovni strani).
+ * Širina iz ure (vsakih 250 ms) z linearnim prehodom - ob novem diapozitivu nov element (začne pri 0).
+ */
+function Casovnica({ delez }: { delez: number }) {
+  const w = Math.min(1, Math.max(0, delez));
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[6px] bg-white/[0.06]" style={{ zIndex: 2_000_000_000 }} aria-hidden>
+      <div
+        className="h-full origin-left bg-[linear-gradient(90deg,#8f380b,#ca5010_35%,#ee7a3a_75%,#f19a66)] shadow-[0_0_14px_rgba(238,122,58,0.75)] transition-transform duration-[250ms] ease-linear"
+        style={{ transform: `scaleX(${w})` }}
+      />
+    </div>
   );
 }
 

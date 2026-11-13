@@ -447,6 +447,8 @@ PRAVILA
    - Predvajalnik (/tv): črn, kazalec skrit; slika TV-ja je VEDNO temna (stalne barve, ne sledi temi). Ob miški / tipki
      4 s vrstica fos-popup zgoraj: znak FIN:TV, ime, stanje in "zdaj: ... 2/5 · 0:10", Ustavi / Nadaljuj, Osveži,
      Pomanjšaj (oranžen; pri Edge --start-fullscreen namig "Pritisni F11"). Brez povezave majhna rumena oznaka desno spodaj.
+     ČASOVNICA: čisto spodaj tanka črta 6 px (na odru 1920 × 1080) z oranžnim prelivom in sijem, ki se v času diapozitiva
+     (prehod + prikaz) zapolni od leve do desne; ob naslednjem začne pri 0. Pri naslovnih straneh je ni (Casovnica v Predvajalnik).
      Pokaži ime = 10 s veliko ime in lokacija na sredini. Prazen seznam / brez ključa = znak FIN:TV in stavek.
    - Obvestilo na TV-ju: sij v barvi obvestila levo zgoraj, mreža, spodaj barvna črta; levo (1040 px) ikona 168 px v
      barvnem prelivu, naslov 92 px (dolg 76 px, preliv belo-sivo), besedilo 44 px (dolgo 34 px); DESNO ZGORAJ prostor za
@@ -664,3 +666,5 @@ DNEVNIK POPRAVKOV UPORABNIKA
              migracija 028, tv.ts (TEST_VIRI), OknoUredi (velja do), Mreza, AGENTS.md.
 2026-11-13 - FIN:TV: komponent je preveč (vsaka za vsak oddelek), panel se vleče in drsi -> ena vrstica na komponento,
              oddelek se izbere s čipi v vrstici. -> razdelek 28, FinTv (Komponente, skupineVirov).
+2026-11-13 - FIN:TV: čisto spodaj tanka črta, ki se polni s časom prikaza okna (časovnica), ne pri naslovnih straneh.
+             -> razdelek 28, Predvajalnik (Casovnica).
