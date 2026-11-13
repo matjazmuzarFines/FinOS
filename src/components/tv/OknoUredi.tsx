@@ -42,10 +42,16 @@ const vLokalno = (iso: string | null) => {
 };
 const izLokalno = (s: string) => (s ? new Date(s).toISOString() : null);
 
-/** "4 str." ali pri objavi po tednih "5 tednov · danes 2 str." */
+/** "4 str.", pri objavi z enim obdobjem "velja do 19.11. · danes 3 str.", po tednih "5 tednov · danes 2 str." */
 const opisStrani = (o: ObjavaVira) => {
   const n = obdobjaObjave(o);
-  if (n <= 1 && !o.velja_od?.some(Boolean)) return `${o.strani.length} str.`;
+  if (n <= 1 && !o.velja_od?.some(Boolean) && !o.velja_do?.some(Boolean)) return `${o.strani.length} str.`;
+  if (n === 1) {
+    const danes = veljavneStrani(o, Date.now()).length;
+    const doDne = o.velja_do?.find(Boolean);
+    const rok = doDne ? `velja do ${Number(doDne.slice(8, 10))}.${Number(doDne.slice(5, 7))}.` : `${o.strani.length} str.`;
+    return `${rok} · danes ${danes ? `${danes} str.` : "ni strani"}`;
+  }
   const tedni = n === 1 ? "1 teden" : n === 2 ? "2 tedna" : n <= 4 ? `${n} tedni` : `${n} tednov`;
   const danes = veljavneStrani(o, Date.now()).length;
   return `${tedni} · danes ${danes ? `${danes} str.` : "ni strani"}`;

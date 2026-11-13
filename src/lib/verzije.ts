@@ -3,6 +3,15 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "8.08",
+    datum: "13. 11. 2026",
+    spremembe: [
+      "FIN:TV: nova komponenta »Zaključeni krovni« za vsak oddelek - produktivnost krovnih nalogov, zaključenih v zadnjih 30 dneh (en krovni en stolpec, stran na celico). Production jo objavi ob uvozu poročanega dela in ob gumbu Na TV, strani veljajo 7 dni. Potrebna migracija 028.",
+      "FIN:TV: »Delo - prejšnji dan« kaže razliko do plana v urah - % pomeni vedno produktivnost (normativne / štempljane ure).",
+      "FIN:TV: okno komponente pri objavi z enim obdobjem pove, do kdaj velja (»velja do 19.11. · danes 3 str.«).",
+    ],
+  },
+  {
     verzija: "8.07",
     datum: "13. 11. 2026",
     spremembe: [

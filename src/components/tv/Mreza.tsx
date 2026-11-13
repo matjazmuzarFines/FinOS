@@ -207,7 +207,7 @@ function Kartica({ okno, st, url, vir, viri, zdaj, onUredi }: { okno: TvOkno; st
       : okno.vrsta === "vir" && !vir?.objava
         ? { ikona: CalendarClock, besedilo: "Čaka na objavo", barva: "text-sync-500" }
         : brezDanes
-          ? { ikona: CalendarClock, besedilo: "Danes ni strani (ni plana za ta teden)", barva: "text-warn-500" }
+          ? { ikona: CalendarClock, besedilo: "Danes ni strani (objava ne velja danes)", barva: "text-warn-500" }
           : zacne
           ? { ikona: CalendarClock, besedilo: `Od ${new Date(okno.velja_od!).toLocaleString("sl-SI", { dateStyle: "short", timeStyle: "short" })}`, barva: "text-sync-500" }
           : !veljaZdaj(okno, zdaj)

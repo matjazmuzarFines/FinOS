@@ -466,7 +466,11 @@ PRAVILA
      (vsak teden svoj PDF, strani veljajo pon - ned); TV kaže samo tekoči teden in v ponedeljek sam preklopi. V oknu
      komponente "5 tednov · danes 2 str."; v mreži brez strani za danes rumeno "Danes ni strani (ni plana za ta teden)".
    - Imena komponent: "Delovni plan · oddelek" (workflow), "Delovni plan - pregled · oddelek", "Delo - prejšnji dan · oddelek"
-     (stran 16:9 iz Production: krog porabe ur na celico, objava ob uvozu poročanega dela, velja samo ta dan).
+     (stran 16:9 iz Production: krog štempljanih ur na celico z razliko do plana v urah, objava ob uvozu poročanega dela,
+     velja samo ta dan), "Zaključeni krovni · oddelek" (ikona Trophy; produktivnost krovnih, zaključenih v zadnjih 30 dneh,
+     stran 16:9 na celico, en krovni en stolpec; velja 7 dni). Okno komponente z enim obdobjem: "velja do 19.11. · danes 3 str.".
+   - % = VEDNO PRODUKTIVNOST (normativne / štempljane ure; >= 100 % zeleno, 85-99 % rumeno, < 85 % rdeče, oznaka
+     PRODUKTIVNOST). Poraba ur se kaže v urah (+8,0 h / -5,0 h), nikoli v %.
 
 15. Prijava (Prijava, Seja, Zaklep)
    - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
@@ -653,3 +657,6 @@ DNEVNIK POPRAVKOV UPORABNIKA
              Produktivnost: štempljane ure na krovni nalog proti planu po celicah, krog 0-100 % zelen, nad 100 % širša
              krožnica rumena do 110 %, rdeča nad; 1 stran na oddelek, posodobi se ob uvozu podatkov). -> razdelek 28,
              migracija 027, Diapozitiv (ikona Gauge), tv.ts; Production deloVceraj.ts, deloPdf.ts, tvObjava.ts, sync.ts.
+2026-11-13 - FIN:TV: nova komponenta "Zaključeni krovni" po oddelkih (produktivnost krovnih, zaključenih v 30 dneh, velja
+             7 dni); % je vedno produktivnost, poraba ur v urah ("Delo - prejšnji dan" brez %). -> razdelek 28,
+             migracija 028, tv.ts (TEST_VIRI), OknoUredi (velja do), Mreza, AGENTS.md.

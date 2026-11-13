@@ -137,6 +137,12 @@
   komponente preimenovane v "Delovni plan · oddelek". Production (`objaviDeloNaTv` v tvObjava.ts, `deloVceraj.ts` = isti
   izračun kot Produktivnost za en dan, `deloPdf.ts` = stran 16:9) objavi ob vsakem uvozu Poročanega dela (sync.ts) in
   ročno (Produktivnost -> Na TV); strani veljajo samo na dan objave (prej TV komponento preskoči).
+- FIN:TV Zaključeni krovni - `028_fin_tv_zakljuceni_krovni.sql`: `fp_zakljuceni_krovni_p/m/e/t` (ikona Trophy) =
+  produktivnost krovnih nalogov plana, zaključenih v zadnjih 30 dneh (stran 16:9 na celico, en krovni en stolpec, do 6 na
+  stran). Production objavi ob uvozu Poročanega dela in ob "Na TV"; strani veljajo 7 dni (nova objava zamenja prejšnjo).
+- ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
+  < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika
+  (+8,0 h / -5,0 h), nikoli v %. Velja za vse aplikacije (tudi KPI in ploščice v FinOS).
 - `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
   vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`
