@@ -99,6 +99,8 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
   const prehod: Prehod = d?.okno.prehod ?? "pojemanje";
   return (
     <Oder className={className}>
+      {/* lasten sloj (isolate): z-index diapozitivov raste s številko kroga (presega največji z-index) in bi prekril časovnico */}
+      <div className="absolute inset-0 isolate">
       <AnimatePresence initial={false} custom={prehod}>
         {d && p ? (
           <motion.div key={kljuc} custom={prehod} variants={PREHODI} initial="vstop" animate="zdaj" exit="izhod" className="absolute inset-0" style={{ zIndex: p.krog * 1000 + p.i + 1 }}>
@@ -110,6 +112,7 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
       {d && p && !d.naslovna && <Casovnica key={`${d.kljuc}#${p.krog}`} delez={p.odmikMs / d.trajanjeMs} />}
     </Oder>
   );
@@ -122,7 +125,7 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
 function Casovnica({ delez }: { delez: number }) {
   const w = Math.min(1, Math.max(0, delez));
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[6px] bg-white/[0.06]" style={{ zIndex: 2_000_000_000 }} aria-hidden>
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[6px] bg-white/[0.06]" style={{ zIndex: 1 }} aria-hidden>
       <div
         className="h-full origin-left bg-[linear-gradient(90deg,#8f380b,#ca5010_35%,#ee7a3a_75%,#f19a66)] shadow-[0_0_14px_rgba(238,122,58,0.75)] transition-transform duration-[250ms] ease-linear"
         style={{ transform: `scaleX(${w})` }}
