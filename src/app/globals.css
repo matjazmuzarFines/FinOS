@@ -531,3 +531,21 @@ html[data-animacije="off"] .fos-intro {
     animation: none;
   }
 }
+
+/* FIN:TV časovnica (Predvajalnik): polni se čez trajanje diapozitiva. Ni okras - teče tudi ob reduced-motion
+   (razred z !important premaga splošno pravilo, ki skrajša animacije). */
+@keyframes fos-tv-casovnica {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.fos-tv-casovnica {
+  transform-origin: left;
+  will-change: transform;
+  animation: fos-tv-casovnica linear 1 both;
+  animation-duration: var(--trajanje) !important;
+  animation-iteration-count: 1 !important;
+}

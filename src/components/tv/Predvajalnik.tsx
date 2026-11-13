@@ -113,22 +113,30 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
         )}
       </AnimatePresence>
       </div>
-      {d && p && !d.naslovna && <Casovnica key={`${d.kljuc}#${p.krog}`} delez={p.odmikMs / d.trajanjeMs} />}
+      {d && p && !d.naslovna && <Casovnica key={`${d.kljuc}#${p.krog}`} odmikMs={p.odmikMs} trajanjeMs={d.trajanjeMs} ustavljeno={ustavljeno} />}
     </Oder>
   );
 }
 
 /**
  * Časovnica čisto spodaj: tanka oranžna črta se polni, dokler je diapozitiv na zaslonu (ne pri naslovni strani).
- * Širina iz ure (vsakih 250 ms) z linearnim prehodom - ob novem diapozitivu nov element (začne pri 0).
+ * Ena CSS animacija čez celo trajanje (grafična kartica, gladko) - začetni položaj iz ure ob prikazu (negativen zamik);
+ * ob novem diapozitivu nov element (začne pri 0). Ustavi = animacija obstane.
  */
-function Casovnica({ delez }: { delez: number }) {
-  const w = Math.min(1, Math.max(0, delez));
+function Casovnica({ odmikMs, trajanjeMs, ustavljeno }: { odmikMs: number; trajanjeMs: number; ustavljeno?: boolean }) {
+  // zamik samo ob prikazu - kasnejša sprememba bi animacijo pognala znova
+  const [zamik] = useState(() => Math.min(odmikMs, trajanjeMs));
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[6px] bg-white/[0.06]" style={{ zIndex: 1 }} aria-hidden>
       <div
-        className="h-full origin-left bg-[linear-gradient(90deg,#8f380b,#ca5010_35%,#ee7a3a_75%,#f19a66)] shadow-[0_0_14px_rgba(238,122,58,0.75)] transition-transform duration-[250ms] ease-linear"
-        style={{ transform: `scaleX(${w})` }}
+        className="fos-tv-casovnica h-full bg-[linear-gradient(90deg,#8f380b,#ca5010_35%,#ee7a3a_75%,#f19a66)] shadow-[0_0_14px_rgba(238,122,58,0.75)]"
+        style={
+          {
+            "--trajanje": `${trajanjeMs}ms`,
+            animationDelay: `-${zamik}ms`,
+            animationPlayState: ustavljeno ? "paused" : "running",
+          } as React.CSSProperties
+        }
       />
     </div>
   );
