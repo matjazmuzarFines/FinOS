@@ -3,6 +3,13 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "8.05",
+    datum: "13. 11. 2026",
+    spremembe: [
+      "FIN:TV: Delovni plan - workflow je zdaj enako kot pregled komponenta za vsak oddelek posebej in po tednih - Production ob Shrani plan objavi workflow in pregled za vsak teden plana, TV kaže tekoči teden. Potrebna migracija 026.",
+    ],
+  },
+  {
     verzija: "8.04",
     datum: "12. 11. 2026",
     spremembe: [

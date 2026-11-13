@@ -129,8 +129,10 @@
 - FIN:TV objave po tednih - `025_fin_tv_tedenske_objave.sql`: `fos_tv_objave.velja_od` / `velja_do` (date[], ena na
   stran, vključno; prazno = vedno), `fos_tv_objavi(..., p_velja_od, p_velja_do)`. TV kaže samo strani, ki veljajo danes
   (`veljavneStrani` v `src/lib/tvObjava.ts` - čist modul, uporablja ga tudi `/api/tv`, ki potekle strani izpusti).
-  Pregled plana je komponenta na oddelek `fp_plan_pregled_p/m/e/t` (splošna `fp_plan_pregled` skrita). Production
-  (`src/lib/tvObjava.ts` tam, 35.03): Shrani plan -> za vsak teden od tekočega do konca plana PDF pregled -> WebP -> objava.
+  Pregled plana je komponenta na oddelek `fp_plan_pregled_p/m/e/t` (splošna `fp_plan_pregled` skrita), enako workflow
+  `fp_plan_workflow_p/m/e/t` (026, splošna `fp_plan_workflow` skrita). Production (`src/lib/tvObjava.ts` tam,
+  `objaviPlanNaTv`, 35.04): Shrani plan -> za vsak teden od tekočega do konca plana PDF workflow + pregled -> WebP -> dve objavi.
+  Nov tedenski dokument plana = vnos v `DOKUMENTI` (tvObjava.ts v Production) + komponente na oddelek v migraciji FinOS.
 - `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
   vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`

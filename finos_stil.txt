@@ -642,3 +642,5 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-11-12 - FIN:TV: plan za vsak teden svoj PDF, vnaprej za vse tedne, za katere je plan narejen (npr. 3 mesece);
              TV mora sam zamenjati PDF ob novem tednu. -> razdelek 28, tvObjava.ts, tvPredvajanje.ts (straniOkna),
              Mreza, OknoUredi, /api/tv, migracija 025; Production tvObjava.ts + DelovniPlan (Shrani plan).
+2026-11-13 - FIN:TV: workflow plana mora biti kot pregled - komponenta na oddelek in po tednih (posodablja se sam).
+             -> razdelek 28, migracija 026, tv.ts (TEST_VIRI); Production tvObjava.ts (objaviPlanNaTv, DOKUMENTI).
