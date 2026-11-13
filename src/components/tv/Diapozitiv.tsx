@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { motion } from "motion/react";
 import {
   CalendarDays,
   CalendarRange,
@@ -19,16 +18,16 @@ import {
   Trophy,
   UserPlus,
   Workflow,
+  Gauge,
   type LucideIcon,
 } from "lucide-react";
 import { Znak } from "@/components/Znak";
 import { BARVE_OBVESTIL, type TvOkno, type TvVir } from "@/lib/tv";
-import { PREHOD_MS, type Diapozitiv as DiapozitivT } from "@/lib/tvPredvajanje";
+import type { Diapozitiv as DiapozitivT } from "@/lib/tvPredvajanje";
 
 /** Logična velikost TV slike. 4K TV jo poveča ×2 (besedilo ostane ostro), 1080p 1:1. */
 export const SIRINA = 1920;
 export const VISINA = 1080;
-const KRIVULJA = [0.22, 1, 0.36, 1] as const;
 
 export const IKONE_OBVESTIL: Record<string, LucideIcon> = {
   Megaphone,
@@ -45,7 +44,7 @@ export const IKONE_OBVESTIL: Record<string, LucideIcon> = {
   TriangleAlert,
 };
 /** Ikone komponent (fos_tv_viri.ikona). */
-export const IKONE_VIROV: Record<string, LucideIcon> = { Workflow, CalendarRange, FileText, CalendarDays, Trophy, GraduationCap, ShieldCheck };
+export const IKONE_VIROV: Record<string, LucideIcon> = { Workflow, Gauge, CalendarRange, FileText, CalendarDays, Trophy, GraduationCap, ShieldCheck };
 
 /**
  * Oder: platno 1920 × 1080, pomanjšano / povečano na velikost okvirja (letterbox, črni robovi). Isti izris za TV,
@@ -74,7 +73,7 @@ export function Oder({ children, className = "" }: { children: ReactNode; classN
 
 type Props = {
   /** diapozitiv (iz diapozitivi()) ali samo okno - sličica / predogled: prva stran */
-  d: Pick<DiapozitivT, "okno" | "stran" | "naslovna" | "pas">;
+  d: Pick<DiapozitivT, "okno" | "stran" | "naslovna">;
   url: (pot: string) => string | undefined;
   /** komponenta okna vrste "vir" (ime, ikona, ali je objava) */
   vir?: TvVir;
@@ -88,7 +87,7 @@ type Props = {
 
 /** En diapozitiv na odru 1920 × 1080. Barve so stalne - TV je vedno temen. */
 export function Diapozitiv({ d, url, vir, mirno, odmikMs = 0, zanka }: Props) {
-  const { okno, stran, naslovna, pas } = d;
+  const { okno, stran, naslovna } = d;
   if (naslovna) return <NaslovnaTv okno={okno} vir={vir} />;
   if (okno.vrsta === "obvestilo") return <ObvestiloTv okno={okno} stran={stran} url={url} mirno={mirno} zanka={zanka} />;
   const strani = okno.vrsta === "pdf" || okno.vrsta === "vir";
@@ -99,7 +98,7 @@ export function Diapozitiv({ d, url, vir, mirno, odmikMs = 0, zanka }: Props) {
   if (okno.vrsta === "vir" && !vir?.objava) return <KomponentaBrezObjave okno={okno} vir={vir} />;
   if (!src) return <Nalagam okno={okno} />;
   if (okno.vrsta === "video") return <VideoTv src={src} celo={celo} mirno={mirno} odmikMs={odmikMs} zanka={zanka} />;
-  if (pas) return <PasStrani src={src} odmik={pas.odmik} razmerje={pas.razmerje} />;
+  if (strani && !celo) return <StranTv src={src} alt={okno.naslov} />;
   return <SlikaTv src={src} celo={celo} alt={okno.naslov} />;
 }
 
@@ -112,23 +111,31 @@ function SlikaTv({ src, celo, alt }: { src: string; celo: boolean; alt: string }
   );
 }
 
-/** Del pokončne strani čez celo širino; ob naslednjem delu (isti element) stran zdrsne navzgor. */
-function PasStrani({ src, odmik, razmerje }: { src: string; odmik: number; razmerje: number }) {
-  const visina = SIRINA * razmerje;
+/** Koliko se sme stran raztegniti v eno smer (A4 ležeče -> 16:9 = 1,26; pokončna dobi bele robove). */
+const RAZTEG_MAX = 1.3;
+
+/**
+ * Stran PDF / komponente pri "Zapolni zaslon": vedno CELA stran (nič odrezano, nič razrezano), raztegnjena do robov
+ * zaslona. Ležeča A4 zapolni zaslon v celoti; pokončna se raztegne največ RAZTEG_MAX, ostalo je belo (papir).
+ */
+function StranTv({ src, alt }: { src: string; alt: string }) {
+  const [razmerje, setRazmerje] = useState<number | null>(null); // višina / širina strani
+  let w = SIRINA;
+  let h = VISINA;
+  if (razmerje) {
+    if (razmerje > VISINA / SIRINA) w = Math.min(SIRINA, (VISINA / razmerje) * RAZTEG_MAX);
+    else h = Math.min(VISINA, SIRINA * razmerje * RAZTEG_MAX);
+  }
   return (
-    <div className="absolute inset-0 overflow-hidden bg-white">
-      <motion.img
+    <div className="absolute inset-0 grid place-items-center bg-white">
+      <img
         src={src}
-        alt=""
+        alt={alt}
         draggable={false}
-        initial={false}
-        animate={{ y: -odmik * visina }}
-        transition={{ duration: PREHOD_MS / 1000, ease: KRIVULJA }}
-        className="absolute left-0 top-0 w-full max-w-none"
-        style={{ height: visina }}
+        onLoad={(e) => setRazmerje(e.currentTarget.naturalHeight / e.currentTarget.naturalWidth || null)}
+        className="max-w-none"
+        style={{ width: w, height: h, visibility: razmerje ? "visible" : "hidden" }}
       />
-      {/* senca na robu: nakaže, da se stran nadaljuje */}
-      {odmik + VISINA / visina < 0.999 && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(transparent,rgb(0_0_0/0.25))]" />}
     </div>
   );
 }

@@ -231,7 +231,7 @@ export function OknoUredi({
           </Oder>
           <p className="text-xs text-ink-500">
             Predogled je enak sliki na TV-ju (1920 × 1080, na 4K povečano).
-            {(vrsta === "pdf" || vrsta === "vir") && ` ${prviDiapozitiv(predogled, viri).pas ? "Pokončne strani se pri Zapolni zaslon razrežejo na dele čez celo širino - med deli stran zdrsne navzgor. " : ""}Vsaka stran / del se pokaže ${o.trajanje || "?"} s.`}
+            {(vrsta === "pdf" || vrsta === "vir") && ` Vsaka stran se pokaže ${o.trajanje || "?"} s.`}
           </p>
 
           {vrsta === "vir" && (
@@ -385,7 +385,7 @@ export function OknoUredi({
             <PoljeObrazca naslov="Prilagoditev" opis={
                 vrsta === "pdf" || vrsta === "vir"
                   ? o.prilagoditev === "zapolni"
-                    ? "Stran čez celo širino zaslona. Pokončna stran se razreže na ležeče dele, med njimi zdrsne navzgor."
+                    ? "Cela stran se raztegne do robov zaslona (nič se ne odreže). Pokončna stran ima ob strani bel rob."
                     : "Vidi se cela stran naenkrat (pokončna je majhna), ob strani zamegljeno ozadje."
                   : o.prilagoditev === "zapolni"
                     ? "Slika zapolni zaslon (robovi se lahko odrežejo)."

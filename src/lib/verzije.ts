@@ -3,9 +3,18 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "8.07",
+    datum: "13. 11. 2026",
+    spremembe: [
+      "FIN:TV: komponente workflowa plana se imenujejo »Delovni plan · oddelek«.",
+      "FIN:TV: nova komponenta »Delo - prejšnji dan« za vsak oddelek - Production ob uvozu poročanega dela objavi stran s krogom štempljanih ur proti planu za vsako celico (zeleno do 100 %, rumeno do 110 %, rdeče nad). Stran velja samo na dan objave. Potrebna migracija 027.",
+    ],
+  },
+  {
     verzija: "8.06",
     datum: "13. 11. 2026",
     spremembe: [
+      "FIN:TV: »Zapolni zaslon« pri PDF in komponentah ne reže več strani - ena stran je en zaslon, cela stran se raztegne do robov (ležeča A4 zapolni ves zaslon, pokončna ima ob strani bel rob). Nov PDF ima privzeto Zapolni zaslon.",
       "Popravek FIN:TV: Predvajaj tukaj ni odprl ničesar (brskalnik je novo okno tiho zavrnil) - zdaj je gumb povezava, ki se vedno odpre v novem zavihku (deluje tudi srednji klik).",
     ],
   },

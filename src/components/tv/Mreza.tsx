@@ -21,7 +21,7 @@ export const VLECI_VIR = "application/x-fos-tv-vir";
 
 type Nalaganje = { kljuc: string; ime: string; stanje: string };
 
-/** Novo okno s komponento (zadnja objava se vrti; pokončne strani razrezane - Zapolni zaslon). */
+/** Novo okno s komponento (zadnja objava se vrti; Zapolni zaslon = cela stran do robov). */
 export const oknoVira = (v: TvVir, idSeznama: number): NovoOkno => ({
   id_seznama: idSeznama,
   vrsta: "vir",
@@ -85,8 +85,7 @@ export function Mreza({ idSeznama, okna: vsa, viri, drugiSeznami, onDodajVir }: 
       stanje("Nalagam ...");
       try {
         const n = await naloziZaTv(f, stanje);
-        // PDF s pokončnimi stranmi: privzeto Zapolni zaslon (stran čez celo širino, razrezana na dele), ležeč: cela stran
-        const pokoncen = n.razmerja.some((r) => r > 1);
+        // PDF: privzeto Zapolni zaslon (cela stran raztegnjena do robov)
         await dodajOkna([
           {
             id_seznama: idSeznama,
@@ -99,7 +98,7 @@ export function Mreza({ idSeznama, okna: vsa, viri, drugiSeznami, onDodajVir }: 
             aktivno: true,
             datoteka: n.datoteka,
             strani: n.strani,
-            vsebina: { prilagoditev: n.vrsta === "pdf" ? (pokoncen ? "zapolni" : "celo") : "zapolni", ...(n.vrsta === "pdf" ? { razmerja: n.razmerja } : {}) },
+            vsebina: { prilagoditev: "zapolni", ...(n.vrsta === "pdf" ? { razmerja: n.razmerja } : {}) },
           },
         ]);
         obvesti(`${f.name} je dodan na seznam.`);

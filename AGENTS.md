@@ -133,6 +133,10 @@
   `fp_plan_workflow_p/m/e/t` (026, splošna `fp_plan_workflow` skrita). Production (`src/lib/tvObjava.ts` tam,
   `objaviPlanNaTv`, 35.04): Shrani plan -> za vsak teden od tekočega do konca plana PDF workflow + pregled -> WebP -> dve objavi.
   Nov tedenski dokument plana = vnos v `DOKUMENTI` (tvObjava.ts v Production) + komponente na oddelek v migraciji FinOS.
+- FIN:TV Delo - prejšnji dan - `027_fin_tv_delo_prejsnji_dan.sql`: `fp_delo_vceraj_p/m/e/t` (ikona Gauge), workflow
+  komponente preimenovane v "Delovni plan · oddelek". Production (`objaviDeloNaTv` v tvObjava.ts, `deloVceraj.ts` = isti
+  izračun kot Produktivnost za en dan, `deloPdf.ts` = stran 16:9) objavi ob vsakem uvozu Poročanega dela (sync.ts) in
+  ročno (Produktivnost -> Na TV); strani veljajo samo na dan objave (prej TV komponento preskoči).
 - `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
   vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`
@@ -212,7 +216,7 @@
 - 8.03: Administracija - vstop je plošča po področjih (Registracija časa, FIN:TV, FIN:DOOR kmalu) s pravimi številkami,
   Ljudje z opozorili, Sistem; iskanje Ctrl+K; meni levo v sekcijah z mrežo nastavitev. Urniki: 3 stolpci od 1760 px.
 - 8.02: FIN:TV - naslovna stran pred vsakim oknom (prehod 2 s, naslov 4 s, prehod 2 s; `PREHOD_MS` / `NASLOV_MS` v
-  tvPredvajanje.ts), pokončne strani PDF pri "Zapolni" razrezane na ležeče dele (`deliStrani`, stran zdrsne), obvestilo s
+  tvPredvajanje.ts), PDF pri "Zapolni" = cela stran raztegnjena do robov (`StranTv` v Diapozitiv.tsx, 8.06 - rezanje na dele odstranjeno), obvestilo s
   prilogo desno zgoraj, panel Komponente (povleci v seznam, `VLECI_VIR`), nalaganje v `src/lib/tvNalozi.ts`.
   Production 35.01: izvoz "PDF - pregled (roki)" (`src/lib/planPregledPdf.ts` v FINES_Production) = prva komponenta za TV.
 - 8.01: FIN:TV faza 1 (osnutek 022). `src/lib/tv.ts` (useTv, pisanje, datoteke), `src/lib/tvPredvajanje.ts` (čista funkcija:

@@ -413,7 +413,7 @@ function Vrstica({
         </span>
         <span className={`truncate text-xs ${stanje.tip === "ok" ? "text-ink-400" : stanje.tip === "brez" ? "text-warn-400" : "text-nok-500"}`}>
           {stanje.besedilo}
-          {zdaj && ` · zdaj: ${zdaj.d.okno.naslov || zdaj.d.okno.vrsta}${zdaj.d.naslovna ? " (naslov)" : zdaj.d.stStrani ? ` (stran ${zdaj.d.stStrani}${zdaj.d.pas ? `, del ${zdaj.d.pas.i + 1}/${zdaj.d.pas.n}` : ""})` : ""} · ${zdaj.i + 1}/${zdaj.n} · ${minSek(zdaj.d.trajanjeMs)}`}
+          {zdaj && ` · zdaj: ${zdaj.d.okno.naslov || zdaj.d.okno.vrsta}${zdaj.d.naslovna ? " (naslov)" : zdaj.d.stStrani ? ` (stran ${zdaj.d.stStrani})` : ""} · ${zdaj.i + 1}/${zdaj.n} · ${minSek(zdaj.d.trajanjeMs)}`}
         </span>
       </span>
       <button type="button" className={gumb} title={ustavljeno ? "Nadaljuj predvajanje" : "Ustavi na tem oknu"} onClick={onUstavi}>

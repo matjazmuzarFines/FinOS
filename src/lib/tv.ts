@@ -22,7 +22,7 @@ export type Obvestilo = { naslov: string; besedilo: string; barva: BarvaObvestil
 export type VsebinaOkna = {
   prilagoditev?: Prilagoditev;
   obvestilo?: Obvestilo;
-  /** PDF: višina / širina vsake strani (pokončna stran pri "Zapolni" se razreže na ležeče dele). */
+  /** PDF: višina / širina vsake strani (Zapolni: cela stran raztegnjena do robov). */
   razmerja?: number[];
   /** Naslovna stran pred oknom (privzeto da, razen pri obvestilu). */
   uvod?: boolean;
@@ -107,8 +107,9 @@ let stanje: Stanje = { vir: "nalagam", napaka: null, zasloni: [], okna: [], viri
 
 /** Katalog brez baze 023: komponente, ki jih bo objavljal Production (še brez objav). */
 export const TEST_VIRI: TvVir[] = [
-  { id: -1, koda: "fp_plan_workflow_p", ime: "Delovni plan - workflow · Proizvodnja", opis: "Kaj je treba narediti: koraki po celicah. Ob Shrani plan za vsak teden plana - TV kaže tekoči teden.", aplikacija: "fp", ikona: "Workflow", vklopljen: true, objava: null },
+  { id: -1, koda: "fp_plan_workflow_p", ime: "Delovni plan · Proizvodnja", opis: "Kaj je treba narediti: koraki po celicah. Ob Shrani plan za vsak teden plana - TV kaže tekoči teden.", aplikacija: "fp", ikona: "Workflow", vklopljen: true, objava: null },
   { id: -2, koda: "fp_plan_pregled_p", ime: "Delovni plan - pregled · Proizvodnja", opis: "Do kdaj: roki krovnih nalogov po celicah. Ob Shrani plan za vsak teden plana - TV kaže tekoči teden.", aplikacija: "fp", ikona: "CalendarRange", vklopljen: true, objava: null },
+  { id: -3, koda: "fp_delo_vceraj_p", ime: "Delo - prejšnji dan · Proizvodnja", opis: "Štempljane ure prejšnjega delovnega dne proti planu po celicah. Objavi se ob uvozu poročanega dela.", aplikacija: "fp", ikona: "Gauge", vklopljen: true, objava: null },
 ];
 const poslusalci = new Set<() => void>();
 const nastavi = (s: Partial<Stanje>) => {
