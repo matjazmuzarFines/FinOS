@@ -9,6 +9,7 @@ export const VERZIJE: Verzija[] = [
       "FIN:TV: nova komponenta »Zaključeni krovni« za vsak oddelek - produktivnost krovnih nalogov, zaključenih v zadnjih 30 dneh (en krovni en stolpec, stran na celico). Production jo objavi ob uvozu poročanega dela in ob gumbu Na TV, strani veljajo 7 dni. Potrebna migracija 028.",
       "FIN:TV: »Delo - prejšnji dan« kaže razliko do plana v urah - % pomeni vedno produktivnost (normativne / štempljane ure).",
       "FIN:TV: okno komponente pri objavi z enim obdobjem pove, do kdaj velja (»velja do 19.11. · danes 3 str.«).",
+      "FIN:TV: panel Komponente je zbit - ista komponenta za več oddelkov je ena vrstica, oddelek izbereš s čipi (privzeto oddelek izbranega zaslona); stikalo in + veljata za izbran oddelek.",
     ],
   },
   {

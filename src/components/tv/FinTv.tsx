@@ -173,7 +173,7 @@ export function FinTv() {
               })}
             </ul>
           </Panel>
-            <Komponente viri={tv.viri} testni={tv.testniViri} zdaj={zdaj} onDodaj={dodajVir} />
+            <Komponente viri={tv.viri} testni={tv.testniViri} zdaj={zdaj} namig={`${izbran.ime} ${izbran.lokacija ?? ""}`} onDodaj={dodajVir} />
           </div>
 
           {/* izbran zaslon */}
@@ -494,57 +494,118 @@ function PoveziOkno({ zaslon, zasloni, okna, onClose }: { zaslon: TvZaslon; zasl
   );
 }
 
+/** Skupina komponent: ista komponenta za več oddelkov ("Delovni plan · Montaža" ...) = ena vrstica z izbiro oddelka. */
+type SkupinaVirov = { kljuc: string; ime: string; clani: { oddelek: string | null; vir: TvVir }[] };
+
+const brezSumnikov = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/** Združi po imenu pred " · " (in aplikaciji); vrstni red = prva pojavitev. */
+function skupineVirov(viri: TvVir[]): SkupinaVirov[] {
+  const skupine = new Map<string, SkupinaVirov>();
+  for (const v of viri) {
+    const [ime, oddelek] = v.ime.split(" · ");
+    const kljuc = `${v.aplikacija}|${oddelek ? ime : v.koda}`;
+    const s = skupine.get(kljuc) ?? { kljuc, ime, clani: [] };
+    s.clani.push({ oddelek: oddelek ?? null, vir: v });
+    skupine.set(kljuc, s);
+  }
+  return [...skupine.values()];
+}
+
+/** Kratko ime oddelka za čip (Proizvodnja -> Proizv.). */
+const kratko = (o: string) => (o.length > 8 ? `${o.slice(0, 6)}.` : o);
+
 /**
  * Predefinirane komponente (fos_tv_viri): dokumenti, ki jih ustvarijo drugi projekti (npr. Production ob Shrani plan).
- * Povleci v seznam predvajanja ali klikni +. Nove komponente se dodajo s PROGRAMIRANJEM v projektu (izvoz + objava) -
- * tu se pokažejo same. Stikalo = vklop / izklop komponente na vseh TV-jih.
+ * Ista komponenta za več oddelkov je ENA vrstica s čipi oddelkov (privzeto oddelek iz imena / lokacije zaslona);
+ * povleci vrstico v seznam predvajanja ali klikni + (doda izbran oddelek). Stikalo = vklop izbranega oddelka na vseh
+ * TV-jih (izklopljen oddelek je v čipu prečrtan). Nove komponente se dodajo s PROGRAMIRANJEM v projektu.
  */
-function Komponente({ viri, testni, zdaj, onDodaj }: { viri: TvVir[]; testni: boolean; zdaj: number; onDodaj: (v: TvVir) => void }) {
+function Komponente({ viri, testni, zdaj, namig, onDodaj }: { viri: TvVir[]; testni: boolean; zdaj: number; namig: string; onDodaj: (v: TvVir) => void }) {
+  const [izbira, setIzbira] = useState<Record<string, number>>({});
+  const skupine = skupineVirov(viri);
+  const n = brezSumnikov(namig);
   return (
-    <Panel naslov="Komponente" desno={testni ? <TestniPodatki opis="Katalog komponent še ni v bazi (osnutek 023) - prikazane so komponente, ki jih bo objavljal Production." /> : <span className="text-xs text-ink-500">{viri.length}</span>}>
+    <Panel
+      naslov="Komponente"
+      desno={
+        <span className="flex items-center gap-2">
+          {testni ? <TestniPodatki opis="Katalog komponent še ni v bazi (osnutek 023) - prikazane so komponente, ki jih bo objavljal Production." /> : <span className="text-xs text-ink-500">{skupine.length}</span>}
+          <span title="Komponente so programirane v projektih (npr. izvoz plana v Production) in se pokažejo tu same. Izberi oddelek in povleci vrstico v seznam predvajanja ali klikni +." className="grid h-6 w-6 place-items-center rounded-full text-fines-300 hover:bg-white/[0.06]">
+            <Code2 className="h-3.5 w-3.5" aria-hidden />
+          </span>
+        </span>
+      }
+    >
       <ul className="flex flex-col gap-1.5">
-        {viri.map((v) => {
+        {skupine.map((s) => {
+          // privzeto: oddelek, ki je v imenu / lokaciji zaslona, sicer prvi
+          const privzet = s.clani.find((c) => c.oddelek && n.includes(brezSumnikov(c.oddelek))) ?? s.clani[0];
+          const clan = s.clani.find((c) => c.vir.id === izbira[s.kljuc]) ?? privzet;
+          const v = clan.vir;
           const Ikona = IKONE_VIROV[v.ikona] ?? FileText;
           return (
             <li
-              key={v.id}
+              key={s.kljuc}
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData(VLECI_VIR, String(v.id));
                 e.dataTransfer.effectAllowed = "copy";
               }}
-              title={`${v.opis}
+              title={`${v.ime}
+${v.opis}
 Povleci v seznam predvajanja.`}
-              className={`group flex cursor-grab items-center gap-2.5 rounded-[14px] border border-white/10 bg-white/[0.03] p-2 transition-all hover:border-fines-400/50 hover:bg-fines-500/[0.05] active:cursor-grabbing ${v.vklopljen ? "" : "opacity-55"}`}
+              className="group flex cursor-grab flex-col gap-1.5 rounded-[14px] border border-white/10 bg-white/[0.03] p-2 transition-all hover:border-fines-400/50 hover:bg-fines-500/[0.05] active:cursor-grabbing"
             >
-              <span className="fos-fines-fill grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-snow">
-                <Ikona className="h-[18px] w-[18px]" aria-hidden />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-sm font-semibold leading-tight text-white">{v.ime}</span>
-                <span className="truncate text-[11px] text-ink-400">
-                  {v.aplikacija === "fp" ? "Production" : v.aplikacija} · {v.objava ? `objava ${pred(v.objava.created_at, zdaj)}` : "še ni objave"}
+              <div className={`flex items-center gap-2.5 transition-opacity ${v.vklopljen ? "" : "opacity-55"}`}>
+                <span className="fos-fines-fill grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-snow">
+                  <Ikona className="h-[18px] w-[18px]" aria-hidden />
                 </span>
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={v.vklopljen}
-                title={v.vklopljen ? "Na TV - klik izklopi komponento na vseh TV-jih" : "Izklopljena - klik jo vklopi na vseh TV-jih"}
-                onClick={() => vklopVira(v, !v.vklopljen).catch((e) => obvesti((e as Error).message, "napaka"))}
-                className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${v.vklopljen ? "bg-[linear-gradient(135deg,#f19a66,#ca5010_60%,#8f380b)] shadow-[0_0_10px_-2px_rgb(238_122_58/0.8)]" : "bg-ink-700"}`}
-              >
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-snow transition-all ${v.vklopljen ? "left-[18px]" : "left-0.5"}`} />
-              </button>
-              <IconButton hint={`Dodaj ${v.ime} na konec seznama izbranega zaslona`} icon={Plus} variant="success" onClick={() => onDodaj(v)} className="!h-8 !w-8" />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-sm font-semibold leading-tight text-white">{s.ime}</span>
+                  <span className="truncate text-[11px] text-ink-400">
+                    {clan.oddelek ? `${clan.oddelek} · ` : `${v.aplikacija === "fp" ? "Production" : v.aplikacija} · `}
+                    {v.objava ? `objava ${pred(v.objava.created_at, zdaj)}` : "še ni objave"}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={v.vklopljen}
+                  title={`${v.ime}: ${v.vklopljen ? "na TV - klik izklopi na vseh TV-jih" : "izklopljena - klik vklopi na vseh TV-jih"}`}
+                  onClick={() => vklopVira(v, !v.vklopljen).catch((e) => obvesti((e as Error).message, "napaka"))}
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${v.vklopljen ? "bg-[linear-gradient(135deg,#f19a66,#ca5010_60%,#8f380b)] shadow-[0_0_10px_-2px_rgb(238_122_58/0.8)]" : "bg-ink-700"}`}
+                >
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-snow transition-all ${v.vklopljen ? "left-[18px]" : "left-0.5"}`} />
+                </button>
+                <IconButton hint={`Dodaj ${v.ime} na konec seznama izbranega zaslona`} icon={Plus} variant="success" onClick={() => onDodaj(v)} className="!h-8 !w-8" />
+              </div>
+              {s.clani.length > 1 && (
+                <div className="flex flex-wrap gap-1 pl-[46px]" role="radiogroup" aria-label={`Oddelek za ${s.ime}`}>
+                  {s.clani.map((c) => {
+                    const je = c.vir.id === v.id;
+                    return (
+                      <button
+                        key={c.vir.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={je}
+                        onClick={() => setIzbira((x) => ({ ...x, [s.kljuc]: c.vir.id }))}
+                        title={`${c.vir.ime}${c.vir.vklopljen ? "" : " (izklopljena)"} · ${c.vir.objava ? `objava ${pred(c.vir.objava.created_at, zdaj)}` : "še ni objave"}`}
+                        className={`relative rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                          je ? "bg-[linear-gradient(135deg,#f19a66,#ca5010_60%,#8f380b)] text-snow shadow-[0_0_10px_-3px_rgb(238_122_58/0.8)]" : "border border-white/10 text-ink-300 hover:border-fines-400/50 hover:text-white"
+                        } ${c.vir.vklopljen ? "" : "line-through opacity-60"}`}
+                      >
+                        {kratko(c.oddelek ?? "")}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </li>
           );
         })}
       </ul>
-      <p className="flex items-start gap-2 rounded-[12px] border border-dashed border-white/15 p-2.5 text-[11px] leading-snug text-ink-400">
-        <Code2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fines-300" aria-hidden />
-        Komponente so programirane v projektih (npr. izvoz plana v Production) in se pokažejo tu same. Povleci jo v seznam predvajanja.
-      </p>
     </Panel>
   );
 }

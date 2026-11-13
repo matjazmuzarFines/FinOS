@@ -458,9 +458,11 @@ PRAVILA
    - PDF / komponenta: ena stran = en zaslon, stran se NIKOLI ne razreže ali odreže. "Zapolni zaslon" = cela stran
      raztegnjena do robov (največ 1,3× v eno smer: ležeča A4 zapolni ves zaslon, pokončna ima ob strani bel rob - papir);
      "Cela slika" = cela stran v pravem razmerju z zamegljenim ozadjem. Nov PDF privzeto Zapolni zaslon.
-   - KOMPONENTE (panel levo pod Zasloni): vrstica = ikona v oranžnem prelivu, ime, "Production · objava pred 2 h", stikalo
-     (vklop na vseh TV-jih), zelen +; vrstico povlečeš v seznam predvajanja (polje "Spusti komponento sem"). Spodaj črtkana
-     opomba: komponente so programirane v projektih in se pokažejo same. Okno komponente: modra kartica z imenom, opisom in
+   - KOMPONENTE (panel levo pod Zasloni): ista komponenta za več oddelkov (ime "X · oddelek") je ENA vrstica - ikona v
+     oranžnem prelivu, ime brez oddelka, "Montaža · objava pred 2 h", stikalo (vklop izbranega oddelka na vseh TV-jih),
+     zelen +; pod njo čipi oddelkov (izbran = oranžen preliv, izklopljen = prečrtan; privzet = oddelek iz imena / lokacije
+     izbranega zaslona). Vrstico povlečeš v seznam predvajanja (polje "Spusti komponento sem") - gre izbran oddelek.
+     Opomba "programirane v projektih" je v hover tekstu ikone </> v glavi panela (brez drsenja). Okno komponente: modra kartica z imenom, opisom in
      zadnjo objavo; v mreži "Čaka na objavo" (modro) / "Komponenta izklopljena".
    - Komponenta po TEDNIH (npr. Delovni plan - pregled, vsak oddelek svoja): objava ima strani za več tednov naprej
      (vsak teden svoj PDF, strani veljajo pon - ned); TV kaže samo tekoči teden in v ponedeljek sam preklopi. V oknu
@@ -660,3 +662,5 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-11-13 - FIN:TV: nova komponenta "Zaključeni krovni" po oddelkih (produktivnost krovnih, zaključenih v 30 dneh, velja
              7 dni); % je vedno produktivnost, poraba ur v urah ("Delo - prejšnji dan" brez %). -> razdelek 28,
              migracija 028, tv.ts (TEST_VIRI), OknoUredi (velja do), Mreza, AGENTS.md.
+2026-11-13 - FIN:TV: komponent je preveč (vsaka za vsak oddelek), panel se vleče in drsi -> ena vrstica na komponento,
+             oddelek se izbere s čipi v vrstici. -> razdelek 28, FinTv (Komponente, skupineVirov).
