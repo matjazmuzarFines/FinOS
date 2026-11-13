@@ -3,6 +3,13 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "8.06",
+    datum: "13. 11. 2026",
+    spremembe: [
+      "Popravek FIN:TV: Predvajaj tukaj ni odprl ničesar (brskalnik je novo okno tiho zavrnil) - zdaj je gumb povezava, ki se vedno odpre v novem zavihku (deluje tudi srednji klik).",
+    ],
+  },
+  {
     verzija: "8.05",
     datum: "13. 11. 2026",
     spremembe: [

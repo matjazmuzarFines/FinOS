@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 /**
@@ -53,6 +53,29 @@ export function Button({ hint, variant = "primary", icon: Icon, size = "md", cla
       {Icon && <Icon className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover/btn:scale-110" aria-hidden />}
       {children}
     </button>
+  );
+}
+
+/**
+ * Povezava, ki je videti kot gumb (npr. odpri v novem zavihku). Za nov zavihek vedno to, ne window.open -
+ * brskalnik window.open lahko tiho zavrne (zaščita pred pojavnimi okni), povezave pa ne.
+ */
+export function ButtonLink({
+  hint,
+  variant = "primary",
+  icon: Icon,
+  size = "md",
+  className = "",
+  children,
+  ...rest
+}: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "title"> & { hint: string; variant?: ButtonVariant; icon?: LucideIcon; size?: "md" | "lg"; children?: ReactNode }) {
+  const sizing = size === "lg" ? "h-12 px-6 text-base rounded-xl" : "h-10 px-4 text-sm rounded-[10px]";
+  return (
+    <a title={hint} className={`${BASE} ${sizing} ${VARIANTS[variant]} ${className}`} {...rest}>
+      <Blesk />
+      {Icon && <Icon className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover/btn:scale-110" aria-hidden />}
+      {children}
+    </a>
   );
 }
 

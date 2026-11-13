@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { Code2, Copy, Download, FileText, KeyRound, Link2, MonitorPlay, Pencil, Plus, Power, RefreshCw, ScanEye, Tv, Unlink, Wifi, WifiOff } from "lucide-react";
-import { Button, IconButton } from "@/components/ui/Button";
+import { Button, ButtonLink, IconButton } from "@/components/ui/Button";
 import { GlavaStrani } from "@/components/ui/GlavaStrani";
 import { Modal } from "@/components/ui/Modal";
 import { POLJE } from "@/components/ui/Polje";
@@ -211,9 +211,9 @@ export function FinTv() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button hint="Odpri predvajanje tega seznama v novem zavihku" variant="neutral" icon={MonitorPlay} onClick={() => window.open(`/tv?seznam=${izbran.id_seznama}`, "_blank")}>
+                <ButtonLink hint="Odpri predvajanje tega seznama v novem zavihku" variant="neutral" icon={MonitorPlay} href={`/tv?seznam=${izbran.id_seznama}`} target="_blank" rel="noopener">
                   Predvajaj tukaj
-                </Button>
+                </ButtonLink>
                 <Button hint="Na TV-ju se za 10 s pokaže ime zaslona" variant="neutral" icon={ScanEye} onClick={() => izvedi(() => ukazZaslonu(izbran.id, "ime"), `${izbran.ime}: ime se pokaže v 20 s.`)} disabled={!izbran.visible}>
                   Pokaži ime
                 </Button>
