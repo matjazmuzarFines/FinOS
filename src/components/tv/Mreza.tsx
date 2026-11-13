@@ -196,16 +196,20 @@ export function Mreza({ idSeznama, okna: vsa, viri, drugiSeznami, onDodajVir }: 
 function Kartica({ okno, st, url, vir, viri, zdaj, onUredi }: { okno: TvOkno; st: number; url: (p: string) => string | undefined; vir?: TvVir; viri: TvVir[]; zdaj: number; onUredi: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: okno.id });
   const Ikona = IKONE_VRST[okno.vrsta];
-  const velja = veljaZdaj(okno, zdaj) && (okno.vrsta !== "vir" || (!!vir?.vklopljen && !!vir.objava));
+  const { strani } = straniOkna(okno, viri, zdaj);
+  // komponenta z objavo, a brez strani za danes (npr. plan za ta teden ni objavljen)
+  const brezDanes = okno.vrsta === "vir" && !!vir?.vklopljen && !!vir.objava && !strani.length;
+  const velja = veljaZdaj(okno, zdaj) && (okno.vrsta !== "vir" || (!!vir?.vklopljen && !!vir.objava && !brezDanes));
   const zacne = okno.velja_od && new Date(okno.velja_od).getTime() > zdaj;
-  const { strani } = straniOkna(okno, viri);
   const oznaka = !okno.aktivno
     ? { ikona: EyeOff, besedilo: "Izklopljeno", barva: "text-ink-300" }
     : okno.vrsta === "vir" && !vir?.vklopljen
       ? { ikona: EyeOff, besedilo: "Komponenta izklopljena", barva: "text-ink-300" }
       : okno.vrsta === "vir" && !vir?.objava
         ? { ikona: CalendarClock, besedilo: "Čaka na objavo", barva: "text-sync-500" }
-        : zacne
+        : brezDanes
+          ? { ikona: CalendarClock, besedilo: "Danes ni strani (ni plana za ta teden)", barva: "text-warn-500" }
+          : zacne
           ? { ikona: CalendarClock, besedilo: `Od ${new Date(okno.velja_od!).toLocaleString("sl-SI", { dateStyle: "short", timeStyle: "short" })}`, barva: "text-sync-500" }
           : !veljaZdaj(okno, zdaj)
             ? { ikona: CalendarClock, besedilo: "Poteklo", barva: "text-nok-500" }
@@ -221,7 +225,7 @@ function Kartica({ okno, st, url, vir, viri, zdaj, onUredi }: { okno: TvOkno; st
       >
         <button type="button" onClick={onUredi} title={`Uredi okno "${okno.naslov}"`} className="block w-full text-left">
           <Oder className={`aspect-video w-full ${velja ? "" : "opacity-40 grayscale"}`}>
-            <Diapozitiv d={prviDiapozitiv(okno, viri)} url={url} vir={vir} mirno />
+            <Diapozitiv d={prviDiapozitiv(okno, viri, zdaj)} url={url} vir={vir} mirno />
           </Oder>
           <span className="flex items-center gap-2 px-3 py-2">
             <span className="min-w-0 flex-1">

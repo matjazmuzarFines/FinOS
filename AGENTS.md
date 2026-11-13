@@ -126,6 +126,11 @@
   `fos_tv_objave` (strani WebP + razmerja, izvor, kdo; zadnja = `fos_tv_zadnje_objave`), okno vrste `vir` (`id_vira`),
   `fos_tv_objavi(koda, strani, razmerja, izvor)` in `fos_tv_vklop_vira` (kliče projekt), košara `fos-tv-viri` (aplikacija fp).
   Nova komponenta = vrstica v `fos_tv_viri` + izvoz PDF v projektu + objava (PDF -> slike strani, kot `pdfStrani.ts`).
+- FIN:TV objave po tednih - `025_fin_tv_tedenske_objave.sql`: `fos_tv_objave.velja_od` / `velja_do` (date[], ena na
+  stran, vključno; prazno = vedno), `fos_tv_objavi(..., p_velja_od, p_velja_do)`. TV kaže samo strani, ki veljajo danes
+  (`veljavneStrani` v `src/lib/tvObjava.ts` - čist modul, uporablja ga tudi `/api/tv`, ki potekle strani izpusti).
+  Pregled plana je komponenta na oddelek `fp_plan_pregled_p/m/e/t` (splošna `fp_plan_pregled` skrita). Production
+  (`src/lib/tvObjava.ts` tam, 35.03): Shrani plan -> za vsak teden od tekočega do konca plana PDF pregled -> WebP -> objava.
 - `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
   vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { napakaApi } from "@/lib/klicatelj";
 import { adminKlient, BREZ_KLJUCA } from "@/lib/supabaseStreznik";
+import { objavaIzVrstice, type ObjavaVira } from "@/lib/tvObjava";
 
 /**
  * FIN:TV predvajalnik (/tv na računalniku ob TV-ju) -> FIN:OS. Prijava s ključem zaslona: ?k=tv_... ali
@@ -39,16 +40,25 @@ export async function GET(req: Request) {
 
   // komponente (023) oken vrste "vir": zadnja objava; brez tabel (023 ni zagnan) brez komponent
   const idViri = [...new Set((okna ?? []).map((o) => o.id_vira as number | null).filter((x): x is number => !!x))];
-  let viri: { id: number; koda: string; ime: string; opis: string; aplikacija: string; ikona: string; vklopljen: boolean; objava: { id: number; strani: string[]; razmerja: number[]; izvor: string; created_at: string } | null }[] = [];
+  let viri: { id: number; koda: string; ime: string; opis: string; aplikacija: string; ikona: string; vklopljen: boolean; objava: (ObjavaVira & { id: number }) | null }[] = [];
   if (idViri.length) {
     const [v, ob] = await Promise.all([
       admin.from("fos_tv_viri").select("id, koda, ime, opis, aplikacija, ikona, vklopljen").in("id", idViri),
-      admin.from("fos_tv_zadnje_objave").select("id, id_vira, kosara, strani, razmerja, izvor, created_at").in("id_vira", idViri),
+      admin.from("fos_tv_zadnje_objave").select("*").in("id_vira", idViri), // * = z in brez 025 (velja_od / velja_do)
     ]);
     if (!v.error && !ob.error) {
+      // strani, ki so že potekle (pretekli tedni), se ne pošljejo; prihodnje TV dobi vnaprej in jih pokaže na svoj dan
+      const vceraj = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
       viri = (v.data ?? []).map((x) => {
         const o = (ob.data ?? []).find((y) => y.id_vira === x.id);
-        return { ...x, objava: o ? { id: o.id, strani: (o.strani as string[]).map((s) => `${o.kosara}:${s}`), razmerja: (o.razmerja as number[]).map(Number), izvor: o.izvor, created_at: o.created_at } : null };
+        if (!o) return { ...x, objava: null };
+        const vsa = objavaIzVrstice(o);
+        const ostane = vsa.strani.map((_, i) => i).filter((i) => !vsa.velja_do?.[i] || vsa.velja_do[i]! >= vceraj);
+        const izberi = <T,>(a: T[] | undefined) => (a?.length ? ostane.map((i) => a[i]) : a);
+        return {
+          ...x,
+          objava: { ...vsa, id: o.id, strani: ostane.map((i) => vsa.strani[i]), razmerja: izberi(vsa.razmerja) ?? [], velja_od: izberi(vsa.velja_od), velja_do: izberi(vsa.velja_do) },
+        };
       });
     }
   }

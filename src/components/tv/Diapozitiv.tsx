@@ -92,6 +92,7 @@ export function Diapozitiv({ d, url, vir, mirno, odmikMs = 0, zanka }: Props) {
   if (naslovna) return <NaslovnaTv okno={okno} vir={vir} />;
   if (okno.vrsta === "obvestilo") return <ObvestiloTv okno={okno} stran={stran} url={url} mirno={mirno} zanka={zanka} />;
   const strani = okno.vrsta === "pdf" || okno.vrsta === "vir";
+  // brez `stran` (sličica) prva stran; za komponento pošlje pravo stran (tekoči teden) prviDiapozitiv()
   const pot = strani ? (stran ?? (okno.vrsta === "vir" ? vir?.objava?.strani[0] : okno.strani[0])) : (okno.datoteka ?? undefined);
   const src = pot ? url(pot) : undefined;
   const celo = (okno.vsebina.prilagoditev ?? (strani ? "celo" : "zapolni")) === "celo";

@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { fetchAll, getSupabase, supabaseConfigured } from "@/lib/supabase";
+import { objavaIzVrstice, type ObjavaVira } from "@/lib/tvObjava";
 
 /**
  * FIN:TV - zasloni (TV-ji), seznami predvajanja in okna (migracija 022_fin_tv.sql), komponente iz projektov
@@ -56,8 +57,10 @@ export type TvVir = {
   aplikacija: string;
   ikona: string;
   vklopljen: boolean;
-  objava: { strani: string[]; razmerja: number[]; izvor: string; created_at: string } | null;
+  objava: ObjavaVira | null;
 };
+
+export { datumIso, obdobjaObjave, objavaIzVrstice, veljavneStrani, type ObjavaVira } from "@/lib/tvObjava";
 
 export type TvZaslon = {
   id: number;
@@ -226,7 +229,7 @@ async function preberiVire(): Promise<Pick<Stanje, "viri" | "testniViri">> {
   const sb = getSupabase();
   const [v, o] = await Promise.all([
     sb.from("fos_tv_viri").select("id, koda, ime, opis, aplikacija, ikona, vklopljen").eq("visible", true).order("vrstni_red"),
-    sb.from("fos_tv_zadnje_objave").select("id_vira, kosara, strani, razmerja, izvor, created_at"),
+    sb.from("fos_tv_zadnje_objave").select("*"), // * = deluje z in brez 025 (velja_od / velja_do)
   ]);
   if (v.error || o.error) return { viri: TEST_VIRI, testniViri: true };
   const objave = new Map((o.data ?? []).map((x) => [x.id_vira as number, x]));
@@ -237,7 +240,7 @@ async function preberiVire(): Promise<Pick<Stanje, "viri" | "testniViri">> {
       return {
         ...(x as Omit<TvVir, "objava">),
         // pot z imenom košare (fos-tv-viri:pot) - urljiDatotek jo podpiše v pravi košari
-        objava: ob ? { strani: (ob.strani as string[]).map((s) => `${ob.kosara}:${s}`), razmerja: (ob.razmerja as number[]).map(Number), izvor: ob.izvor, created_at: ob.created_at } : null,
+        objava: ob ? objavaIzVrstice(ob) : null,
       };
     }),
   };

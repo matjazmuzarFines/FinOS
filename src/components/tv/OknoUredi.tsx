@@ -22,6 +22,9 @@ import {
   type Obvestilo,
   type Prehod,
   imaUvod,
+  obdobjaObjave,
+  veljavneStrani,
+  type ObjavaVira,
   type Prilagoditev,
   type PrilogaObvestila,
   type TvOkno,
@@ -38,6 +41,15 @@ const vLokalno = (iso: string | null) => {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 };
 const izLokalno = (s: string) => (s ? new Date(s).toISOString() : null);
+
+/** "4 str." ali pri objavi po tednih "5 tednov · danes 2 str." */
+const opisStrani = (o: ObjavaVira) => {
+  const n = obdobjaObjave(o);
+  if (n <= 1 && !o.velja_od?.some(Boolean)) return `${o.strani.length} str.`;
+  const tedni = n === 1 ? "1 teden" : n === 2 ? "2 tedna" : n <= 4 ? `${n} tedni` : `${n} tednov`;
+  const danes = veljavneStrani(o, Date.now()).length;
+  return `${tedni} · danes ${danes ? `${danes} str.` : "ni strani"}`;
+};
 
 type Osnutek = {
   naslov: string;
@@ -229,7 +241,7 @@ export function OknoUredi({
                 <b className="text-white">{vir?.ime ?? "Komponenta"}</b>
                 <span className="text-ink-300">{vir?.opis}</span>
                 <span className="text-xs text-ink-400">
-                  {vir?.objava ? `Zadnja objava ${new Date(vir.objava.created_at).toLocaleString("sl-SI", { dateStyle: "short", timeStyle: "short" })}${vir.objava.izvor ? ` · ${vir.objava.izvor}` : ""} · ${vir.objava.strani.length} str.` : "Še ni objave - pokaže se, ko jo projekt prvič objavi."}
+                  {vir?.objava ? `Zadnja objava ${new Date(vir.objava.created_at).toLocaleString("sl-SI", { dateStyle: "short", timeStyle: "short" })}${vir.objava.izvor ? ` · ${vir.objava.izvor}` : ""} · ${opisStrani(vir.objava)}` : "Še ni objave - pokaže se, ko jo projekt prvič objavi."}
                   {vir && !vir.vklopljen && " · izklopljena na TV (panel Komponente)"}
                 </span>
               </span>

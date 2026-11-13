@@ -1,4 +1,4 @@
-import { imaUvod, type TvOkno, type TvVir } from "@/lib/tv";
+import { imaUvod, veljavneStrani, type TvOkno, type TvVir } from "@/lib/tv";
 
 /**
  * FIN:TV - kaj se vrti zdaj (čista funkcija, brez React).
@@ -45,11 +45,17 @@ export function deliStrani(razmerje: number | undefined): number[] {
   return Array.from({ length: n }, (_, i) => Math.min(i * korak, 1 - vidno));
 }
 
-/** Strani okna: PDF, komponenta (zadnja objava), priloga PDF pri obvestilu. */
-export function straniOkna(o: TvOkno, viri: TvVir[]): { strani: string[]; razmerja: number[] } {
+/**
+ * Strani okna: PDF, komponenta (zadnja objava - samo strani, ki veljajo na dan `zdaj`, npr. tekoči teden plana),
+ * priloga PDF pri obvestilu.
+ */
+export function straniOkna(o: TvOkno, viri: TvVir[], zdaj = Date.now()): { strani: string[]; razmerja: number[] } {
   if (o.vrsta === "vir") {
     const v = viri.find((x) => x.id === o.id_vira);
-    return v?.vklopljen && v.objava ? { strani: v.objava.strani, razmerja: v.objava.razmerja } : { strani: [], razmerja: [] };
+    if (!v?.vklopljen || !v.objava) return { strani: [], razmerja: [] };
+    const ob = v.objava;
+    const i = veljavneStrani(ob, zdaj);
+    return { strani: i.map((x) => ob.strani[x]), razmerja: i.map((x) => ob.razmerja[x]) };
   }
   return { strani: o.strani, razmerja: o.vsebina.razmerja ?? [] };
 }
@@ -60,7 +66,7 @@ export function diapozitivi(okna: TvOkno[], zdaj: number, viri: TvVir[] = []): D
     if (!veljaZdaj(o, zdaj)) continue;
     const ms = PREHOD_MS + Math.max(1, o.trajanje_s) * 1000;
     const vsebina: Diapozitiv[] = [];
-    const { strani, razmerja } = straniOkna(o, viri);
+    const { strani, razmerja } = straniOkna(o, viri, zdaj);
     if (o.vrsta === "pdf" || o.vrsta === "vir") {
       const zapolni = (o.vsebina.prilagoditev ?? "celo") === "zapolni";
       strani.forEach((s, i) => {
@@ -112,8 +118,8 @@ export const minSek = (ms: number) => {
 };
 
 /** Prvi diapozitiv okna za sličico / predogled (pokončna stran pri Zapolni = prvi del). */
-export function prviDiapozitiv(o: TvOkno, viri: TvVir[]): Pick<Diapozitiv, "okno" | "stran" | "pas"> {
-  const { strani, razmerja } = straniOkna(o, viri);
+export function prviDiapozitiv(o: TvOkno, viri: TvVir[], zdaj = Date.now()): Pick<Diapozitiv, "okno" | "stran" | "pas"> {
+  const { strani, razmerja } = straniOkna(o, viri, zdaj);
   const deli = (o.vsebina.prilagoditev ?? "celo") === "zapolni" && (o.vrsta === "pdf" || o.vrsta === "vir") ? deliStrani(razmerja[0]) : [0];
   return { okno: o, stran: strani[0], ...(deli.length > 1 ? { pas: { odmik: 0, razmerje: razmerja[0], i: 0, n: deli.length } } : {}) };
 }

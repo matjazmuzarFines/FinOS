@@ -3,6 +3,16 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "8.04",
+    datum: "12. 11. 2026",
+    spremembe: [
+      "FIN:TV: komponenta ima lahko strani za več tednov naprej - TV kaže samo tekoči teden in v ponedeljek sam preklopi na naslednjega, brez ponovnega shranjevanja. Strani prihodnjih tednov TV prenese vnaprej (deluje tudi brez povezave).",
+      "FIN:TV: Delovni plan - pregled je komponenta za vsak oddelek posebej (Proizvodnja, Montaža, Elektro, Testiranje). Production ob Shrani plan objavi pregled za vsak teden plana.",
+      "FIN:TV: kartica komponente brez strani za danes pokaže »Danes ni strani (ni plana za ta teden)«; okno komponente pove, koliko tednov je objavljenih. Potrebna migracija 025.",
+      "Popravek: Super Admin lahko nalaga datoteke v FIN:TV tudi brez vklopljene aplikacije FIN:TV (migracija 024).",
+    ],
+  },
+  {
     verzija: "8.03",
     datum: "12. 11. 2026",
     spremembe: [
