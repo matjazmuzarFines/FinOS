@@ -135,8 +135,13 @@
   Nov tedenski dokument plana = vnos v `DOKUMENTI` (tvObjava.ts v Production) + komponente na oddelek v migraciji FinOS.
 - FIN:TV Delo - prejšnji dan - `027_fin_tv_delo_prejsnji_dan.sql`: `fp_delo_vceraj_p/m/e/t` (ikona Gauge), workflow
   komponente preimenovane v "Delovni plan · oddelek". Production (`objaviDeloNaTv` v tvObjava.ts, `deloVceraj.ts` = isti
-  izračun kot Produktivnost za en dan, `deloPdf.ts` = stran 16:9) objavi ob vsakem uvozu Poročanega dela (sync.ts) in
-  ročno (Produktivnost -> Na TV); strani veljajo samo na dan objave (prej TV komponento preskoči).
+  izračun kot Produktivnost za en dan, `deloPdf.ts` = stran 16:9) objavi ob vsakem uvozu Poročanega dela (sync.ts);
+  strani veljajo samo na dan objave (prej TV komponento preskoči).
+- Production - VRSTA OBJAV na TV (37.01): vse objave gredo v vrsto `tvVrsta.ts` in tečejo v ozadju ena za drugo
+  (`tvOpravila.ts`: plan oddelka iz SHRANJENEGA plana `tvPlan.ts`, Delo + Zaključeni po uvozu Poročanega dela). Stanje:
+  `TvProvider` (stanje komponent iz `fos_tv_viri` + `fos_tv_zadnje_objave`, `tvStanje.ts`), ikona stanja `StanjeIkona`
+  na kvadratku `TvPovezava`, gumb FIN:TV v glavi (`TvGlava`) in stran Podatki -> Sync v TV (`/podatki/tv`, Sync plana
+  po oddelkih / Sync vse). Workflow na TV = 2 tedna, pregled = strani za vsak delovni dan (oznaka DANES).
 - FIN:TV Zaključeni krovni - `028_fin_tv_zakljuceni_krovni.sql`: `fp_zakljuceni_krovni_p/m/e/t` (ikona Trophy) =
   produktivnost krovnih nalogov plana, zaključenih v zadnjih 30 dneh (stran 16:9 na celico, en krovni en stolpec, do 6 na
   stran). Production objavi ob uvozu Poročanega dela in ob "Na TV"; strani veljajo 7 dni (nova objava zamenja prejšnjo).

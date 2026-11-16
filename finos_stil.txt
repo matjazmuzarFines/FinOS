@@ -673,3 +673,8 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-11-16 - FIN:TV: Delovni plan na TV samo za tekoči teden (privzet pogled sta 2 tedna); v pregledu je ostal "DANES 13.11"
              (dan shranjevanja) -> workflow 2 tedna, pregled za vsak delovni dan svoje strani. -> razdelek 28;
              Production tvObjava.ts (DOKUMENTI tednov / poDnevih), planPregledPdf.ts (danesIso), tvIzpisi.ts.
+2026-11-16 - FIN:TV objave iz Production: uporabnik je čakal na obvestilo in ni vedel, ali se nalaga ali je napaka -> vrsta
+             objav v ozadju, ikona stanja (kljukica / vrteča / ura / klicaj / križec) na kvadratku FIN:TV in v glavi,
+             stran Podatki -> Sync v TV (Sync plana po oddelkih brez odpiranja plana), opozorilo ob zapiranju.
+             -> Production 37.01 (tvVrsta, tvOpravila, tvPlan, tvStanje, TvProvider, TvGlava, SyncTv, StanjeIkona),
+             FINES_Standardi (Povezava s FIN:TV, Ikona stanja).
