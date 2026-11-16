@@ -3,6 +3,15 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "9.01",
+    datum: "16. 11. 2026",
+    spremembe: [
+      "Ena prijava za celo aplikacijo: že na začetni strani FIN:OS (po uvodni animaciji) - brez prijave stran ni več odprta za vse obiskovalce.",
+      "Po prijavi: Moj Fines je odprt vsem, Administracija samo Super Adminu. Ostali vidijo kartico Administracija z rdečo značko »Ni dovoljenja«, klik pokaže »Nimaš dovoljenja« z gumbom Na začetno stran.",
+      "Povezava na podstran (npr. Moj čas) brez prijave pelje na prijavo in po prijavi nazaj na to podstran. Predvajalnik FIN:TV (/tv) ostane brez prijave (ključ zaslona).",
+    ],
+  },
+  {
     verzija: "8.08",
     datum: "13. 11. 2026",
     spremembe: [

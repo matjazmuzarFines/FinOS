@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
-import { LogOut, ShieldX } from "lucide-react";
+import { Home, LogOut, ShieldX } from "lucide-react";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { jeUrednik, urednikiNastavljeni } from "@/lib/uredniki";
-import { Prijava } from "./Prijava";
-import { Button } from "./ui/Button";
+import { Button, ButtonLink } from "./ui/Button";
 import { PraznoStanje } from "./ui/PraznoStanje";
 
 // undefined = še preverjam, null = ni prijave
@@ -16,9 +16,23 @@ const DostopKontekst = createContext<boolean | undefined>(undefined);
 // funkcije prijavljenega uporabnika (008: super_admin, kadrovanje ...)
 const FunkcijeKontekst = createContext<string[]>([]);
 
-/** Prijavljen uporabnik (Supabase Auth) ali null. Domača stran FIN:OS deluje tudi brez prijave. */
+/** Prijavljen uporabnik (Supabase Auth) ali null (tudi, dokler se seja še preverja). */
 export function useSeja() {
   return useContext(SejaKontekst) ?? null;
+}
+
+/** Seja s stanjem preverjanja: undefined = še preverjam, null = ni prijave. */
+export function useSejaStanje() {
+  return useContext(SejaKontekst);
+}
+
+/** Parameter domače strani: kam po prijavi (pot, s katere je bil uporabnik preusmerjen na prijavo). */
+export const NAPREJ = "naprej";
+
+/** Varna pot za vrnitev po prijavi (samo pot znotraj aplikacije, ne drug strežnik). */
+export function potNaprej(iskanje: string): string | null {
+  const pot = new URLSearchParams(iskanje).get(NAPREJ);
+  return pot && pot.startsWith("/") && !pot.startsWith("//") ? pot : null;
 }
 
 /** true = prijavljen uporabnik sme v Administracijo in ureja (NEXT_PUBLIC_FOS_UREDNIKI ali Super Admin). */
@@ -82,17 +96,18 @@ export function Seja({ children }: { children: ReactNode }) {
 }
 
 /**
- * Zaklep dela aplikacije (Administracija): brez prijave prijavno okno, prijavljen uporabnik brez
- * dostopa (ni Super Admin in ni na zasilnem seznamu NEXT_PUBLIC_FOS_UREDNIKI) dobi "Ni dostopa" z odjavo.
+ * Zaklep dela aplikacije (Administracija, FIN:ME). Prijava je ENA - na domači strani FIN:OS: brez prijave zaklep
+ * preusmeri na domačo stran (?naprej= = vrnitev po prijavi). Prijavljen uporabnik brez dostopa (ni Super Admin in ni
+ * na zasilnem seznamu NEXT_PUBLIC_FOS_UREDNIKI) dobi "Ni dovoljenja" z vrnitvijo na začetno stran in odjavo.
  */
-export function Zaklep({ children, naslov, pripona, samoPrijava }: { children: ReactNode; naslov: string; pripona?: string; /** FIN:ME: dovolj je prijava (kdo je kdo, ugotovi JazOkvir). */ samoPrijava?: boolean }) {
+export function Zaklep({ children, naslov, samoPrijava }: { children: ReactNode; naslov: string; /** FIN:ME: dovolj je prijava (kdo je kdo, ugotovi JazOkvir). */ samoPrijava?: boolean }) {
   const seja = useContext(SejaKontekst);
   const dostop = useContext(DostopKontekst);
 
   if (!supabaseConfigured)
     return <p className="grid min-h-dvh place-items-center p-6 text-center text-sm text-nok-500">Supabase ni nastavljen (manjkata NEXT_PUBLIC_SUPABASE_URL in NEXT_PUBLIC_SUPABASE_ANON_KEY).</p>;
   if (seja === undefined) return null;
-  if (!seja) return <Prijava naslov={naslov} pripona={pripona} />;
+  if (!seja) return <NaPrijavo />;
   if (samoPrijava) return <>{children}</>;
   if (dostop === undefined) return null;
   if (!dostop)
@@ -101,19 +116,34 @@ export function Zaklep({ children, naslov, pripona, samoPrijava }: { children: R
         <PraznoStanje
           ton="napaka"
           icon={ShieldX}
-          naslov={`Ni dostopa: ${naslov}`}
+          naslov={`Nimaš dovoljenja: ${naslov}`}
           opis={
             urednikiNastavljeni
-              ? `Uporabnik ${seja.user.email ?? ""} nima dostopa do tega dela FIN:OS (ni Super Admin).`
+              ? `Uporabnik ${seja.user.email ?? ""} nima dovoljenja za ta del FIN:OS - dostop ima samo Super Admin. Moj Fines je odprt vsem zaposlenim.`
               : `Uporabnik ${seja.user.email ?? ""} ni Super Admin. (Zasilni seznam NEXT_PUBLIC_FOS_UREDNIKI na strežniku ni nastavljen.)`
           }
           akcija={
-            <Button hint="Odjavi se in prijavi z drugim uporabnikom" variant="primary" icon={LogOut} onClick={odjava}>
-              Odjava
-            </Button>
+            <>
+              <ButtonLink href="/" hint="Vrni se na začetno stran FIN:OS" variant="neutral" icon={Home}>
+                Na začetno stran
+              </ButtonLink>
+              <Button hint="Odjavi se in prijavi z drugim uporabnikom" variant="primary" icon={LogOut} onClick={odjava}>
+                Odjava
+              </Button>
+            </>
           }
         />
       </div>
     );
   return <>{children}</>;
+}
+
+/** Brez prijave: na domačo stran (prijava), po prijavi nazaj na to stran. */
+function NaPrijavo() {
+  const router = useRouter();
+  useEffect(() => {
+    const pot = window.location.pathname + window.location.search;
+    router.replace(`/?${NAPREJ}=${encodeURIComponent(pot)}`);
+  }, [router]);
+  return null;
 }

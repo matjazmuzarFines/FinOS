@@ -7,7 +7,7 @@ import { IskanjeAdmin } from "@/components/admin/IskanjeAdmin";
 export const metadata: Metadata = { title: "Administracija | FIN:OS" };
 
 export default function AdministracijaLayout({ children }: { children: ReactNode }) {
-  // FIN:OS (domača stran) je brez prijave, Administracija zahteva prijavo
+  // Prijava je ena (domača stran FIN:OS); Administracija sme samo Super Admin
   return (
     <Okvir>
       <Zaklep naslov="Administracija">

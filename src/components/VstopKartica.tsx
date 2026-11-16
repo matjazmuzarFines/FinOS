@@ -3,7 +3,7 @@
 import { useRef, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "motion/react";
-import { ArrowRight, type LucideIcon } from "lucide-react";
+import { ArrowRight, Lock, type LucideIcon } from "lucide-react";
 import { Znak } from "./Znak";
 
 type Props = {
@@ -16,14 +16,16 @@ type Props = {
   zamik?: number;
   /** Kam vodi kartica; brez = "Kmalu" (ne klikne). */
   href?: string;
+  /** Uporabnik nima dovoljenja: značka "Ni dovoljenja" s ključavnico, besedilo = hover tekst (klik pokaže "Nimaš dovoljenja"). */
+  zaklenjeno?: string;
 };
 
 /**
  * Velika vstopna kartica (Administracija, Moj Fines): steklo, 3D nagib za miško,
  * svetlobni žaromet pod kazalcem, animirana obroba s prelivom ob hoverju.
- * Brez `href` ne vodi nikamor (`aria-disabled`, značka "Kmalu").
+ * Brez `href` ne vodi nikamor (`aria-disabled`, značka "Kmalu"). `zaklenjeno` = rdeča značka "Ni dovoljenja".
  */
-export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije, zamik = 0, href }: Props) {
+export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije, zamik = 0, href, zaklenjeno }: Props) {
   const router = useRouter();
   const odpri = () => href && router.push(href);
   const ref = useRef<HTMLDivElement>(null);
@@ -60,7 +62,7 @@ export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije
         tabIndex={0}
         onClick={odpri}
         onKeyDown={(e) => e.key === "Enter" && odpri()}
-        title={hint}
+        title={zaklenjeno ?? hint}
         onPointerMove={premik}
         onPointerLeave={ven}
         style={{ rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d" }}
@@ -88,6 +90,12 @@ export function VstopKartica({ naslov, pripona, opis, hint, icon: Icon, funkcije
               <Icon className="h-7 w-7 sm:h-8 sm:w-8" aria-hidden />
               <span className="fos-shine absolute inset-0" />
             </span>
+            {zaklenjeno && (
+              <span title={zaklenjeno} className="inline-flex items-center gap-1.5 rounded-full border border-nok-500/40 bg-nok-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-nok-500">
+                <Lock className="h-3 w-3" aria-hidden />
+                Ni dovoljenja
+              </span>
+            )}
             {!href && (
               <span className="rounded-full border border-fines-400/30 bg-fines-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-fines-300">
                 Kmalu

@@ -7,10 +7,10 @@ import { JazOkvir } from "@/components/me/Jaz";
 export const metadata: Metadata = { title: "Moj Fines | FIN:ME" };
 
 export default function MojFinesLayout({ children }: { children: ReactNode }) {
-  // FIN:ME: prijava z e-mailom / uporabniškim imenom zaposlenega; kdo je kdo in kaj vidi (hierarhija) ugotovi JazOkvir
+  // FIN:ME: vsi prijavljeni (prijava je ena, na domači strani); kdo je kdo in kaj vidi (hierarhija) ugotovi JazOkvir
   return (
     <Okvir>
-      <Zaklep naslov="Moj Fines" pripona="ME" samoPrijava>
+      <Zaklep naslov="Moj Fines" samoPrijava>
         <JazOkvir>{children}</JazOkvir>
       </Zaklep>
     </Okvir>

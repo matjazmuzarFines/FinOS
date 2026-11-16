@@ -156,7 +156,10 @@
 - Spremenljivke okolja: `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_FOS_UREDNIKI`,
   `SUPABASE_SERVICE_ROLE_KEY`) - nikoli v git; enake vpiši tudi na Vercelu. `SUPABASE_SERVICE_ROLE_KEY` je samo za strežnik
   (`src/lib/supabaseStreznik.ts`, API poti) - nikoli `NEXT_PUBLIC_`, nikoli v komponento za brskalnik.
-- Prijava: domača stran FIN:OS brez prijave; Administracija zaklenjena (`Zaklep` v `administracija/layout.tsx`).
+- Prijava (9.01): ENA prijava na domači strani FIN:OS (`Domov` -> `Prijava` po uvodu) - brez prijave ni vidno nič razen
+  predvajalnika `/tv` (ključ zaslona), `/promo` in API. `Zaklep` (administracija/layout.tsx, moj-fines/layout.tsx) brez
+  prijave preusmeri na `/?naprej=<pot>`, po prijavi nazaj (`potNaprej` v Seja.tsx). Moj Fines = vsi prijavljeni
+  (`samoPrijava`), Administracija = Super Admin; ostali "Nimaš dovoljenja" + kartica z značko "Ni dovoljenja".
 - Pravice = **funkcije** (Nastavitve -> Pravice in dostopi, `PraviceDostopi`, `/api/pravice`, `src/lib/klicatelj.ts`).
   V Administracijo sme funkcija **Super Admin** (prijava z e-mailom / uporabniškim imenom + geslom). **Kadrovanje** = osebni
   podatki zaposlenih (zaščita v bazi); dodeli / odvzame jo samo, kdor jo ima (ali zasilni račun). V brskalniku `useFunkcija(koda)`. `NEXT_PUBLIC_FOS_UREDNIKI` je zasilni seznam (npr. fines@fines.si), da se ne

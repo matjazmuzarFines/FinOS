@@ -479,10 +479,13 @@ PRAVILA
      PRODUKTIVNOST). Poraba ur se kaže v urah (+8,0 h / -5,0 h), nikoli v %.
 
 15. Prijava (Prijava, Seja, Zaklep)
-   - Domača stran FIN:OS je BREZ prijave. Prijavo zahtevajo deli z dostopom (Administracija, kasneje FIN:ME):
-     okvir podstrani (glava, ozadje) + na sredini steklena kartica z oranžno črto zgoraj, logo, FIN:OS, ime dela,
-     slogan, "E-mail ali uporabniško ime", geslo s pokaži / skrij, oranžen gumb Prijava.
-   - Prijavljen uporabnik brez dostopa: "Ni dostopa" (rdeče prazno stanje) z gumbom Odjava.
+   - ENA prijava za celo aplikacijo, na DOMAČI STRANI FIN:OS (po uvodni animaciji): glava, ozadje, na sredini steklena
+     kartica z oranžno črto zgoraj, logo, znak FIN:OS, "Prijava", "Administracija in Moj Fines · slogan", "E-mail ali
+     uporabniško ime", geslo s pokaži / skrij, oranžen gumb Prijava. Brez prijave ni vidno nič (razen predvajalnika /tv).
+   - Podstran brez prijave (npr. povezava na Moj čas) preusmeri na prijavo (/?naprej=) in po prijavi nazaj nanjo.
+   - Po prijavi domača stran: Moj Fines odprt vsem, Administracija samo Super Admin - ostali imajo na kartici rdečo
+     značko s ključavnico "Ni dovoljenja" (hover pove zakaj), klik pokaže "Nimaš dovoljenja: Administracija" (rdeče
+     prazno stanje) z gumboma Na začetno stran (bel) in Odjava.
    - V glavi e-mail uporabnika (sivo, od lg naprej) in Izhod = odjava - samo, ko je uporabnik prijavljen.
    - Polje za geslo: samo naše oko (pokaži / skrij), Edgeovo vgrajeno je skrito (::-ms-reveal).
 
@@ -678,3 +681,6 @@ DNEVNIK POPRAVKOV UPORABNIKA
              stran Podatki -> Sync v TV (Sync plana po oddelkih brez odpiranja plana), opozorilo ob zapiranju.
              -> Production 37.01 (tvVrsta, tvOpravila, tvPlan, tvStanje, TvProvider, TvGlava, SyncTv, StanjeIkona),
              FINES_Standardi (Povezava s FIN:TV, Ikona stanja).
+2026-11-16 - Prijava je bila za FIN:OS in FIN:ME posebej, domača stran javna -> ena prijava na domači strani, Moj Fines
+             vsi, Administracija Super Admin (ostali "Ni dovoljenja"). -> razdelek 15, Domov, Prijava, Seja (Zaklep,
+             NaPrijavo, potNaprej), VstopKartica (zaklenjeno), layout Administracije in Moj Fines.

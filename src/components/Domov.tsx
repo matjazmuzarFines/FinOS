@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { ShieldCheck, UserRound } from "lucide-react";
 import { Intro, SLOGAN } from "./Intro";
@@ -12,16 +13,39 @@ import { VstopKartica } from "./VstopKartica";
 import { Moduli, Trak } from "./Moduli";
 import { APP_VERSION } from "@/lib/verzije";
 import { useAnimacije } from "@/lib/animacije";
+import { supabaseConfigured } from "@/lib/supabase";
+import { potNaprej, useDostopStanje, useSejaStanje } from "./Seja";
+import { Prijava } from "./Prijava";
 
 // uvod se pokaže ob nalaganju strani, ne ob vrnitvi z Administracije
 let uvodPrikazan = false;
 
-/** Začetna stran FIN:OS: uvodna animacija → glava, znak, slogan, ura, vstopni kartici, moduli. */
+/**
+ * Začetna stran FIN:OS: uvodna animacija → PRIJAVA (ena za celo aplikacijo) → glava, znak, slogan, ura, vstopni
+ * kartici, moduli. Administracija samo Super Admin (ostali vidijo kartico zaklenjeno), Moj Fines vsi prijavljeni.
+ * Po prijavi se uporabnik vrne na stran, s katere ga je preusmeril Zaklep (?naprej=).
+ */
 export function Domov() {
   const [pripravljeno, setPripravljeno] = useState(uvodPrikazan);
   const animacije = useAnimacije();
+  const router = useRouter();
+  const seja = useSejaStanje();
+  const dostop = useDostopStanje();
+  // pot za vrnitev po prijavi (prebere se ob prikazu - brez useSearchParams, stran ostane statična)
+  const naprej = useSyncExternalStore<string | null | undefined>(
+    (p) => {
+      window.addEventListener("popstate", p);
+      return () => window.removeEventListener("popstate", p);
+    },
+    () => potNaprej(window.location.search),
+    () => undefined,
+  );
+  useEffect(() => {
+    if (seja && naprej) router.replace(naprej);
+  }, [seja, naprej, router]);
   // brez dodatnih animacij ni uvoda - stran se pokaže takoj
   const prikazi = pripravljeno || !animacije;
+  const zaklep = supabaseConfigured && (seja === undefined || naprej === undefined || !seja || !!naprej);
 
   return (
     <>
@@ -33,7 +57,20 @@ export function Domov() {
           }}
         />}
 
-      {prikazi && (
+      {/* prijava: ena za Administracijo in Moj Fines */}
+      {prikazi && zaklep && seja === null && naprej !== undefined && (
+        <div className="flex min-h-dvh flex-col overflow-x-clip">
+          <Glava />
+          <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-6">
+            <Prijava naslov={naprej ? "Prijavi se za nadaljevanje" : "Prijava"} />
+          </main>
+          <footer className="border-t border-white/5 py-4 text-center text-xs text-ink-500">
+            FINES d.o.o. | FIN:OS | Verzija {APP_VERSION}
+          </footer>
+        </div>
+      )}
+
+      {prikazi && !zaklep && (
         <div className="flex min-h-dvh flex-col overflow-x-clip">
           <Glava />
 
@@ -87,6 +124,7 @@ export function Domov() {
                 opis="Upravljanje zaposlenih, evidenc, dostopov in kartic za vodje in kadrovsko službo."
                 hint="Odpri administracijo FIN:OS Admin"
                 href="/administracija"
+                zaklenjeno={dostop === false ? "Nimaš dovoljenja za Administracijo - dostop ima samo Super Admin" : undefined}
                 icon={ShieldCheck}
                 funkcije={["Zaposleni", "Delovni čas", "Odsotnosti", "FIN:DOOR", "Kartice"]}
                 zamik={0.5}
