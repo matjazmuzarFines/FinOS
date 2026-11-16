@@ -467,7 +467,9 @@ PRAVILA
      Opomba "programirane v projektih" je v hover tekstu ikone </> v glavi panela (brez drsenja). Okno komponente: modra kartica z imenom, opisom in
      zadnjo objavo; v mreži "Čaka na objavo" (modro) / "Komponenta izklopljena".
    - Komponenta po TEDNIH (npr. Delovni plan - pregled, vsak oddelek svoja): objava ima strani za več tednov naprej
-     (vsak teden svoj PDF, strani veljajo pon - ned); TV kaže samo tekoči teden in v ponedeljek sam preklopi. V oknu
+     (vsak teden svoj PDF, strani veljajo pon - ned); TV kaže samo tekoči teden in v ponedeljek sam preklopi.
+     Workflow (Delovni plan) pokaže 2 tedna (tekoči + naslednji, kot privzet pogled plana). Pregled ima za vsak delovni
+     dan svoje strani (oznaka DANES = ta dan, petek velja do nedelje). V oknu
      komponente "5 tednov · danes 2 str."; v mreži brez strani za danes rumeno "Danes ni strani (ni plana za ta teden)".
    - Imena komponent: "Delovni plan · oddelek" (workflow), "Delovni plan - pregled · oddelek", "Delo - prejšnji dan · oddelek"
      (stran 16:9 iz Production: krog štempljanih ur na celico z razliko do plana v urah, objava ob uvozu poročanega dela,
@@ -668,3 +670,6 @@ DNEVNIK POPRAVKOV UPORABNIKA
              oddelek se izbere s čipi v vrstici. -> razdelek 28, FinTv (Komponente, skupineVirov).
 2026-11-13 - FIN:TV: čisto spodaj tanka črta, ki se polni s časom prikaza okna (časovnica), ne pri naslovnih straneh.
              -> razdelek 28, Predvajalnik (Casovnica).
+2026-11-16 - FIN:TV: Delovni plan na TV samo za tekoči teden (privzet pogled sta 2 tedna); v pregledu je ostal "DANES 13.11"
+             (dan shranjevanja) -> workflow 2 tedna, pregled za vsak delovni dan svoje strani. -> razdelek 28;
+             Production tvObjava.ts (DOKUMENTI tednov / poDnevih), planPregledPdf.ts (danesIso), tvIzpisi.ts.
