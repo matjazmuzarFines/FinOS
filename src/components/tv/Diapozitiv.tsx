@@ -11,6 +11,7 @@ import {
   ImagePlus,
   Info,
   Megaphone,
+  PackageCheck,
   PartyPopper,
   ShieldCheck,
   TreePalm,
@@ -44,7 +45,7 @@ export const IKONE_OBVESTIL: Record<string, LucideIcon> = {
   TriangleAlert,
 };
 /** Ikone komponent (fos_tv_viri.ikona). */
-export const IKONE_VIROV: Record<string, LucideIcon> = { Workflow, Gauge, CalendarRange, FileText, CalendarDays, Trophy, GraduationCap, ShieldCheck };
+export const IKONE_VIROV: Record<string, LucideIcon> = { Workflow, Gauge, CalendarRange, FileText, CalendarDays, Trophy, GraduationCap, ShieldCheck, PackageCheck };
 
 /**
  * Oder: platno 1920 × 1080, pomanjšano / povečano na velikost okvirja (letterbox, črni robovi). Isti izris za TV,
