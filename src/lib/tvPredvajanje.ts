@@ -1,4 +1,5 @@
 import { imaUvod, veljavneStrani, type TvOkno, type TvVir } from "@/lib/tv";
+import { sceneElementa, type Scena } from "@/lib/tvScene";
 
 /**
  * FIN:TV - kaj se vrti zdaj (čista funkcija, brez React).
@@ -8,6 +9,8 @@ import { imaUvod, veljavneStrani, type TvOkno, type TvVir } from "@/lib/tv";
  * Vsak diapozitiv se začne s prehodom (PREHOD_MS), zato je njegov čas = prehod + prikaz.
  * PDF / komponenta: vsaka stran svoj diapozitiv - stran se NIKOLI ne razreže (ena stran = en zaslon); "Zapolni zaslon"
  * celo stran raztegne do robov (Diapozitiv -> StranTv).
+ * Komponenta z ANIMIRANO objavo (podatki, tvScene.ts): vsaka scena svoj diapozitiv, trajanje = prehod + trajanje scene
+ * (trajanje okna se ne upošteva - scena ima svoj potek).
  * Položaj v krogu se izračuna iz URE: čas mod skupno trajanje -> povezani zasloni kažejo isto ob istem času.
  */
 export const PREHOD_MS = 2000;
@@ -23,6 +26,8 @@ export type Diapozitiv = {
   /** pot slike strani (PDF, komponenta, priloga obvestila PDF) */
   stran?: string;
   stStrani?: number;
+  /** animirana scena komponente (namesto strani) */
+  scena?: Scena;
   trajanjeMs: number;
 };
 
@@ -45,6 +50,15 @@ export function straniOkna(o: TvOkno, viri: TvVir[], zdaj = Date.now()): { stran
   return { strani: o.strani, razmerja: o.vsebina.razmerja ?? [] };
 }
 
+/** Scene okna komponente z animirano objavo (samo elementi, ki veljajo na dan `zdaj`). */
+export function sceneOkna(o: TvOkno, viri: TvVir[], zdaj = Date.now()): Scena[] {
+  if (o.vrsta !== "vir") return [];
+  const v = viri.find((x) => x.id === o.id_vira);
+  const podatki = v?.vklopljen ? v.objava?.podatki : undefined;
+  if (!v || !podatki?.length) return [];
+  return veljavneStrani(v.objava!, zdaj).flatMap((i) => sceneElementa(v.koda, podatki[i]));
+}
+
 export function diapozitivi(okna: TvOkno[], zdaj: number, viri: TvVir[] = []): Diapozitiv[] {
   const izid: Diapozitiv[] = [];
   for (const o of [...okna].sort((a, b) => a.vrstni_red - b.vrstni_red || a.id - b.id)) {
@@ -52,7 +66,10 @@ export function diapozitivi(okna: TvOkno[], zdaj: number, viri: TvVir[] = []): D
     const ms = PREHOD_MS + Math.max(1, o.trajanje_s) * 1000;
     const vsebina: Diapozitiv[] = [];
     const { strani } = straniOkna(o, viri, zdaj);
-    if (o.vrsta === "pdf" || o.vrsta === "vir") {
+    const scene = sceneOkna(o, viri, zdaj);
+    if (scene.length) {
+      scene.forEach((s, i) => vsebina.push({ kljuc: `${o.id}:s${i}`, prikaz: `${o.id}:${s.kljuc}`, okno: o, scena: s, stStrani: i + 1, trajanjeMs: PREHOD_MS + s.trajanjeMs }));
+    } else if (o.vrsta === "pdf" || o.vrsta === "vir") {
       strani.forEach((s, i) => vsebina.push({ kljuc: `${o.id}:${i}`, prikaz: `${o.id}:${i}`, okno: o, stran: s, stStrani: i + 1, trajanjeMs: ms }));
     } else if (o.vrsta === "obvestilo") {
       if (o.vsebina.obvestilo?.priloga === "pdf" && strani.length)
@@ -89,6 +106,6 @@ export const minSek = (ms: number) => {
 };
 
 /** Prvi diapozitiv okna za sličico / predogled. */
-export function prviDiapozitiv(o: TvOkno, viri: TvVir[], zdaj = Date.now()): Pick<Diapozitiv, "okno" | "stran"> {
-  return { okno: o, stran: straniOkna(o, viri, zdaj).strani[0] };
+export function prviDiapozitiv(o: TvOkno, viri: TvVir[], zdaj = Date.now()): Pick<Diapozitiv, "okno" | "stran" | "scena"> {
+  return { okno: o, stran: straniOkna(o, viri, zdaj).strani[0], scena: sceneOkna(o, viri, zdaj)[0] };
 }

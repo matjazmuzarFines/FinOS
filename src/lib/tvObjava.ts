@@ -8,16 +8,22 @@ export type ObjavaVira = {
   razmerja: number[];
   velja_od?: (string | null)[];
   velja_do?: (string | null)[];
+  /**
+   * Animirana objava (030): podatki namesto slik strani - en element = ena "stran" z veljavnostjo (velja_od / velja_do
+   * po istem indeksu). FIN:TV iz njih naredi scene (tvScene.ts). Objava ima ALI strani ALI podatke.
+   */
+  podatki?: unknown[];
   izvor: string;
   created_at: string;
 };
 
 /** Iz vrstice fos_tv_zadnje_objave (poti z imenom košare: "fos-tv-viri:pot"). Brez 025 ni veljavnosti. */
-export const objavaIzVrstice = (o: { kosara: string; strani: unknown; razmerja: unknown; velja_od?: unknown; velja_do?: unknown; izvor: string; created_at: string }): ObjavaVira => ({
-  strani: (o.strani as string[]).map((s) => `${o.kosara}:${s}`),
+export const objavaIzVrstice = (o: { kosara: string; strani: unknown; razmerja: unknown; velja_od?: unknown; velja_do?: unknown; podatki?: unknown; izvor: string; created_at: string }): ObjavaVira => ({
+  strani: ((o.strani as string[]) ?? []).map((s) => `${o.kosara}:${s}`),
   razmerja: ((o.razmerja as number[]) ?? []).map(Number),
   velja_od: (o.velja_od as (string | null)[] | undefined) ?? [],
   velja_do: (o.velja_do as (string | null)[] | undefined) ?? [],
+  podatki: Array.isArray(o.podatki) && o.podatki.length ? o.podatki : undefined,
   izvor: o.izvor,
   created_at: o.created_at,
 });
@@ -28,11 +34,14 @@ export const datumIso = (ms: number) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-/** Indeksi strani objave, ki veljajo na dan `ms`. */
+/** Število "strani" objave: podatki (animirana) ali slike strani. */
+export const steviloStrani = (o: Pick<ObjavaVira, "strani" | "podatki">) => o.podatki?.length || o.strani.length;
+
+/** Indeksi strani objave (ali elementov `podatki`), ki veljajo na dan `ms`. */
 export const veljavneStrani = (o: ObjavaVira, ms: number) => {
   const dan = datumIso(ms);
-  return o.strani.map((_, i) => i).filter((i) => (!o.velja_od?.[i] || o.velja_od[i]! <= dan) && (!o.velja_do?.[i] || o.velja_do[i]! >= dan));
+  return Array.from({ length: steviloStrani(o) }, (_, i) => i).filter((i) => (!o.velja_od?.[i] || o.velja_od[i]! <= dan) && (!o.velja_do?.[i] || o.velja_do[i]! >= dan));
 };
 
 /** Število različnih obdobij (tednov) v objavi - za opis "3 tedni". */
-export const obdobjaObjave = (o: ObjavaVira) => new Set(o.strani.map((_, i) => `${o.velja_od?.[i] ?? ""}|${o.velja_do?.[i] ?? ""}`)).size;
+export const obdobjaObjave = (o: ObjavaVira) => new Set(Array.from({ length: steviloStrani(o) }, (_, i) => `${o.velja_od?.[i] ?? ""}|${o.velja_do?.[i] ?? ""}`)).size;

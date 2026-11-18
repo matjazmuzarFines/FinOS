@@ -71,7 +71,7 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
   // velja od-do se preveri vsako minuto (seznam se ne računa ob vsakem tiku)
   const minuta = Math.floor(cas / 60_000);
   const seznam = useMemo(
-    () => diapozitivi(okna, minuta * 60_000, viri).filter((d) => d.naslovna || d.okno.vrsta === "obvestilo" || !!url(d.stran ?? d.okno.datoteka ?? "")),
+    () => diapozitivi(okna, minuta * 60_000, viri).filter((d) => d.naslovna || !!d.scena || d.okno.vrsta === "obvestilo" || !!url(d.stran ?? d.okno.datoteka ?? "")),
     [okna, minuta, url, viri],
   );
   const p = polozaj(seznam, cas);

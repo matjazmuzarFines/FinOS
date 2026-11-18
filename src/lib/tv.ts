@@ -60,7 +60,7 @@ export type TvVir = {
   objava: ObjavaVira | null;
 };
 
-export { datumIso, obdobjaObjave, objavaIzVrstice, veljavneStrani, type ObjavaVira } from "@/lib/tvObjava";
+export { datumIso, obdobjaObjave, objavaIzVrstice, steviloStrani, veljavneStrani, type ObjavaVira } from "@/lib/tvObjava";
 
 export type TvZaslon = {
   id: number;

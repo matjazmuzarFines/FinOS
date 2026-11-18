@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { obvesti } from "@/components/ui/Obvestila";
 import { Panel } from "@/components/cas/Skupno";
 import { dodajOkna, imaUvod, oknaSeznama, potiOkna, preurediOkna, PREHODI, PRIVZETO_TRAJANJE, urljiDatotek, type NovoOkno, type TvOkno, type TvVir, type VrstaOkna } from "@/lib/tv";
-import { diapozitivi, minSek, prviDiapozitiv, straniOkna, trajanjeKroga, veljaZdaj } from "@/lib/tvPredvajanje";
+import { diapozitivi, minSek, prviDiapozitiv, sceneOkna, straniOkna, trajanjeKroga, veljaZdaj } from "@/lib/tvPredvajanje";
 import { brezKoncnice, naloziZaTv, SPREJME, VELIK_VIDEO } from "@/lib/tvNalozi";
 import { Diapozitiv, Oder } from "./Diapozitiv";
 import { OknoUredi } from "./OknoUredi";
@@ -196,8 +196,10 @@ function Kartica({ okno, st, url, vir, viri, zdaj, onUredi }: { okno: TvOkno; st
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: okno.id });
   const Ikona = IKONE_VRST[okno.vrsta];
   const { strani } = straniOkna(okno, viri, zdaj);
+  // animirana objava (podatki): scene namesto strani
+  const scene = sceneOkna(okno, viri, zdaj);
   // komponenta z objavo, a brez strani za danes (npr. plan za ta teden ni objavljen)
-  const brezDanes = okno.vrsta === "vir" && !!vir?.vklopljen && !!vir.objava && !strani.length;
+  const brezDanes = okno.vrsta === "vir" && !!vir?.vklopljen && !!vir.objava && !strani.length && !scene.length;
   const velja = veljaZdaj(okno, zdaj) && (okno.vrsta !== "vir" || (!!vir?.vklopljen && !!vir.objava && !brezDanes));
   const zacne = okno.velja_od && new Date(okno.velja_od).getTime() > zdaj;
   const oznaka = !okno.aktivno
@@ -233,7 +235,9 @@ function Kartica({ okno, st, url, vir, viri, zdaj, onUredi }: { okno: TvOkno; st
               </span>
               <span className="flex items-center gap-1 truncate text-[11px] text-ink-400">
                 {imaUvod(okno) && <Heading className="h-3 w-3 shrink-0 text-fines-300" aria-label="Z naslovno stranjo" />}
-                {strani.length && (okno.vrsta === "pdf" || okno.vrsta === "vir") ? `${strani.length} str. × ${okno.trajanje_s} s` : okno.vrsta === "vir" ? `${okno.trajanje_s} s / str.` : minSek(okno.trajanje_s * 1000)} · {PREHODI[okno.prehod].ime}
+                {scene.length
+                  ? `${scene.length} ${scene.length === 1 ? "scena" : scene.length === 2 ? "sceni" : scene.length < 5 ? "scene" : "scen"} · animirano · ${minSek(scene.reduce((x, s) => x + s.trajanjeMs, 0))}`
+                  : strani.length && (okno.vrsta === "pdf" || okno.vrsta === "vir") ? `${strani.length} str. × ${okno.trajanje_s} s` : okno.vrsta === "vir" ? `${okno.trajanje_s} s / str.` : minSek(okno.trajanje_s * 1000)} · {PREHODI[okno.prehod].ime}
               </span>
             </span>
             {oznaka && (

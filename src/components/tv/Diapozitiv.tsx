@@ -25,6 +25,7 @@ import {
 import { Znak } from "@/components/Znak";
 import { BARVE_OBVESTIL, type TvOkno, type TvVir } from "@/lib/tv";
 import type { Diapozitiv as DiapozitivT } from "@/lib/tvPredvajanje";
+import { Scena } from "./scene/Scena";
 
 /** Logična velikost TV slike. 4K TV jo poveča ×2 (besedilo ostane ostro), 1080p 1:1. */
 export const SIRINA = 1920;
@@ -74,7 +75,7 @@ export function Oder({ children, className = "" }: { children: ReactNode; classN
 
 type Props = {
   /** diapozitiv (iz diapozitivi()) ali samo okno - sličica / predogled: prva stran */
-  d: Pick<DiapozitivT, "okno" | "stran" | "naslovna">;
+  d: Pick<DiapozitivT, "okno" | "stran" | "naslovna" | "scena">;
   url: (pot: string) => string | undefined;
   /** komponenta okna vrste "vir" (ime, ikona, ali je objava) */
   vir?: TvVir;
@@ -90,6 +91,7 @@ type Props = {
 export function Diapozitiv({ d, url, vir, mirno, odmikMs = 0, zanka }: Props) {
   const { okno, stran, naslovna } = d;
   if (naslovna) return <NaslovnaTv okno={okno} vir={vir} />;
+  if (d.scena) return <Scena scena={d.scena} odmikMs={odmikMs} mirno={mirno} />;
   if (okno.vrsta === "obvestilo") return <ObvestiloTv okno={okno} stran={stran} url={url} mirno={mirno} zanka={zanka} />;
   const strani = okno.vrsta === "pdf" || okno.vrsta === "vir";
   // brez `stran` (sličica) prva stran; za komponento pošlje pravo stran (tekoči teden) prviDiapozitiv()

@@ -145,6 +145,17 @@
 - FIN:TV Zaključeni krovni - `028_fin_tv_zakljuceni_krovni.sql`: `fp_zakljuceni_krovni_p/m/e/t` (ikona Trophy) =
   produktivnost krovnih nalogov plana, zaključenih v zadnjih 30 dneh (stran 16:9 na celico, en krovni en stolpec, do 6 na
   stran). Production objavi ob uvozu Poročanega dela in ob "Na TV"; strani veljajo 7 dni (nova objava zamenja prejšnjo).
+- FIN:TV ANIMIRANE SCENE (dogovor 2026-11-18, namesto slik PDF na TV - izvozi PDF v Production OSTANEJO): projekt objavi
+  PODATKE (`fos_tv_objave.podatki` - migracija 030 še ni; en element = ena "stran" z veljavnostjo), FIN:TV iz njih naredi
+  scene (`src/lib/tvScene.ts`: `sceneElementa(koda, podatek)`, počutje, utripi, časi) in jih animirano izriše
+  (`src/components/tv/scene/`: `Scena` = naslov + glava Fineseka + EN podatek, `FinesekGlava` = pečica z obrazom v SVG,
+  počutja navdušen / vesel / zadovoljen / zaskrbljen / ponosen). Diapozitiv s `scena` (tvPredvajanje.ts `sceneOkna`),
+  trajanje = prehod + scena (uvod 1,2 s + 5,5 s na utrip, največ 4 krovni + nadure). Preizkus: `/tv/scena` (testni podatki
+  `tvSceneDemo.ts`), `/tv/scena?obrazi=1` = vsa počutja. Nova animirana komponenta = veja v `sceneElementa`.
+  Počutje Delo - prejšnji dan: ure NA PLAN (ne 8 h na osebo) - pred planom navdušen, za planom zaskrbljen, v planu
+  ure / plan >= 1 vesel, >= 0,85 zadovoljen, sicer zaskrbljen; celica skupaj nad planom = nadure -> ponosen ("Hvala za nadure").
+  Material: ni naročeno / pride prepozno / zamuja = zaskrbljen, po planu / pravočasno = vesel. Zaključeni krovni: po
+  produktivnosti (kot barve). Ton: slab obraz = zaskrbljen (ne jezen), samo celica / ekipa, nikoli imena.
 - ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
   < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika
   (+8,0 h / -5,0 h), nikoli v %. Velja za vse aplikacije (tudi KPI in ploščice v FinOS).
