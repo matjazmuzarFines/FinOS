@@ -23,8 +23,8 @@ export const DEMO_DELO: DeloOddelka = {
       rezija: 2.5,
       osebe: 5,
       krovni: [
-        { krovni: "2337", narocnik: "Pekarna Grosuplje", plan: 28, ure: 7.6, izvenDneva: null },
-        { krovni: "2386", narocnik: "Žito d.o.o.", plan: 0, ure: 30.5, izvenDneva: "pred" },
+        { krovni: "2337", druzine: [{ d: "OCB", kos: 4 }, { d: "OCA", kos: 2 }], plan: 28, ure: 7.6, izvenDneva: null },
+        { krovni: "2386", druzine: [{ d: "ROT", kos: 2 }], plan: 0, ure: 30.5, izvenDneva: "pred" },
       ],
     },
     {
@@ -36,9 +36,9 @@ export const DEMO_DELO: DeloOddelka = {
       rezija: 1,
       osebe: 5,
       krovni: [
-        { krovni: "2341", narocnik: "Mlinotest", plan: 24, ure: 25, izvenDneva: null },
-        { krovni: "2350", narocnik: "Don Don", plan: 16, ure: 14.2, izvenDneva: null },
-        { krovni: "2299", narocnik: "Pekarna Pečjak", plan: 0, ure: 6, izvenDneva: "po" },
+        { krovni: "2341", druzine: [{ d: "OCA", kos: 6 }, { d: "PUL", kos: 1 }], plan: 24, ure: 25, izvenDneva: null },
+        { krovni: "2350", druzine: [{ d: "KOM", kos: 3 }, { d: "OCB", kos: 1 }], plan: 16, ure: 14.2, izvenDneva: null },
+        { krovni: "2299", druzine: [{ d: "OCB", kos: 8 }], plan: 0, ure: 6, izvenDneva: "po" },
       ],
     },
   ],
@@ -85,16 +85,16 @@ export const demoPlan = (): PlanTv => ({
     {
       naziv: "Montaža 1",
       koraki: [
-        { krovni: "2337", narocnik: "Pekarna Grosuplje", od: dan(-1), do: dan(0), ure: 36, brezKapacitete: 0, prosta: false },
-        { krovni: "2390", narocnik: "Mlinotest", od: dan(1), do: dan(1), ure: 16, brezKapacitete: 0, prosta: false },
-        { krovni: "2401", narocnik: "Don Don", od: dan(2), do: dan(6), ure: 64, brezKapacitete: 12, prosta: false },
+        { krovni: "2337", druzine: [{ d: "OCB", kos: 4 }, { d: "OCA", kos: 2 }], od: dan(-1), do: dan(0), ure: 36, brezKapacitete: 0, prosta: false },
+        { krovni: "2390", druzine: [{ d: "ROT", kos: 2 }], od: dan(1), do: dan(1), ure: 16, brezKapacitete: 0, prosta: false },
+        { krovni: "2401", druzine: [{ d: "OCA", kos: 6 }, { d: "PUL", kos: 1 }], od: dan(2), do: dan(6), ure: 64, brezKapacitete: 12, prosta: false },
       ],
     },
     {
       naziv: "Montaža 2",
       koraki: [
-        { krovni: "2412", narocnik: "Žito d.o.o.", od: dan(0), do: dan(3), ure: 48, brezKapacitete: 0, prosta: false },
-        { krovni: "2415", narocnik: "Pekarna Pečjak", od: dan(4), do: dan(9), ure: 40, brezKapacitete: 0, prosta: false },
+        { krovni: "2412", druzine: [{ d: "KOM", kos: 3 }, { d: "OCB", kos: 1 }], od: dan(0), do: dan(3), ure: 48, brezKapacitete: 0, prosta: false },
+        { krovni: "2415", druzine: [{ d: "OCB", kos: 8 }], od: dan(4), do: dan(9), ure: 40, brezKapacitete: 0, prosta: false },
       ],
     },
   ],

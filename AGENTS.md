@@ -149,7 +149,10 @@
   PODATKE (`030_fin_tv_animirane_objave.sql`: `fos_tv_objave.podatki` jsonb, en element = ena "stran" z veljavnostjo,
   `fos_tv_objavi_podatke(koda, podatki, izvor, velja_od, velja_do)`; Production `objaviDeloNaTv`), FIN:TV iz njih naredi
   scene (`src/lib/tvScene.ts`: `sceneElementa(koda, podatek)`, počutje, utripi, časi) in jih animirano izriše
-  (`src/components/tv/scene/`: `Scena` = naslov + glava Fineseka + EN podatek, `FinesekGlava` = pečica z obrazom v SVG,
+  (`src/components/tv/scene/`: `Scena` = naslov + SVET komponente, `Sveti.tsx` = vsaka komponenta svoj svet (`SVETI` v
+  tvScene.ts: Delo = merilnik, Zaključeni = stolpci + konfeti, Material = tekoči trak s paketi, Plan = pot s postajami,
+  Pregled = koledar, ki trga liste; vsak svoja barva), `Skupno.tsx` = glava z odzivom, podatek, števec, konfeti;
+  `FinesekGlava` = pečica z obrazom v SVG,
   počutja navdušen / vesel / zadovoljen / zaskrbljen / ponosen). Diapozitiv s `scena` (tvPredvajanje.ts `sceneOkna`),
   trajanje = prehod + scena (uvod 1,2 s + 5,5 s na utrip, največ 4 krovni + nadure). Preizkus: `/tv/scena` (testni podatki
   `tvSceneDemo.ts`), `/tv/scena?obrazi=1` = vsa počutja. Nova animirana komponenta = veja v `sceneElementa`.
@@ -160,6 +163,8 @@
   Plan (workflow = kaj delamo, DANES; pregled = delovni dnevi do roka `do`): zaskrbljen ob premalo ljudeh (brezKapacitete)
   in ob roku danes / jutri (samo pregled); NE ob koncu po odpremi. Plan gre kot podatki tedna (velja pon - ned), TV sam
   računa danes (`sceneElementa(koda, podatek, danes)`). Vse scene: ena celica = ena scena, največ 4 utripi.
+  Pod krovnim NI naročnika (krovni ima naloge več naročnikov) - glavne družine in kosi ("OCB 4 kos · OCA 2 kos", `druzine`).
+  Delo in Zaključeni imata v Production Sync v TV tudi ročni gumb Sync.
   Ton: slab obraz = zaskrbljen (ne jezen), samo celica / ekipa, nikoli imena. Preizkus vsake: `/tv/scena?k=delo|zakljuceni|material|plan|pregled`.
 - ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
   < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika

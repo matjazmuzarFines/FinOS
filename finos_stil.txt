@@ -699,3 +699,6 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-11-18 - FIN:TV: animirane še Zaključeni krovni, Pripravljenost materiala, Delovni plan (kaj delamo) in Pregled (dni do
              roka) - dve ločeni sceni za plan; zaskrbljen ob premalo ljudeh in roku danes / jutri. -> razdelek 28,
              tvScene.ts, /tv/scena?k=..., Production tvObjava.ts.
+2026-11-18 - FIN:TV: vse komponente so imele isto postavitev (videti je bilo vedno isto) -> vsaka svoj svet in barva:
+             merilnik, stolpci + konfeti, tekoči trak, pot s postajami, koledar. Pod krovnim družine in kosi, ne naročnik.
+             -> razdelek 28, scene/Sveti.tsx, Skupno.tsx, tvScene.ts (SVETI); Production deloVceraj.ts, tvObjava.ts, SyncTv.

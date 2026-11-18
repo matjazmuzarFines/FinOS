@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { TvOkno, TvVir } from "@/lib/tv";
 import { RAZPOLOZENJA, type Razpolozenje } from "@/lib/tvScene";
@@ -25,6 +25,9 @@ export function SceneDemo() {
   const iskanje = useSearchParams();
   const obrazi = iskanje.get("obrazi");
   const k = iskanje.get("k");
+  // samo v brskalniku (datumi testnih podatkov in ura - brez razlike strežnik / brskalnik)
+  const [gor, setGor] = useState(false);
+  useEffect(() => setGor(true), []);
   const { okna, viri } = useMemo(() => {
     const izbrane = KOMPONENTE.filter((x) => !k || x.k === k);
     const viri: TvVir[] = izbrane.map((x, i) => ({
@@ -57,6 +60,7 @@ export function SceneDemo() {
     return { okna, viri };
   }, [k]);
 
+  if (!gor) return <div className="fixed inset-0 bg-black" />;
   if (obrazi)
     return (
       <div className="fixed inset-0 bg-black">

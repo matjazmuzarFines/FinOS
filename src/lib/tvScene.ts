@@ -40,6 +40,27 @@ export type Utrip = {
   /** trak napredka 0-1 (ure / plan), null = brez */
   trak?: number | null;
   stavek: string;
+  // --- podatki za posamezne svete (izris komponente) ---
+  /** merilnik (Delo): štempljane ure in plan (null = brez plana) */
+  meter?: { vrednost: number; plan: number | null };
+  /** tekoči trak (Material): stanje materiala */
+  material?: StanjeMateriala;
+  /** kdaj (datum / obdobje): postaja poti, list koledarja, pride */
+  kdaj?: string | null;
+  /** pot (Plan): korak teče danes */
+  danes?: boolean;
+  /** koledar (Pregled): delovni dnevi do roka */
+  dni?: number;
+};
+
+/** Svet = postavitev in animacija komponente (vsaka komponenta svoj svet, da TV ni vedno enak). */
+export type Svet = "merilnik" | "podij" | "trak" | "pot" | "koledar";
+export const SVETI: Record<string, { svet: Svet; barva: string }> = {
+  fp_delo_vceraj: { svet: "merilnik", barva: "#3b82f6" },
+  fp_zakljuceni_krovni: { svet: "podij", barva: "#eab308" },
+  fp_pripravljenost_mat: { svet: "trak", barva: "#a855f7" },
+  fp_plan_workflow: { svet: "pot", barva: "#14b8a6" },
+  fp_plan_pregled: { svet: "koledar", barva: "#f43f5e" },
 };
 
 export type Scena = {
@@ -81,10 +102,19 @@ export const danIso = (iso: string) => {
   return `${DNEVI[new Date(l, m - 1, d).getDay()]}, ${d}. ${m}.`;
 };
 
+/** Glavna družina in kosi (OCB 4) - krovni ima lahko naloge več naročnikov, zato na TV družine, ne naročnik. */
+export type DruzinaKosov = { d: string; kos: number };
+/** "OCB 4 kos · OCA 2 kos" (največ 3 družine, nato "+2"); prazno = null. */
+export function besediloDruzin(dr: DruzinaKosov[] | undefined | null): string | null {
+  if (!dr?.length) return null;
+  const t = dr.slice(0, 3).map((x) => (x.kos > 0 ? `${x.d} ${x.kos} kos` : x.d));
+  return dr.length > 3 ? `${t.join(" · ")} · +${dr.length - 3}` : t.join(" · ");
+}
+
 // ---------------------------------------------------------------------
 // Delo - prejšnji dan (Production deloVceraj.ts -> DeloOddelka, ena objava = en oddelek)
 // ---------------------------------------------------------------------
-export type DeloKrovnega = { krovni: string; narocnik: string | null; plan: number; ure: number; izvenDneva: "pred" | "po" | null };
+export type DeloKrovnega = { krovni: string; plan: number; ure: number; izvenDneva: "pred" | "po" | null; druzine?: DruzinaKosov[] };
 export type DeloCelice = { naziv: string; dodatno: boolean; plan: number; ure: number; izven: number; rezija: number; osebe: number; krovni: DeloKrovnega[] };
 export type DeloOddelka = { koda: string; naziv: string; datum: string; celice: DeloCelice[] };
 
@@ -106,7 +136,7 @@ export const nadureCelice = (c: Pick<DeloCelice, "plan" | "ure">) => (c.plan > 0
 
 function utripKrovnega(k: DeloKrovnega): Utrip {
   const razpolozenje = razpolozenjeKrovnega(k);
-  const osnova = { kljuc: k.krovni, razpolozenje, glava: k.krovni, pod: k.narocnik };
+  const osnova = { kljuc: k.krovni, razpolozenje, glava: k.krovni, pod: besediloDruzin(k.druzine), meter: { vrednost: k.ure, plan: k.plan > 0.05 ? k.plan : null } };
   if (k.izvenDneva === "pred")
     return { ...osnova, oznaka: "Pred planom", ton: "zelena", vrednost: { st: k.ure, predpona: "+", pripona: " h" }, stavek: "Delali ste že naprej - odlično!" };
   if (k.izvenDneva === "po")
@@ -133,6 +163,7 @@ export function sceneDela(o: DeloOddelka): Scena[] {
     if (nadure)
       utripi.push({
         kljuc: "nadure",
+        meter: { vrednost: c.ure, plan: c.plan },
         razpolozenje: "ponosen",
         glava: "Skupaj",
         oznaka: "Hvala za nadure",
@@ -141,7 +172,7 @@ export function sceneDela(o: DeloOddelka): Scena[] {
         stavek: `Skupaj ${ure(c.ure)} h, plan ${ure(c.plan, true)} h.`,
       });
     if (!utripi.length)
-      utripi.push({ kljuc: "skupaj", razpolozenje: "zadovoljen", glava: "Skupaj", oznaka: "Delo", ton: "siva", vrednost: { st: c.ure, pripona: " h" }, stavek: "Štempljane ure celice." });
+      utripi.push({ kljuc: "skupaj", meter: { vrednost: c.ure, plan: c.plan > 0.05 ? c.plan : null }, razpolozenje: "zadovoljen", glava: "Skupaj", oznaka: "Delo", ton: "siva", vrednost: { st: c.ure, pripona: " h" }, stavek: "Štempljane ure celice." });
     izid.push({
       kljuc: `${o.koda}:${o.datum}:${c.naziv}`,
       komponenta: "fp_delo_vceraj",
@@ -270,7 +301,7 @@ export const razpolozenjeMateriala = (s: StanjeMateriala): Razpolozenje => (s ==
 const materialov = (n: number) => ({ st: n, pripona: n === 1 ? " material" : n === 2 ? " materiala" : n <= 4 ? " materiali" : " materialov", cela: true });
 
 function utripMateriala(k: KrovniMaterialTv): Utrip {
-  const osnova = { kljuc: k.krovni, razpolozenje: razpolozenjeMateriala(k.stanje), glava: k.krovni, pod: k.druzina };
+  const osnova = { kljuc: k.krovni, razpolozenje: razpolozenjeMateriala(k.stanje), glava: k.krovni, pod: k.druzina, material: k.stanje, kdaj: k.kompleten ? kratekDan(k.kompleten) : null };
   const zacetek = `začetek ${kratekDan(k.zacetek)}`;
   switch (k.stanje) {
     case "zaloga":
@@ -330,7 +361,7 @@ export function sceneMateriala(o: MaterialOddelkaTv): Scena[] {
 // ---------------------------------------------------------------------
 // Delovni plan (workflow) in Pregled (roki) - Production WorkflowPlan, en element = en teden (velja pon - ned)
 // ---------------------------------------------------------------------
-export type KorakPlanaTv = { krovni: string; narocnik: string | null; od: string; do: string; ure: number; brezKapacitete: number; prosta: boolean };
+export type KorakPlanaTv = { krovni: string; druzine?: DruzinaKosov[]; od: string; do: string; ure: number; brezKapacitete: number; prosta: boolean };
 export type PlanTv = { oddelek: string; od: string; do: string; celice: { naziv: string; koraki: KorakPlanaTv[] }[] };
 
 /** Delovni dnevi (pon - pet) od `od` (izključno) do `do` (vključno); 0 = isti dan ali prej. */
@@ -351,7 +382,7 @@ const premaloLjudi = (k: KorakPlanaTv): Utrip | null =>
         kljuc: k.krovni,
         razpolozenje: "zaskrbljen",
         glava: k.krovni,
-        pod: k.narocnik,
+        pod: besediloDruzin(k.druzine),
         oznaka: "Premalo ljudi",
         ton: "oranzna",
         vrednost: { st: k.brezKapacitete, pripona: " h manjka" },
@@ -367,12 +398,17 @@ export function scenePlana(o: PlanTv, danes: string): Scena[] {
     if (!koraki.length) continue;
     const utripi = koraki.slice(0, MAX_UTRIPOV).map((k): Utrip => {
       const zdaj = k.od <= danes;
+      const kdaj = k.od === k.do ? kratekDan(k.od) : `${kratekDan(k.od)} - ${kratekDan(k.do)}`;
+      const ljudje = premaloLjudi(k);
+      if (ljudje) return { ...ljudje, kdaj, danes: zdaj };
       return (
-        premaloLjudi(k) ?? {
+        {
+          kdaj,
+          danes: zdaj,
           kljuc: k.krovni,
           razpolozenje: zdaj ? "vesel" : "zadovoljen",
           glava: k.krovni,
-          pod: k.narocnik,
+          pod: besediloDruzin(k.druzine),
           oznaka: zdaj ? "Danes delamo" : `Od ${kratekDan(k.od)}`,
           ton: zdaj ? "zelena" : "siva",
           vrednost: { st: k.ure, pripona: " h" },
@@ -403,10 +439,10 @@ export function scenePregleda(o: PlanTv, danes: string): Scena[] {
     const koraki = (c.koraki ?? []).filter((k) => k.do >= danes).sort((a, b) => a.do.localeCompare(b.do));
     if (!koraki.length) continue;
     const utripi = koraki.slice(0, MAX_UTRIPOV).map((k): Utrip => {
-      const ljudje = premaloLjudi(k);
-      if (ljudje) return ljudje;
       const n = delovnihDni(danes, k.do);
-      const osnova = { kljuc: k.krovni, glava: k.krovni, pod: k.narocnik, stavek: `Rok ${kratekDan(k.do)}` };
+      const ljudje = premaloLjudi(k);
+      if (ljudje) return { ...ljudje, dni: n, kdaj: kratekDan(k.do) };
+      const osnova = { kljuc: k.krovni, glava: k.krovni, pod: besediloDruzin(k.druzine), stavek: `Rok ${kratekDan(k.do)}`, dni: n, kdaj: kratekDan(k.do) };
       if (n === 0) return { ...osnova, razpolozenje: "zaskrbljen", oznaka: "Rok danes", ton: "rdeca", vrednost: { besedilo: "Danes" }, stavek: "Danes ga zaključimo!" };
       if (n === 1) return { ...osnova, razpolozenje: "zaskrbljen", oznaka: "Rok jutri", ton: "oranzna", vrednost: { st: 1, predpona: "še ", pripona: " dan", cela: true } };
       return {

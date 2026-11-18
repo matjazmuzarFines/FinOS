@@ -9,6 +9,8 @@ export const VERZIJE: Verzija[] = [
       "FIN:TV: animirane scene za delavce namesto strani PDF - naslov, en podatek in glava Fineseka, ki pove, kako gre (navdušen, vesel, zadovoljen, zaskrbljen, ponosen). Ob vsakem podatku kamera približa Fineseka, ta poskoči ali se strese, številka šteje navzgor.",
       "FIN:TV: »Delo - prejšnji dan« animirano - za vsako celico krovni nalogi: zaostajamo / skoraj / plan dosežen (ure na plan), pred planom, za planom, na koncu »Hvala za nadure«.",
       "FIN:TV: animirano tudi »Zaključeni krovni« (produktivnost, skupaj celice), »Pripravljenost materiala« (material je tu / pride pravočasno / prepozno / zamuja / ni naročeno), »Delovni plan« (kaj delamo danes, premalo ljudi) in »Pregled« (delovni dnevi do roka, rok danes / jutri).",
+      "FIN:TV: vsaka komponenta ima svoj svet, da TV ni vedno enak: Delo = merilnik s kazalcem, Zaključeni = stolpci produktivnosti s Finesekom na vrhu in konfeti, Material = tekoči trak s paketi, Delovni plan = pot s postajami (Finesek skače do DANES), Pregled = koledar, ki trga liste do roka. Vsak svet svoja barva.",
+      "FIN:TV: pod krovnim nalogom so glavne družine in kosi (OCB 4 kos · OCA 2 kos) namesto naročnika - krovni ima lahko naloge več naročnikov.",
       "Potrebna migracija 030 - Production takrat objavi podatke namesto slik PDF (izvozi PDF ostanejo).",
       "Preizkus brez baze: /tv/scena (vse komponente), /tv/scena?k=delo|zakljuceni|material|plan|pregled, /tv/scena?obrazi=1 (vsa počutja).",
     ],
