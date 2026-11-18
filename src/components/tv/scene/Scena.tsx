@@ -5,7 +5,7 @@ import { AnimatePresence, animate, motion, useMotionValue, useTransform, type Ta
 import { FileText, Gauge, PackageCheck, Trophy, Workflow, CalendarRange, type LucideIcon } from "lucide-react";
 import { Znak } from "@/components/Znak";
 import { PREHOD_MS } from "@/lib/tvPredvajanje";
-import { RAZPOLOZENJA, TONI, ure, utripOb, type Razpolozenje, type Scena as ScenaT, type Utrip } from "@/lib/tvScene";
+import { RAZPOLOZENJA, TONI, celo, ure, utripOb, type Razpolozenje, type Scena as ScenaT, type Utrip } from "@/lib/tvScene";
 import { FinesekGlava } from "./FinesekGlava";
 
 /**
@@ -52,22 +52,29 @@ function OzadjeSceni({ barva, mirno }: { barva: string; mirno?: boolean }) {
   );
 }
 
-/** Vrednost, ki šteje navzgor (7,6 / 28 h). */
+/** Vrednost, ki šteje navzgor (7,6 / 28 h, 112 %) ali besedilo (Vse v hiši). */
 function Vrednost({ v, barva, mirno }: { v: Utrip["vrednost"]; barva: string; mirno?: boolean }) {
-  const st = useMotionValue(mirno ? v.st : 0);
-  const besedilo = useTransform(st, (x) => ure(x));
+  const cilj = v.st ?? 0;
+  const st = useMotionValue(mirno ? cilj : 0);
+  const besedilo = useTransform(st, (x) => (v.cela ? celo(x) : ure(x)));
   useEffect(() => {
-    if (mirno) return;
-    const a = animate(st, v.st, { duration: 1.4, delay: 1.3, ease: [0.22, 1, 0.36, 1] });
+    if (mirno || v.st == null) return;
+    const a = animate(st, cilj, { duration: 1.4, delay: 1.3, ease: [0.22, 1, 0.36, 1] });
     return () => a.stop();
-  }, [st, v.st, mirno]);
+  }, [st, cilj, v.st, mirno]);
   return (
-    <div className="flex items-baseline font-display font-bold leading-none tracking-[-0.03em]" style={{ color: barva, textShadow: `0 0 60px ${barva}66` }}>
-      <span className="text-[150px]">
-        {v.predpona}
-        <motion.span>{besedilo}</motion.span>
-      </span>
-      {v.pripona && <span className="ml-3 text-[80px] opacity-80">{v.pripona.trim()}</span>}
+    <div className="flex flex-wrap items-baseline font-display font-bold leading-none tracking-[-0.03em]" style={{ color: barva, textShadow: `0 0 60px ${barva}66` }}>
+      {v.besedilo != null ? (
+        <span className="text-[120px]">{v.besedilo}</span>
+      ) : (
+        <>
+          <span className="text-[150px]">
+            {v.predpona}
+            <motion.span>{besedilo}</motion.span>
+          </span>
+          {v.pripona && <span className="ml-3 text-[72px] opacity-80">{v.pripona.trim()}</span>}
+        </>
+      )}
     </div>
   );
 }

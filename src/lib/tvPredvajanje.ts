@@ -1,4 +1,4 @@
-import { imaUvod, veljavneStrani, type TvOkno, type TvVir } from "@/lib/tv";
+import { datumIso, imaUvod, veljavneStrani, type TvOkno, type TvVir } from "@/lib/tv";
 import { sceneElementa, type Scena } from "@/lib/tvScene";
 
 /**
@@ -56,7 +56,7 @@ export function sceneOkna(o: TvOkno, viri: TvVir[], zdaj = Date.now()): Scena[] 
   const v = viri.find((x) => x.id === o.id_vira);
   const podatki = v?.vklopljen ? v.objava?.podatki : undefined;
   if (!v || !podatki?.length) return [];
-  return veljavneStrani(v.objava!, zdaj).flatMap((i) => sceneElementa(v.koda, podatki[i]));
+  return veljavneStrani(v.objava!, zdaj).flatMap((i) => sceneElementa(v.koda, podatki[i], datumIso(zdaj)));
 }
 
 export function diapozitivi(okna: TvOkno[], zdaj: number, viri: TvVir[] = []): Diapozitiv[] {

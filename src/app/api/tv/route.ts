@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { napakaApi } from "@/lib/klicatelj";
 import { adminKlient, BREZ_KLJUCA } from "@/lib/supabaseStreznik";
-import { objavaIzVrstice, type ObjavaVira } from "@/lib/tvObjava";
+import { objavaIzVrstice, steviloStrani, type ObjavaVira } from "@/lib/tvObjava";
 
 /**
  * FIN:TV predvajalnik (/tv na računalniku ob TV-ju) -> FIN:OS. Prijava s ključem zaslona: ?k=tv_... ali
@@ -53,11 +53,20 @@ export async function GET(req: Request) {
         const o = (ob.data ?? []).find((y) => y.id_vira === x.id);
         if (!o) return { ...x, objava: null };
         const vsa = objavaIzVrstice(o);
-        const ostane = vsa.strani.map((_, i) => i).filter((i) => !vsa.velja_do?.[i] || vsa.velja_do[i]! >= vceraj);
+        // strani ali elementi podatkov (animirana objava, 030)
+        const ostane = Array.from({ length: steviloStrani(vsa) }, (_, i) => i).filter((i) => !vsa.velja_do?.[i] || vsa.velja_do[i]! >= vceraj);
         const izberi = <T,>(a: T[] | undefined) => (a?.length ? ostane.map((i) => a[i]) : a);
         return {
           ...x,
-          objava: { ...vsa, id: o.id, strani: ostane.map((i) => vsa.strani[i]), razmerja: izberi(vsa.razmerja) ?? [], velja_od: izberi(vsa.velja_od), velja_do: izberi(vsa.velja_do) },
+          objava: {
+            ...vsa,
+            id: o.id,
+            strani: izberi(vsa.strani) ?? [],
+            razmerja: izberi(vsa.razmerja) ?? [],
+            podatki: izberi(vsa.podatki),
+            velja_od: izberi(vsa.velja_od),
+            velja_do: izberi(vsa.velja_do),
+          },
         };
       });
     }

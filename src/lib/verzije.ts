@@ -3,6 +3,17 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "10.01",
+    datum: "18. 11. 2026",
+    spremembe: [
+      "FIN:TV: animirane scene za delavce namesto strani PDF - naslov, en podatek in glava Fineseka, ki pove, kako gre (navdušen, vesel, zadovoljen, zaskrbljen, ponosen). Ob vsakem podatku kamera približa Fineseka, ta poskoči ali se strese, številka šteje navzgor.",
+      "FIN:TV: »Delo - prejšnji dan« animirano - za vsako celico krovni nalogi: zaostajamo / skoraj / plan dosežen (ure na plan), pred planom, za planom, na koncu »Hvala za nadure«.",
+      "FIN:TV: animirano tudi »Zaključeni krovni« (produktivnost, skupaj celice), »Pripravljenost materiala« (material je tu / pride pravočasno / prepozno / zamuja / ni naročeno), »Delovni plan« (kaj delamo danes, premalo ljudi) in »Pregled« (delovni dnevi do roka, rok danes / jutri).",
+      "Potrebna migracija 030 - Production takrat objavi podatke namesto slik PDF (izvozi PDF ostanejo).",
+      "Preizkus brez baze: /tv/scena (vse komponente), /tv/scena?k=delo|zakljuceni|material|plan|pregled, /tv/scena?obrazi=1 (vsa počutja).",
+    ],
+  },
+  {
     verzija: "9.01",
     datum: "16. 11. 2026",
     spremembe: [

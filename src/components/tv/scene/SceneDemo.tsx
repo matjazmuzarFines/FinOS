@@ -1,53 +1,62 @@
 "use client";
 
+import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import type { TvOkno, TvVir } from "@/lib/tv";
 import { RAZPOLOZENJA, type Razpolozenje } from "@/lib/tvScene";
-import { DEMO_DELO } from "@/lib/tvSceneDemo";
+import { DEMO_DELO, demoMaterial, demoPlan, demoZakljuceni } from "@/lib/tvSceneDemo";
 import { Oder } from "../Diapozitiv";
 import { Predvajalnik } from "../Predvajalnik";
 import { FinesekGlava } from "./FinesekGlava";
 
-const VIR: TvVir = {
-  id: -100,
-  koda: "fp_delo_vceraj_m",
-  ime: "Delo - prejšnji dan · Montaža",
-  opis: "",
-  aplikacija: "fp",
-  ikona: "Gauge",
-  vklopljen: true,
-  objava: {
-    strani: [],
-    razmerja: [],
-    podatki: [DEMO_DELO],
-    izvor: "demo",
-    created_at: "2026-11-18T06:00:00Z",
-  },
-};
-
-const OKNO: TvOkno = {
-  id: -100,
-  id_seznama: -100,
-  vrsta: "vir",
-  naslov: "Delo - prejšnji dan · Montaža",
-  vrstni_red: 1,
-  trajanje_s: 15,
-  prehod: "pojemanje",
-  velja_od: null,
-  velja_do: null,
-  aktivno: true,
-  datoteka: null,
-  strani: [],
-  vsebina: { uvod: true },
-  id_vira: -100,
-  visible: true,
-};
+/** Testne komponente (?k=delo / zakljuceni / material / plan / pregled; brez = vse po vrsti). */
+const KOMPONENTE: { k: string; koda: string; ime: string; ikona: string; podatki: () => unknown }[] = [
+  { k: "delo", koda: "fp_delo_vceraj_m", ime: "Delo - prejšnji dan · Montaža", ikona: "Gauge", podatki: () => DEMO_DELO },
+  { k: "zakljuceni", koda: "fp_zakljuceni_krovni_m", ime: "Zaključeni krovni · Montaža", ikona: "Trophy", podatki: demoZakljuceni },
+  { k: "material", koda: "fp_pripravljenost_mat_m", ime: "Pripravljenost materiala · Montaža", ikona: "PackageCheck", podatki: demoMaterial },
+  { k: "plan", koda: "fp_plan_workflow_m", ime: "Delovni plan · Montaža", ikona: "Workflow", podatki: demoPlan },
+  { k: "pregled", koda: "fp_plan_pregled_m", ime: "Delovni plan - pregled · Montaža", ikona: "CalendarRange", podatki: demoPlan },
+];
 
 const brezDatotek = () => undefined;
 
-/** /tv/scena - predvajalnik s testno objavo (Delo - prejšnji dan · Montaža); ?obrazi=1 = mreža počutij. */
+/** /tv/scena - predvajalnik s testnimi objavami vseh animiranih komponent; ?obrazi=1 = mreža počutij. */
 export function SceneDemo() {
-  const obrazi = useSearchParams().get("obrazi");
+  const iskanje = useSearchParams();
+  const obrazi = iskanje.get("obrazi");
+  const k = iskanje.get("k");
+  const { okna, viri } = useMemo(() => {
+    const izbrane = KOMPONENTE.filter((x) => !k || x.k === k);
+    const viri: TvVir[] = izbrane.map((x, i) => ({
+      id: -100 - i,
+      koda: x.koda,
+      ime: x.ime,
+      opis: "",
+      aplikacija: "fp",
+      ikona: x.ikona,
+      vklopljen: true,
+      objava: { strani: [], razmerja: [], podatki: [x.podatki()], izvor: "demo", created_at: "2026-11-18T06:00:00Z" },
+    }));
+    const okna: TvOkno[] = izbrane.map((x, i) => ({
+      id: -100 - i,
+      id_seznama: -100,
+      vrsta: "vir",
+      naslov: x.ime,
+      vrstni_red: i + 1,
+      trajanje_s: 15,
+      prehod: "pojemanje",
+      velja_od: null,
+      velja_do: null,
+      aktivno: true,
+      datoteka: null,
+      strani: [],
+      vsebina: { uvod: true },
+      id_vira: -100 - i,
+      visible: true,
+    }));
+    return { okna, viri };
+  }, [k]);
+
   if (obrazi)
     return (
       <div className="fixed inset-0 bg-black">
@@ -56,10 +65,7 @@ export function SceneDemo() {
             {(Object.keys(RAZPOLOZENJA) as Razpolozenje[]).map((r) => (
               <div key={r} className="flex flex-col items-center gap-4">
                 <FinesekGlava razpolozenje={r} className="w-[520px]" />
-                <span
-                  className="font-display text-[44px] font-bold"
-                  style={{ color: RAZPOLOZENJA[r].barva }}
-                >
+                <span className="font-display text-[44px] font-bold" style={{ color: RAZPOLOZENJA[r].barva }}>
                   {RAZPOLOZENJA[r].ime}
                 </span>
               </div>
@@ -70,12 +76,7 @@ export function SceneDemo() {
     );
   return (
     <div className="fixed inset-0 bg-black">
-      <Predvajalnik
-        okna={[OKNO]}
-        viri={[VIR]}
-        url={brezDatotek}
-        className="h-full w-full"
-      />
+      <Predvajalnik okna={okna} viri={viri} url={brezDatotek} className="h-full w-full" />
     </div>
   );
 }

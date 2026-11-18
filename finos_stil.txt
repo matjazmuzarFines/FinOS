@@ -696,3 +696,6 @@ DNEVNIK POPRAVKOV UPORABNIKA
              en podatek in glava Fineseka (smeje se / zaskrbljen / ponosen), tresenje, zoom. Obraz v SVG (slike stopenj
              so premajhne za 4K). Počutje po planu (ne po 8 h), nadure = ponosen. Izvozi PDF v Production ostanejo.
              -> razdelek 28, tvScene.ts, scene/ (Scena, FinesekGlava), tvPredvajanje.ts, Diapozitiv, /tv/scena.
+2026-11-18 - FIN:TV: animirane še Zaključeni krovni, Pripravljenost materiala, Delovni plan (kaj delamo) in Pregled (dni do
+             roka) - dve ločeni sceni za plan; zaskrbljen ob premalo ljudeh in roku danes / jutri. -> razdelek 28,
+             tvScene.ts, /tv/scena?k=..., Production tvObjava.ts.

@@ -146,7 +146,8 @@
   produktivnost krovnih nalogov plana, zaključenih v zadnjih 30 dneh (stran 16:9 na celico, en krovni en stolpec, do 6 na
   stran). Production objavi ob uvozu Poročanega dela in ob "Na TV"; strani veljajo 7 dni (nova objava zamenja prejšnjo).
 - FIN:TV ANIMIRANE SCENE (dogovor 2026-11-18, namesto slik PDF na TV - izvozi PDF v Production OSTANEJO): projekt objavi
-  PODATKE (`fos_tv_objave.podatki` - migracija 030 še ni; en element = ena "stran" z veljavnostjo), FIN:TV iz njih naredi
+  PODATKE (`030_fin_tv_animirane_objave.sql`: `fos_tv_objave.podatki` jsonb, en element = ena "stran" z veljavnostjo,
+  `fos_tv_objavi_podatke(koda, podatki, izvor, velja_od, velja_do)`; Production `objaviDeloNaTv`), FIN:TV iz njih naredi
   scene (`src/lib/tvScene.ts`: `sceneElementa(koda, podatek)`, počutje, utripi, časi) in jih animirano izriše
   (`src/components/tv/scene/`: `Scena` = naslov + glava Fineseka + EN podatek, `FinesekGlava` = pečica z obrazom v SVG,
   počutja navdušen / vesel / zadovoljen / zaskrbljen / ponosen). Diapozitiv s `scena` (tvPredvajanje.ts `sceneOkna`),
@@ -155,7 +156,11 @@
   Počutje Delo - prejšnji dan: ure NA PLAN (ne 8 h na osebo) - pred planom navdušen, za planom zaskrbljen, v planu
   ure / plan >= 1 vesel, >= 0,85 zadovoljen, sicer zaskrbljen; celica skupaj nad planom = nadure -> ponosen ("Hvala za nadure").
   Material: ni naročeno / pride prepozno / zamuja = zaskrbljen, po planu / pravočasno = vesel. Zaključeni krovni: po
-  produktivnosti (kot barve). Ton: slab obraz = zaskrbljen (ne jezen), samo celica / ekipa, nikoli imena.
+  produktivnosti (kot barve, >= 110 % navdušen, skupaj celice >= 100 % ponosen; izven 50-150 % se ne pokaže - preveri).
+  Plan (workflow = kaj delamo, DANES; pregled = delovni dnevi do roka `do`): zaskrbljen ob premalo ljudeh (brezKapacitete)
+  in ob roku danes / jutri (samo pregled); NE ob koncu po odpremi. Plan gre kot podatki tedna (velja pon - ned), TV sam
+  računa danes (`sceneElementa(koda, podatek, danes)`). Vse scene: ena celica = ena scena, največ 4 utripi.
+  Ton: slab obraz = zaskrbljen (ne jezen), samo celica / ekipa, nikoli imena. Preizkus vsake: `/tv/scena?k=delo|zakljuceni|material|plan|pregled`.
 - ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
   < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika
   (+8,0 h / -5,0 h), nikoli v %. Velja za vse aplikacije (tudi KPI in ploščice v FinOS).
