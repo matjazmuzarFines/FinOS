@@ -60,18 +60,15 @@ export function Trak() {
   const animacije = useAnimacije();
   return (
     <div aria-hidden className="relative w-full overflow-hidden py-3 [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
-      <motion.div
-        className="flex w-max gap-8"
-        animate={animacije ? { x: ["0%", "-50%"] } : { x: "-10%" }}
-        transition={animacije ? { duration: 40, ease: "linear", repeat: Infinity } : { duration: 0.6 }}
-      >
+      {/* CSS animacija (fos-trak) = premik na grafični kartici; brez dodatnih animacij trak miruje */}
+      <div className={`flex w-max gap-8 ${animacije ? "fos-trak" : ""}`} style={animacije ? undefined : { transform: "translateX(-10%)" }}>
         {vrsta.map((b, i) => (
           <span key={i} className="flex items-center gap-8 font-display text-2xl font-semibold text-white/15 sm:text-4xl">
             {b}
             <span className="fos-fines-fill h-2 w-2 rounded-[2px]" />
           </span>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -169,11 +169,18 @@ body {
   box-shadow: var(--fos-glow-fines);
 }
 
-/* Bleščica, ki preleti element (dodaj kot otrok z absolute inset-0) */
+/* Bleščica, ki preleti element (dodaj kot otrok z absolute inset-0). Pas s prelivom (::before, 250 % širine) se
+   PREMIKA s transform - dela grafična kartica; prej background-position = risanje vsako sličico. Ista slika kot prej. */
 .fos-shine {
   pointer-events: none;
+  overflow: hidden;
+}
+.fos-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 250%;
   background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
-  background-size: 250% 100%;
   animation: var(--animate-shine);
 }
 
@@ -187,6 +194,12 @@ body {
   --fos-angle: 0deg;
   background: conic-gradient(from var(--fos-angle), transparent 0%, #ee7a3a 12%, #ca5010 22%, transparent 34%, transparent 60%, rgb(255 255 255 / 0.5) 70%, transparent 80%);
   animation: fos-rotate 4s linear infinite;
+  /* vrti se SAMO, ko je vidna (hover / fokus kartice .group) - prej se je nevidna vrtela (in risala) na vsaki ploščici */
+  animation-play-state: paused;
+}
+.group:hover .fos-border-anim,
+.group:focus-within .fos-border-anim {
+  animation-play-state: running;
 }
 
 /* Mreža v ozadju, ki pojenja proti robovom */
@@ -232,12 +245,21 @@ body {
 }
 @keyframes fos-shine {
   0% {
-    background-position: 150% 0;
+    transform: translateX(-90%);
   }
   60%,
   100% {
-    background-position: -100% 0;
+    transform: translateX(60%);
   }
+}
+/* Trak besed (Moduli -> Trak): neskončen premik za polovico širine (vrsta je podvojena) */
+@keyframes fos-trak {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.fos-trak {
+  animation: fos-trak 40s linear infinite;
 }
 @keyframes fos-float {
   0%,

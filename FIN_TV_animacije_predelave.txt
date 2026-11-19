@@ -1,0 +1,184 @@
+FIN:TV - ANIMIRANE SCENE NA TELEVIZORJU: NAVODILA ZA PREDELAVO
+================================================================
+Napisano 2026-11-19 za nadaljevanje v novem pogovoru. Preberi skupaj z AGENTS.md in finos_stil.txt
+(razdelek 28 = FIN:TV, razdelek 29 = STANDARD ANIMACIJ).
+
+
+1. PROBLEM
+----------
+Animirane scene FIN:TV (src/components/tv/scene/) na televizorju štekajo, na računalniku so gladke.
+Po optimizaciji 19. 11. (verzija 10.03, commit "update tv") je uporabnik zadnjo verzijo preizkusil na
+televizorju: ŠE VEDNO NI OK.
+
+Televizor: Samsung Crystal UHD 4K UE65U7022HUXXH, 65", Tizen, Crystal Processor 4K, 50 Hz.
+Stran /tv?k=KLJUČ se predvaja NEPOSREDNO V BRSKALNIKU TELEVIZORJA (ni računalnika ob TV-ju).
+To pomeni: šibek procesor, starejši Chromium, malo pomnilnika. Vse meritve doslej so bile narejene na
+razvojnem računalniku v Edgeu - televizorja ne posnemajo.
+
+Česar NE vemo (vprašaj uporabnika / izmeri na TV-ju, glej 5. korak 0):
+  - katera različica brskalnika teče na televizorju (navigator.userAgent),
+  - v kakšni velikosti televizor riše stran (innerWidth × innerHeight, devicePixelRatio),
+  - kaj točno šteka: prehod med okni, začetek scene, menjava podatka (utrip) ali ves čas,
+  - ali štekajo tudi navadna okna (slika, PDF, obvestilo) ali samo animirane scene.
+
+
+2. OPAŽANJE IN ŽELJA UPORABNIKA (2026-11-19)
+--------------------------------------------
+"Sedaj se dosti stvari na sliki premika. Mogoče bi morala zmanjšati premikanje, posebej pri podatkih.
+Da se podatki pokažejo in šele po nekaj sekundah je animacija samo določenih zadev. To bi mogoče zmanjšalo
+nalaganje med slikami. Ne rabi se vse premikati vedno."
+
+Smer predelave torej NI več "ista slika, manj porabe", ampak MANJ GIBANJA:
+  - podatki se pokažejo takoj in mirujejo (berljivost je pomembnejša od učinka),
+  - animacija pride kasneje, kratka, samo na enem ali dveh delih,
+  - nič se ne premika ves čas.
+Vizualne spremembe so dovoljene.
+
+
+3. KAJ JE ŽE NAREJENO (stanje kode)
+-----------------------------------
+V gitu (commit 18017a3 "update tv"):
+  - Predvajalnik.tsx: DiapozitivEnkrat (memo) - scena se v Reactu ne izriše več 4× na sekundo; drsni prehod
+    med okni ima razred fos-tv-sloj.
+  - CSS animacije namesto JavaScripta (razredi fos-tv-* v globals.css): kamera (fos-tv-kamera), lebdenje glave
+    (fos-tv-lebdi), tekoči trak in cesta (fos-tv-tece), vprašaj, majanje škatle, konfeti (fos-tv-konfet).
+  - Scena.tsx: sij počutja se preliva s prosojnostjo (fos-tv-sij); svet je narisan zadnji.
+  - scene/Ura.tsx: živa ura desno zgoraj (UraSceni, popravek ure OdmikUre iz Predvajalnika), izris 1× na minuto.
+  - Next.js 16.4.6 v vseh štirih projektih (FinOS, FINES_Production, FINES_WorkInstructions,
+    FINES_RabljenaOprema/web) - potrjeno v gitu.
+
+NEPOTRJENO v delovni mapi FinOS (splošne animacije aplikacije, ne TV):
+  AGENTS.md, finos_stil.txt (razdelek 29), globals.css (fos-shine, fos-border-anim, fos-trak),
+  Moduli.tsx (Trak), Ozadje.tsx (delci 30 izrisov na sekundo), verzije.ts, scripts/animacije/meri.mjs.
+  Izmerjeno na prijavni strani: skripte -60 %, risanje 107 ms -> 0. Uporabnik naj to potrdi (commit) ali zavrže.
+
+
+4. KAJ SMO SE NAUČILI (ne ponavljaj istih napak)
+------------------------------------------------
+  - Več slojev (will-change na veliko elementih) je bilo po meritvi POČASNEJE: vsak velik sloj se sestavlja
+    vsako sličico. Slojev mora biti malo in morajo biti majhni.
+  - will-change na elementu, ki se povečuje, pusti sliko narisano v začetni velikosti (zamegljeno).
+  - Kar je narisano za animiranim slojem, postane svoj sloj - animirani del mora biti v vrstnem redu zadnji.
+  - Povečava kamere prek JavaScripta je vsako sličico narisala cel zaslon znova.
+  - Na razvojnem računalniku z grafično kartico razlike med staro in novo različico scen NI bilo mogoče
+    izmeriti; pri programskem izrisu je bila nova celo ~20 % počasnejša v sličicah na sekundo (manj risanja,
+    dražje sestavljanje). Meritve na računalniku torej ne povedo, kaj se dogaja na televizorju.
+  - Posamezna meritev močno niha - vedno poravnaj začetek snemanja na začetek scene in meri vsaj dvakrat.
+  - Scena Delo: v mirnem delu utripa se v SVG glave Fineseka ves čas spreminja slog enega dela
+    (iskrica / kapljica / lučka), zato se glava z zamegljevalnim filtrom (feGaussianBlur) verjetno riše znova
+    vsako sličico. Domneva, ni potrjeno.
+  - Kamera ima ključ `kamera${i}` -> ob VSAKEM utripu se cel svet (merilnik, trak, koledar + glava Fineseka)
+    odstrani in na novo vstavi. To je zatik točno na začetku utripa in zaradi tega se obraz nikoli zvezno ne
+    preoblikuje med počutji (čeprav je FinesekGlava narejena za to).
+
+
+5. PREDLOG PREDELAVE (po vrsti; po vsakem koraku preizkus na televizorju)
+-------------------------------------------------------------------------
+KORAK 0 - NAJPREJ PODATKI S TELEVIZORJA (brez tega ugibamo)
+  Dodaj diagnostiko v predvajalnik, vklop z naslovom /tv?k=KLJUČ&meri=1 (in /tv/scena?meri=1):
+  majhen izpis v kotu: sličic na sekundo (requestAnimationFrame, povprečje 2 s in najdaljši premor),
+  innerWidth × innerHeight, devicePixelRatio, navigator.userAgent (različica Chromiuma).
+  Po možnosti pošlji iste številke v /api/tv (ob pozivu vsakih 20 s), da se vidijo v Administraciji -> FIN:TV
+  pri zaslonu - tako jih ni treba prepisovati z zaslona.
+  S tem izvemo: (a) ali je starejši brskalnik (npr. brez color-mix(), ki ga scene uporabljajo - Chrome 111+),
+  (b) ali riše v 1920 × 1080 ali 3840 × 2160, (c) kateri del scene dejansko pade pod npr. 20 sličic na sekundo.
+  Dodaj tudi stikala v naslovu za hitro izločanje vzroka na TV-ju brez nove objave, npr. &brez=kamera,lebdi,
+  sence,glava - vsako izklopi en del. Kar po izklopu steče gladko, je krivec.
+
+KORAK 1 - "MIRNA SCENA": podatki takoj, animacija kasneje (želja uporabnika)
+  Nov potek utripa (zdaj: UVOD_MS 1200, UTRIP_MS 5500 v src/lib/tvScene.ts):
+    0,0 s   podatek je TAKOJ viden in miruje: oznaka, številka krovnega, družine, vrednost (končna številka,
+            brez štetja navzgor), trak napredka poln, stavek. Brez drsenja z desne, brez vzmeti, brez zamikov.
+    ~2 s    ENA kratka animacija (do ~1,5 s) na ENEM delu: odziv Fineseka (poskok / stresanje) ALI kazalec
+            merilnika / stolpec / paket. Ne oboje hkrati.
+    ostalo  vse miruje do naslednjega utripa.
+  Menjava utripa: preprost preliv prosojnosti podatka (0,4 s) namesto izhoda v levo in prihoda z desne.
+  Kaj odstraniti / poenostaviti:
+    - Kamera (povečava celega sveta ob utripu): odstrani. Je največji posamezen premik in ob vsakem utripu
+      na novo vstavi cel svet (ključ). Brez nje se glava ne vstavlja znova in obraz se zvezno preoblikuje.
+    - Lebdenje glave (ves čas): odstrani ali pusti samo med odzivom.
+    - Stevec (številka šteje navzgor 1,4 s = besedilo z velikim sijem se riše vsako sličico): pokaži končno
+      vrednost takoj.
+    - Tekoči trak in črte na cesti (ves čas): naj mirujejo; paket pripelje enkrat in obstane.
+    - Konfeti (46 koščkov): zmanjšaj na ~12 ali zamenjaj z enim utripom sija; samo pri "Skupaj".
+    - Vprašaj, majanje škatle, utripajoča lučka, potna kapljica, iskrice: mirujoče (narisane, brez gibanja)
+      ali en sam utrip ob odzivu.
+    - Mežikanje oči: lahko ostane (0,3 s na 4 s), če meritev pokaže, da ni drago.
+  Pravilo za naprej: v vsakem trenutku se premika največ ENA stvar, in nič ne teče ves čas.
+
+KORAK 2 - PREHOD MED OKNI ("nalaganje med slikami")
+  Zdaj: prehod 2 s (PREHOD_MS), med njim sta na zaslonu DVE celi sceni (stara izginja, nova se pojavlja) in
+  nova scena v istem trenutku že začne vse svoje vstopne animacije. To je najtežji trenutek.
+    - Animirane scene naj se ne začnejo animirati, dokler prehod ni končan (prvi utrip miruje).
+    - Za okna z animirano sceno uporabi samo prehod "pojemanje" (prosojnost); "povečava" (zameglitev celega
+      zaslona) in "zavesa" (clip-path) sta za televizor pretežka - v OknoUredi ju pri sceni skrij ali opozori.
+    - Razmisli o krajšem prehodu (1 s) ali o prehodu čez črno (stara ugasne, nato nova zasveti - nikoli dve
+      sceni hkrati). Čez črno je najcenejše.
+    - Naslovna stran pred oknom (2 + 4 + 2 s) pomeni dva prehoda na okno - pri scenah jo lahko izklopimo,
+      ker ima scena naslov že v sebi.
+
+KORAK 3 - CENEJŠA SLIKA (če koraka 1 in 2 nista dovolj)
+    - Glava Fineseka: SVG z veliko prelivi, izrezi (clipPath) in filtrom feGaussianBlur. Odstrani filter
+      (sij lučke nariši kot prosojen pravokotnik) ali glavo za vsako počutje vnaprej pretvori v sliko (WebP,
+      5 počutij) in jih prelivaj s prosojnostjo. Slika se nariše enkrat, SVG ob vsaki spremembi znova.
+    - Veliki siji in sence: textShadow 60 px na številkah, boxShadow 40-90 px, drop-shadow na loku merilnika,
+      mask-image na mreži ozadja. Na šibki napravi so dragi ob vsakem risanju - zmanjšaj ali odstrani tam, kjer
+      se element spreminja (številke, lok).
+    - Ozadje scene (prelivi + mreža z masko): eno statično sliko (WebP) namesto petih plasti CSS.
+    - Poseben način za televizor ("TV varčno"): stikalo pri zaslonu v Administraciji ali samodejno po
+      meritvi sličic na sekundo - isti podatki, mirna postavitev brez gibanja. Močnejši zasloni ohranijo vse.
+    - Preveri color-mix() in druge novejše lastnosti CSS glede na različico brskalnika iz koraka 0; po potrebi
+      barve izračunaj v JavaScriptu (tvScene.ts) in jih zapiši kot navadne vrednosti.
+
+KORAK 4 - ČE BRSKALNIK TELEVIZORJA NE ZMORE
+    - Majhen računalnik ob TV-ju (kot je bila prvotna zasnova: Edge --app --start-fullscreen, zagon .cmd je
+      že narejen) - najzanesljivejša rešitev, televizor je samo zaslon.
+    - Ali: scene vnaprej posneti kot kratek video (playwright, kot scripts/promo/posnemi.mjs) ob objavi
+      podatkov - televizor predvaja video, kar zna dobro. Večji poseg (strežnik za snemanje).
+
+
+6. KJE JE KAJ
+-------------
+  src/lib/tvScene.ts               podatki -> scene (sceneElementa), utripi, počutja, časi UVOD_MS / UTRIP_MS
+  src/lib/tvPredvajanje.ts         diapozitivi, položaj iz ure, PREHOD_MS / NASLOV_MS, trajanje scene
+  src/components/tv/Predvajalnik.tsx   prehodi (PREHODI), DiapozitivEnkrat, časovnica, OdmikUre
+  src/components/tv/scene/Scena.tsx    ozadje, naslov, pike utripov, ura, svet
+  src/components/tv/scene/Sveti.tsx    Kamera + 5 svetov (merilnik, podij, trak, pot, koledar)
+  src/components/tv/scene/Skupno.tsx   GlavaOdziv, Stevec, Vrednost, Oznaka, PodatekUtripa, Konfeti
+  src/components/tv/scene/FinesekGlava.tsx   glava v SVG (počutja, iskrice, kapljica, medalja)
+  src/components/tv/scene/Ura.tsx      živa ura
+  src/app/globals.css              razredi fos-tv-* (na koncu datoteke)
+  Preizkus brez baze: /tv/scena, /tv/scena?k=delo|zakljuceni|material|plan|pregled, /tv/scena?obrazi=1
+  Meritev: node scripts/animacije/meri.mjs <oznaka> <URL>  (playwright-core + nameščen Edge)
+
+
+7. KAKO DELATI
+--------------
+  - Povezani zasloni so usklajeni po uri: časi scene (UVOD_MS, UTRIP_MS, trajanje) morajo ostati izračunani
+    iz ure (utripOb), ne iz lokalnih časovnikov.
+  - Sličice v urejevalniku uporabljajo isti izris z `mirno` (prvi utrip, brez animacij) - po predelavi naj
+    bo mirna slika enaka sliki na TV-ju v mirovanju.
+  - Lokalni strežnik FinOS teče na 3010 (next start) - gradnja v isti mapi ga zmoti. Za primerjavo gradi v
+    ločeni kopiji (git worktree) ali strežnik prej ustavi.
+  - `next dev` doda blok na konec AGENTS.md - uporabljaj next build + next start.
+  - Vsak popravek uporabnika gre v DNEVNIK in razdelek 28 / 29 v finos_stil.txt ter v verzije.ts.
+  - Uspeh se presoja NA TELEVIZORJU, ne na računalniku. Po vsakem koraku objava in ogled.
+
+
+8. VPRAŠANJA ZA UPORABNIKA NA ZAČETKU NASLEDNJEGA POGOVORA
+----------------------------------------------------------
+  1. Kaj točno na televizorju ni OK: prehod med okni, začetek scene, menjava podatka ali ves čas?
+  2. Ali štekajo tudi navadna okna (slika, PDF, obvestilo, naslovna stran) ali samo animirane scene?
+  3. Ali se scena sploh pravilno izriše (barve, prelivi, ikone) ali kaj manjka?
+  4. Ali naj začnemo s korakom 0 (diagnostika na TV-ju) ali takoj s korakom 1 (mirna scena)?
+     Predlog: oba hkrati - korak 0 je majhen in pove, ali korak 1 zadošča.
+  5. Koliko gibanja naj ostane: samo odziv Fineseka, ali tudi en del sveta (kazalec, stolpec, paket)?
+  6. Ali je računalnik ob TV-ju (korak 4) sprejemljiva rešitev, če brskalnik televizorja ne bo zmogel?
+
+
+9. ODPRTO IZVEN TV (iz razdelka 29, ni nujno)
+---------------------------------------------
+  - steklo (backdrop-filter) na vrsticah seznamov nad gibljivim ozadjem,
+  - zamegljeni prelivi ozadja (blur-3xl na treh velikih animiranih elementih),
+  - me-cesta (background-position) in me-napaka (box-shadow) v prizorih Moj Fines (tečeta samo ob hoverju),
+  - standard animacij prenesti v ../FINES_Standardi, če naj velja za vse Fines projekte.

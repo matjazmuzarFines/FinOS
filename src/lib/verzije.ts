@@ -8,6 +8,7 @@ export const VERZIJE: Verzija[] = [
     spremembe: [
       "FIN:TV: živa ura na vseh animiranih scenah desno zgoraj (ure in minute, pod njimi dan in datum; čas je usklajen s strežnikom).",
       "FIN:TV: manj dela za televizor pri animiranih scenah - stalna gibanja (lebdenje Fineseka, tekoči trak, cesta, konfeti) in povečava kamere tečejo kot CSS animacije, scena se ne izrisuje več 4× na sekundo. Slika je enaka kot prej.",
+      "Manjša poraba pri animacijah v celi aplikaciji (slika enaka): vrteča obroba kartic teče samo, ko je miška na kartici, bleščica in trak besed tečeta na grafični kartici, delci v ozadju se rišejo 30× na sekundo.",
     ],
   },
   {

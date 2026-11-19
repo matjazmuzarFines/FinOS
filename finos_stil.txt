@@ -492,6 +492,38 @@ PRAVILA
      v JavaScriptu; malo majhnih slojev (will-change samo za majhne dele, ki se sučejo / premikajo, nikoli za dele, ki
      se povečujejo). Nova stalna animacija scene = CSS razred fos-tv-*.
 
+29. STANDARD ANIMACIJ (velja za vse nove in popravljene animacije; izmerjeno 2026-11-19 s sledjo brskalnika)
+   Cilj: animacija ne sme stati nič, ko je ne vidiš, in čim manj, ko jo. Najšibkejša naprava je brskalnik televizorja.
+   a) KAJ se animira: samo transform (premik, suk, povečava) in opacity - to dela grafična kartica brez risanja.
+      NE v stalni animaciji: width / height / top / left (postavitev), background-position, box-shadow, filter, barve,
+      prelivi, CSS spremenljivke (@property) - vsaka sličica se nariše znova. Namesto tega: pas / senco nariši enkrat in
+      ga premikaj s transform ali prelivaj z opacity (zgled: fos-shine::before, fos-tv-tece, fos-tv-sij).
+   b) S ČIM: stalna gibanja (infinite) in vse, kar traja ves čas prikaza = CSS @keyframes v globals.css (razred).
+      `motion` (JavaScript) samo za končna gibanja: prikaz / izhod, sprememba stanja, vzmet, odziv na miško in dotik.
+      `repeat: Infinity` v `motion` se NE uporablja. Premik v `motion` vedno x / y / scale / rotate, nikoli left / top.
+   c) NEVIDNO NE TEČE: animacija, ki se pokaže ob hoverju, je do takrat ustavljena (animation-play-state: paused,
+      zgled fos-border-anim); skrit zavihek brskalnika = stop (visibilitychange); dodatne animacije imajo razred
+      fos-deko ali useAnimacije() (stikalo Animacije, razdelek 12) in spoštujejo prefers-reduced-motion.
+   d) SLOJI: malo in majhni. Vsak animiran element je svoj sloj - naj bo majhen in znotraj okvirja z overflow-hidden.
+      will-change: transform samo za majhne dele, ki se sučejo / premikajo ves čas; nikoli za dele, ki se povečujejo
+      (ostanejo narisani v začetni velikosti = zamegljeni) in nikoli za cel zaslon. Kar je narisano ZA animiranim
+      slojem, postane svoj sloj - animirani del naj bo v vrstnem redu risanja zadnji.
+   e) PLATNO (canvas) in zanke v JavaScriptu: gibanje vezano na čas (ne na sličice), največ 30 izrisov na sekundo
+      (60 samo med premikanjem miške), brez dela ob skritem zavihku (zgled Ozadje.tsx).
+   f) REACT: ura / časovnik ne sme vsak tik na novo izrisati animirane vsebine - vsebino loči z memo (zgled
+      DiapozitivEnkrat), stanje nastavi samo, ko se vidna vrednost spremeni (zgled UraSceni: enkrat na minuto).
+   g) DRAGI UČINKI (backdrop-filter / steklo, blur, velike sence, mask-image, drop-shadow): samo na mirujočih in redkih
+      površinah (glava, okno, nekaj kartic). Ne na vrsticah dolgih seznamov in ne na elementu, ki se animira.
+   h) SVG: sprememba enega dela SVG nariše znova cel SVG. Deli, ki se gibljejo ves čas, naj bodo svoji elementi
+      zunaj glavne slike (animirani s transform), obraz / lik pa miruje.
+   i) PREVERJANJE: vsaka nova stalna animacija se izmeri - `node scripts/animacije/meri.mjs prej URL` in
+      `... potem URL` (Edge, 15 s mirovanja; skripta, slog, risanje, raster, sestavljanje). Mirujoča stran naj ima
+      risanje in raster blizu 0. Ne zanašaj se na občutek - prvi poskus s sloji je bil po meritvi počasnejši.
+   Stanje 2026-11-19 (prijavna stran v mirovanju): skripte -60 %, risanje 107 ms -> 0, raster 523 -> 15 ploščic.
+   ŠE ODPRTO (ni po standardu, teče samo ob hoverju ali je vizualna odločitev): me-cesta (background-position),
+   me-napaka (box-shadow), iskrice / kapljica / lučka v SVG glave Fineseka na TV, zamegljeni prelivi ozadja (blur-3xl
+   na treh velikih animiranih elementih), steklo (backdrop-filter) na vrsticah seznamov nad gibljivim ozadjem.
+
 15. Prijava (Prijava, Seja, Zaklep)
    - ENA prijava za celo aplikacijo, na DOMAČI STRANI FIN:OS (po uvodni animaciji): glava, ozadje, na sredini steklena
      kartica z oranžno črto zgoraj, logo, znak FIN:OS, "Prijava", "Administracija in Moj Fines · slogan", "E-mail ali
@@ -712,3 +744,7 @@ DNEVNIK POPRAVKOV UPORABNIKA
              gibanja in kamera kot CSS animacije, scena se ne izrisuje 4× na sekundo; slika enaka. Živa ura na vseh
              animiranih scenah desno zgoraj. -> razdelek 28, globals.css (fos-tv-*), Predvajalnik, Scena, Skupno,
              Sveti, scene/Ura.tsx.
+2026-11-19 - Optimizacija splošnih animacij in standard, kako se delajo: vrteča obroba kartic teče samo ob hoverju
+             (prej nevidna na vsaki ploščici), bleščica in trak besed s transform (grafična kartica), delci ozadja 30
+             izrisov na sekundo in vezani na čas. -> razdelek 29 (STANDARD ANIMACIJ), globals.css (fos-shine,
+             fos-border-anim, fos-trak), Moduli (Trak), Ozadje, scripts/animacije/meri.mjs.

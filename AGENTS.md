@@ -192,6 +192,9 @@
 ## Tehnologija
 - Next.js 16 (App Router, `src/`), React 19, TypeScript, Tailwind CSS 4.
 - Animacije: `motion` (`import { motion } from "motion/react"`), CSS keyframes v `globals.css`, canvas za ozadja.
+  **STANDARD ANIMACIJ = `finos_stil.txt` razdelek 29** (obvezno za vsako novo animacijo): animira se samo transform /
+  opacity; stalna gibanja = CSS @keyframes (ne `motion` z `repeat: Infinity`); nevidno ne teče; malo majhnih slojev;
+  canvas največ 30 izrisov na sekundo; meritev `node scripts/animacije/meri.mjs <oznaka> <URL>`.
 - Ikone: `lucide-react`.
 - Povleci in spusti: `@dnd-kit/core` (miška, dotik, tipkovnica), za zlaganje seznamov `@dnd-kit/sortable`.
 - Grafi (ko bodo potrebni): po pravilih iz `finos_stil.txt` (prelivi, animiran izris).
