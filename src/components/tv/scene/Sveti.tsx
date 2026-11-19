@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Clock, HelpCircle, Truck } from "lucide-react";
 import { TONI, ure, type Scena, type Utrip } from "@/lib/tvScene";
@@ -18,19 +18,16 @@ import { GlavaOdziv, KRIVULJA, Konfeti, Oznaka, PodatekUtripa, Stevec, Vrednost,
 
 export type SvetProps = { scena: Scena; i: number; u: Utrip; mirno?: boolean; barva: string };
 
-/** Kamera: ob vsakem utripu približa fokus (Fineseka) in se oddalji. */
+/**
+ * Kamera: ob menjavi utripa približa fokus (Fineseka) in se oddalji (ob prvem prikazu scene ne). CSS animacija
+ * (fos-tv-kamera) = povečavo dela grafična kartica; prek JavaScripta se je cel zaslon vsako sličico narisal znova.
+ */
 export function Kamera({ i, fokus, mirno, children }: { i: number; fokus: string; mirno?: boolean; children: ReactNode }) {
+  const [prvi] = useState(i);
   return (
-    <motion.div
-      key={mirno ? "mirno" : `kamera${i}`}
-      className="absolute inset-0"
-      style={{ transformOrigin: fokus }}
-      initial={false}
-      animate={mirno ? undefined : { scale: [1, 1.14, 1.14, 1] }}
-      transition={{ duration: 1.9, times: [0, 0.35, 0.55, 1], ease: "easeInOut" }}
-    >
+    <div key={mirno ? "mirno" : `kamera${i}`} className={`absolute inset-0 ${mirno || i === prvi ? "" : "fos-tv-kamera"}`} style={{ transformOrigin: fokus }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -74,6 +71,10 @@ export function SvetMerilnik({ i, u, mirno }: SvetProps) {
   const kotKazalca = -90 + (180 * Math.min(vr, max)) / max;
   return (
     <>
+      {/* podatek je narisan PRED animiranim delom: kar je narisano za animiranim slojem, postane svoj (velik) sloj */}
+      <Desno levo={1230}>
+        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} brezVrednosti brezTraku />
+      </Desno>
       <Kamera i={i} fokus="56% 70%" mirno={mirno}>
         <svg className="absolute inset-0" viewBox="0 0 1920 1080" aria-hidden>
           {pas.map((p) => (
@@ -109,7 +110,7 @@ export function SvetMerilnik({ i, u, mirno }: SvetProps) {
         {/* kazalec */}
         <motion.div
           key={mirno ? "mirno" : `kazalec${i}`}
-          className="absolute rounded-full"
+          className={`absolute rounded-full ${mirno ? "" : "fos-tv-sloj"}`}
           style={{ left: M.cx - 8, top: M.cy - (M.r - 50), width: 16, height: M.r - 50, transformOrigin: "50% 100%", background: "linear-gradient(180deg,#ffffff,#9a9aa1)", boxShadow: "0 0 24px rgb(255 255 255 / 0.5)" }}
           initial={mirno ? false : { rotate: -90 }}
           animate={{ rotate: kotKazalca }}
@@ -122,9 +123,6 @@ export function SvetMerilnik({ i, u, mirno }: SvetProps) {
         </div>
         <GlavaOdziv u={u} i={i} mirno={mirno} pogledX={8} className="absolute left-[870px] top-[560px] w-[340px]" />
       </Kamera>
-      <Desno levo={1230}>
-        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} brezVrednosti brezTraku />
-      </Desno>
     </>
   );
 }
@@ -177,20 +175,21 @@ export function SvetPodij({ scena, i, u, mirno }: SvetProps) {
           </div>
         );
       })}
+      {/* podatek je narisan PRED animiranim delom: kar je narisano za animiranim slojem, postane svoj (velik) sloj */}
+      <Desno levo={1230}>
+        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} brezTraku />
+      </Desno>
       {/* Finesek na vrhu trenutnega stolpca */}
       <motion.div
-        className="absolute"
+        className="absolute left-0 top-0"
         style={{ width: sirinaGlave }}
-        initial={mirno ? false : { left: levo(i) + P.sirina / 2 - sirinaGlave / 2, top: P.dno - 160 }}
-        animate={{ left: levo(i) + P.sirina / 2 - sirinaGlave / 2, top: P.dno - h - 170 }}
+        initial={mirno ? false : { x: levo(i) + P.sirina / 2 - sirinaGlave / 2, y: P.dno - 160 }}
+        animate={{ x: levo(i) + P.sirina / 2 - sirinaGlave / 2, y: P.dno - h - 170 }}
         transition={mirno ? { duration: 0 } : { type: "spring", stiffness: 60, damping: 12, delay: 0.9 }}
       >
         <GlavaOdziv u={u} i={i} mirno={mirno} pogledX={6} className="w-full" />
       </motion.div>
       {uspeh && !mirno && <Konfeti key={`konfeti${i}`} zamik={1.8} />}
-      <Desno levo={1230}>
-        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} brezTraku />
-      </Desno>
     </>
   );
 }
@@ -205,9 +204,9 @@ function Skatla({ crtkano, barva, vprasaj, mirno }: { crtkano?: boolean; barva: 
     return (
       <div className="grid h-full w-full place-items-center rounded-[14px] border-[5px] border-dashed" style={{ borderColor: barva }}>
         {vprasaj && (
-          <motion.span animate={mirno ? undefined : { scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.6, repeat: Infinity }} style={{ color: barva }}>
+          <span className={mirno ? undefined : "fos-tv-vprasaj"} style={{ color: barva }}>
             <HelpCircle className="h-14 w-14" strokeWidth={2.4} aria-hidden />
-          </motion.span>
+          </span>
         )}
       </div>
     );
@@ -238,21 +237,10 @@ export function SvetTrak({ i, u, mirno }: SvetProps) {
             : { ikona: HelpCircle, besedilo: "Ni naročeno" };
   return (
     <>
+      <Desno levo={1230}>
+        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} />
+      </Desno>
       <Kamera i={i} fokus="55% 68%" mirno={mirno}>
-        {/* trak */}
-        <motion.div
-          className="absolute rounded-[23px]"
-          style={{
-            left: T.levo,
-            width: T.sirina,
-            top: T.vrh,
-            height: 46,
-            backgroundImage: "repeating-linear-gradient(90deg,#2b2b30 0 40px,#1d1d21 40px 80px)",
-            boxShadow: "inset 0 3px 0 rgb(255 255 255 / 0.08), 0 20px 40px -18px #000",
-          }}
-          animate={mirno || !tece ? undefined : { backgroundPositionX: ["0px", "-160px"] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
-        />
         {Array.from({ length: 8 }, (_, j) => (
           <div key={j} className="absolute h-10 w-10 rounded-full border-4 border-[#3a3a40] bg-[#18181b]" style={{ left: T.levo + 40 + j * 130, top: T.vrh + 52 }} />
         ))}
@@ -296,10 +284,13 @@ export function SvetTrak({ i, u, mirno }: SvetProps) {
             className="absolute"
             style={{ left: T.levo + 40, top: T.vrh - T.skatla - 2, width: T.skatla, height: T.skatla }}
             initial={mirno ? false : { x: -260, opacity: 0 }}
-            animate={mirno ? { x: 0, opacity: 1 } : { x: 0, opacity: 1, rotate: [0, -3, 3, 0] }}
-            transition={mirno ? { duration: 0 } : { duration: 2.4, delay: 0.8, ease: KRIVULJA, rotate: { duration: 1.2, repeat: Infinity, delay: 3 } }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={mirno ? { duration: 0 } : { duration: 2.4, delay: 0.8, ease: KRIVULJA }}
           >
-            <Skatla barva={barva} mirno={mirno} />
+            {/* majanje = CSS animacija (od 3. sekunde) */}
+            <div className={`h-full w-full ${mirno ? "" : "fos-tv-maje"}`} style={{ "--z": "3s" } as React.CSSProperties}>
+              <Skatla barva={barva} mirno={mirno} />
+            </div>
           </motion.div>
         )}
         {stanje === "zaloga" && (
@@ -314,11 +305,17 @@ export function SvetTrak({ i, u, mirno }: SvetProps) {
             <Check className="h-12 w-12" strokeWidth={3.5} aria-hidden />
           </motion.span>
         )}
+        {/* trak */}
+        {/* vzorec traku je širši pas, ki drsi (CSS preoblikovanje na grafični kartici; background-position bi se risal vsako sličico) */}
+        <div className="absolute overflow-hidden rounded-[23px]" style={{ left: T.levo, width: T.sirina, top: T.vrh, height: 46, boxShadow: "0 20px 40px -18px #000" }}>
+          <div
+            className={`absolute inset-y-0 left-0 ${mirno || !tece ? "" : "fos-tv-tece"}`}
+            style={{ width: T.sirina + 160, backgroundImage: "repeating-linear-gradient(90deg,#2b2b30 0 40px,#1d1d21 40px 80px)", "--pot": "-160px", "--t": "1.6s" } as React.CSSProperties}
+          />
+          <div className="absolute inset-0 rounded-[23px]" style={{ boxShadow: "inset 0 3px 0 rgb(255 255 255 / 0.08)" }} />
+        </div>
         <GlavaOdziv u={u} i={i} mirno={mirno} pogledX={-8} className="absolute left-[860px] top-[560px] w-[270px]" />
       </Kamera>
-      <Desno levo={1230}>
-        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} />
-      </Desno>
     </>
   );
 }
@@ -341,12 +338,12 @@ export function SvetPot({ scena, i, u, mirno }: SvetProps) {
         className="absolute rounded-full"
         style={{ left: 120, right: 120, top: C.y - 36, height: 72, background: "linear-gradient(180deg,#34343a,#1c1c20)", boxShadow: "inset 0 3px 0 rgb(255 255 255 / 0.08), 0 30px 50px -25px #000" }}
       />
-      <motion.div
-        className="absolute h-[6px]"
-        style={{ left: 150, right: 150, top: C.y - 3, backgroundImage: "repeating-linear-gradient(90deg,#9a9aa1 0 40px,transparent 40px 80px)", opacity: 0.5 }}
-        animate={mirno ? undefined : { backgroundPositionX: ["0px", "80px"] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-      />
+      <div className="absolute h-[6px] overflow-hidden" style={{ left: 150, right: 150, top: C.y - 3, opacity: 0.5 }}>
+        <div
+          className={`absolute inset-y-0 right-0 ${mirno ? "" : "fos-tv-tece"}`}
+          style={{ left: -80, backgroundImage: "repeating-linear-gradient(90deg,#9a9aa1 0 40px,transparent 40px 80px)", "--pot": "80px", "--t": "2s" } as React.CSSProperties}
+        />
+      </div>
       {/* postaje */}
       {scena.utripi.map((s, j) => {
         const b = TONI[s.ton];
@@ -378,10 +375,10 @@ export function SvetPot({ scena, i, u, mirno }: SvetProps) {
       })}
       {/* Finesek skače od postaje do postaje */}
       <motion.div
-        className="absolute"
+        className="absolute left-0"
         style={{ width: C.glava, top: C.y - C.krog / 2 - 140 }}
-        initial={mirno ? false : { left: x(Math.max(0, i - 1)) - C.glava / 2 }}
-        animate={{ left: x(i) - C.glava / 2 }}
+        initial={mirno ? false : { x: x(Math.max(0, i - 1)) - C.glava / 2 }}
+        animate={{ x: x(i) - C.glava / 2 }}
         transition={mirno ? { duration: 0 } : { duration: 1.1, delay: 0.3, ease: "easeInOut" }}
       >
         <motion.div key={mirno ? "mirno" : `skok${i}`} animate={mirno ? undefined : { y: [0, -150, 0, -30, 0] }} transition={{ duration: 1.3, delay: 0.25, times: [0, 0.4, 0.75, 0.88, 1] }}>
@@ -437,6 +434,9 @@ export function SvetKoledar({ i, u, mirno, barva }: SvetProps) {
   const tresi = u.razpolozenje === "zaskrbljen";
   return (
     <>
+      <Desno levo={1090}>
+        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} brezVrednosti brezTraku />
+      </Desno>
       <Kamera i={i} fokus="27% 62%" mirno={mirno}>
         <motion.div
           key={mirno ? "mirno" : `koledar${i}`}
@@ -459,7 +459,7 @@ export function SvetKoledar({ i, u, mirno, barva }: SvetProps) {
             prej.map((d, j) => (
               <motion.div
                 key={`${i}:${d}`}
-                className="absolute inset-x-0 bottom-0"
+                className="fos-tv-sloj absolute inset-x-0 bottom-0"
                 style={{ top: K.pas, transformOrigin: "0% 0%" }}
                 initial={{ rotate: 0, y: 0, x: 0, opacity: 1 }}
                 animate={{ rotate: [0, -6, 28], y: [0, 16, 760], x: [0, -10, 180], opacity: [1, 1, 0] }}
@@ -473,9 +473,6 @@ export function SvetKoledar({ i, u, mirno, barva }: SvetProps) {
           <GlavaOdziv u={u} i={i} mirno={mirno} pogledX={8} className="w-full" />
         </motion.div>
       </Kamera>
-      <Desno levo={1090}>
-        <PodatekUtripa key={mirno ? "mirno" : `${i}:${u.kljuc}`} u={u} mirno={mirno} brezVrednosti brezTraku />
-      </Desno>
     </>
   );
 }

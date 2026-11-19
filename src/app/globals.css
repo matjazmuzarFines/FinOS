@@ -549,3 +549,125 @@ html[data-animacije="off"] .fos-intro {
   animation-duration: var(--trajanje) !important;
   animation-iteration-count: 1 !important;
 }
+
+/* FIN:TV animirane scene (računalnik ob TV-ju je šibek, slika je 4K). Izmerjeno s sledjo brskalnika:
+   - stalna gibanja in povečava kamere tečejo kot CSS animacije preoblikovanja / prosojnosti = na grafični kartici,
+     brez JavaScripta in brez ponovnega risanja (povečava prek JS je vsako sličico na novo narisala cel zaslon);
+   - slojev je MALO in so MAJHNI: vsak velik sloj v 4K se sestavlja vsako sličico (več velikih slojev je bilo počasneje
+     kot brez njih). fos-tv-sloj zato samo za majhne dele, ki se sučejo / premikajo - NE za dele, ki se povečujejo
+     (sloj z will-change ostane narisan v začetni velikosti = zamegljen).
+   Niso okras - kot časovnica tečejo tudi ob reduced-motion (!important premaga splošno pravilo). Čas: --t, zamik: --z. */
+.fos-tv-sloj {
+  will-change: transform;
+}
+@keyframes fos-tv-kamera {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  35%,
+  55% {
+    transform: scale(1.14);
+  }
+}
+.fos-tv-kamera {
+  animation: fos-tv-kamera ease-in-out 1 both;
+  animation-duration: 1.9s !important;
+  animation-iteration-count: 1 !important;
+}
+.fos-tv-sij {
+  transition: opacity 1.2s ease-out !important;
+}
+@keyframes fos-tv-lebdi {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+@keyframes fos-tv-tece {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--pot));
+  }
+}
+@keyframes fos-tv-vprasaj {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+@keyframes fos-tv-maje {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  33.333% {
+    transform: rotate(-3deg);
+  }
+  66.667% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes fos-tv-konfet-pot {
+  from {
+    transform: translate(0, -60px) rotate(0deg);
+  }
+  to {
+    transform: translate(var(--dx), 1140px) rotate(var(--r));
+  }
+}
+@keyframes fos-tv-konfet-vid {
+  0% {
+    opacity: 0;
+  }
+  33.333%,
+  66.667% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+.fos-tv-lebdi,
+.fos-tv-tece,
+.fos-tv-vprasaj,
+.fos-tv-maje {
+  animation-duration: var(--t) !important;
+  animation-delay: var(--z, 0s);
+  animation-iteration-count: infinite !important;
+}
+.fos-tv-lebdi {
+  --t: 3.4s;
+  animation-name: fos-tv-lebdi;
+  animation-timing-function: ease-in-out;
+}
+.fos-tv-tece {
+  animation-name: fos-tv-tece;
+  animation-timing-function: linear;
+}
+.fos-tv-vprasaj {
+  --t: 1.6s;
+  animation-name: fos-tv-vprasaj;
+  animation-timing-function: ease-in-out;
+}
+.fos-tv-maje {
+  --t: 1.2s;
+  animation-name: fos-tv-maje;
+  animation-timing-function: ease-in-out;
+}
+.fos-tv-konfet {
+  animation: fos-tv-konfet-pot ease-in 1 both, fos-tv-konfet-vid ease-in 1 both;
+  animation-duration: var(--t) !important;
+  animation-delay: var(--z);
+  animation-iteration-count: 1 !important;
+}

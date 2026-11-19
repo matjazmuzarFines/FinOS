@@ -485,6 +485,12 @@ PRAVILA
      nikoli %), trak napredka, kratek stavek. Sij ozadja v barvi počutja. Ob vsakem utripu kamera približa glavo in se
      oddalji, Finesek se odzove (navdušen poskoči + iskrice, vesel poskoči, zaskrbljen se strese + potna kapljica in
      utripajoča rdeča lučka, ponosen se nagne + medalja, zaprte oči ^ ^); pike utripov spodaj, znak FIN:TV desno spodaj.
+     DESNO ZGORAJ ŽIVA URA (UraSceni): ure in minute 96 px (preliv belo-sivo, oranžno dvopičje), pod njimi dan in datum
+     30 px sivo; brez sekund in brez utripanja (izriše se samo ob menjavi minute).
+   - POSTAVITEV NA TV: predvaja se neposredno v brskalniku televizorja (Samsung Crystal UHD, Tizen) - šibek procesor.
+     Stalna gibanja in povečave zato kot CSS animacije preoblikovanja / prosojnosti (razredi fos-tv-* v globals.css), ne
+     v JavaScriptu; malo majhnih slojev (will-change samo za majhne dele, ki se sučejo / premikajo, nikoli za dele, ki
+     se povečujejo). Nova stalna animacija scene = CSS razred fos-tv-*.
 
 15. Prijava (Prijava, Seja, Zaklep)
    - ENA prijava za celo aplikacijo, na DOMAČI STRANI FIN:OS (po uvodni animaciji): glava, ozadje, na sredini steklena
@@ -702,3 +708,7 @@ DNEVNIK POPRAVKOV UPORABNIKA
 2026-11-18 - FIN:TV: vse komponente so imele isto postavitev (videti je bilo vedno isto) -> vsaka svoj svet in barva:
              merilnik, stolpci + konfeti, tekoči trak, pot s postajami, koledar. Pod krovnim družine in kosi, ne naročnik.
              -> razdelek 28, scene/Sveti.tsx, Skupno.tsx, tvScene.ts (SVETI); Production deloVceraj.ts, tvObjava.ts, SyncTv.
+2026-11-19 - FIN:TV: animacije na televiziji štekajo (predvaja se neposredno v brskalniku televizorja Samsung) -> stalna
+             gibanja in kamera kot CSS animacije, scena se ne izrisuje 4× na sekundo; slika enaka. Živa ura na vseh
+             animiranih scenah desno zgoraj. -> razdelek 28, globals.css (fos-tv-*), Predvajalnik, Scena, Skupno,
+             Sveti, scene/Ura.tsx.

@@ -166,6 +166,9 @@
   Pod krovnim NI naročnika (krovni ima naloge več naročnikov) - glavne družine in kosi ("OCB 4 kos · OCA 2 kos", `druzine`).
   Delo in Zaključeni imata v Production Sync v TV tudi ročni gumb Sync.
   Ton: slab obraz = zaskrbljen (ne jezen), samo celica / ekipa, nikoli imena. Preizkus vsake: `/tv/scena?k=delo|zakljuceni|material|plan|pregled`.
+  TV se predvaja NEPOSREDNO V BRSKALNIKU TELEVIZORJA (Samsung Crystal UHD, Tizen - šibek procesor, starejši Chromium):
+  stalna gibanja in kamera so CSS animacije (`fos-tv-*` v globals.css), ne `motion` v JavaScriptu; `Predvajalnik` scene
+  ne izrisuje ob vsakem tiku (`DiapozitivEnkrat`). Živa ura desno zgoraj: `scene/Ura.tsx` (`UraSceni`, popravek `OdmikUre`).
 - ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
   < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika
   (+8,0 h / -5,0 h), nikoli v %. Velja za vse aplikacije (tudi KPI in ploščice v FinOS).

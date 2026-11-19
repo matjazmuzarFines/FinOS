@@ -3,6 +3,14 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "10.03",
+    datum: "19. 11. 2026",
+    spremembe: [
+      "FIN:TV: živa ura na vseh animiranih scenah desno zgoraj (ure in minute, pod njimi dan in datum; čas je usklajen s strežnikom).",
+      "FIN:TV: manj dela za televizor pri animiranih scenah - stalna gibanja (lebdenje Fineseka, tekoči trak, cesta, konfeti) in povečava kamere tečejo kot CSS animacije, scena se ne izrisuje več 4× na sekundo. Slika je enaka kot prej.",
+    ],
+  },
+  {
     verzija: "10.02",
     datum: "18. 11. 2026",
     spremembe: [

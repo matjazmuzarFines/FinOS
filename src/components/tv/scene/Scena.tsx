@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { CalendarRange, FileText, Gauge, PackageCheck, Trophy, Workflow, type LucideIcon } from "lucide-react";
 import { Znak } from "@/components/Znak";
 import { PREHOD_MS } from "@/lib/tvPredvajanje";
 import { RAZPOLOZENJA, SVETI, TONI, utripOb, type Scena as ScenaT, type Svet } from "@/lib/tvScene";
+import { UraSceni } from "./Ura";
 import { SvetKoledar, SvetMerilnik, SvetPodij, SvetPot, SvetTrak, type SvetProps } from "./Sveti";
 
 /**
@@ -34,17 +35,18 @@ const SVET_KOMPONENTA: Record<Svet, (p: SvetProps) => React.ReactNode> = {
 /** Kje je Finesek (sij počutja v ozadju). */
 const FOKUS: Record<Svet, string> = { merilnik: "40% 72%", podij: "28% 60%", trak: "50% 70%", pot: "50% 70%", koledar: "28% 55%" };
 
-function OzadjeSceni({ barvaSveta, barvaPocutja, fokus, mirno }: { barvaSveta: string; barvaPocutja: string; fokus: string; mirno?: boolean }) {
+/**
+ * Ozadje scene. Sij počutja: en element na barvo, menjava = prelivanje prosojnosti (CSS, grafična kartica) - prej se je
+ * preliv barve računal v JavaScriptu in se je 1,2 s vsako sličico na novo narisal cel zaslon.
+ */
+function OzadjeSceni({ barvaSveta, barvaPocutja, barvePocutij, fokus }: { barvaSveta: string; barvaPocutja: string; barvePocutij: string[]; fokus: string }) {
   return (
     <>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_100%_100%,#2b2b2f,#121214_60%)]" />
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 45% at 8% 0%, ${barvaSveta}40, ${barvaSveta}00 70%)` }} />
-      <motion.div
-        className="absolute inset-0"
-        initial={false}
-        animate={{ background: `radial-gradient(ellipse 50% 60% at ${fokus}, ${barvaPocutja}44, ${barvaPocutja}00 70%)` }}
-        transition={{ duration: mirno ? 0 : 1.2 }}
-      />
+      {barvePocutij.map((b) => (
+        <div key={b} className="fos-tv-sij absolute inset-0" style={{ opacity: b === barvaPocutja ? 1 : 0, background: `radial-gradient(ellipse 50% 60% at ${fokus}, ${b}44, ${b}00 70%)` }} />
+      ))}
       <div
         className="absolute inset-0 opacity-60"
         style={{ backgroundImage: "linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px)", backgroundSize: "96px 96px", maskImage: "radial-gradient(ellipse at 40% 50%, black, transparent 80%)" }}
@@ -72,6 +74,7 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
     return () => clearInterval(t);
   }, [scena, zacetek, mirno]);
 
+  const barvePocutij = useMemo(() => [...new Set(scena.utripi.map((x) => RAZPOLOZENJA[x.razpolozenje].barva))], [scena]);
   const u = scena.utripi[i] ?? scena.utripi[0];
   if (!u) return null;
   const { svet, barva } = SVETI[scena.komponenta] ?? { svet: "merilnik" as Svet, barva: "#ee7a3a" };
@@ -80,9 +83,7 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#121214] font-sans text-white">
-      <OzadjeSceni barvaSveta={barva} barvaPocutja={RAZPOLOZENJA[u.razpolozenje].barva} fokus={FOKUS[svet]} mirno={mirno} />
-
-      <SvetX scena={scena} i={i} u={u} mirno={mirno} barva={barva} />
+      <OzadjeSceni barvaSveta={barva} barvaPocutja={RAZPOLOZENJA[u.razpolozenje].barva} barvePocutij={barvePocutij} fokus={FOKUS[svet]} />
 
       {/* naslov */}
       <motion.div
@@ -118,9 +119,13 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
           ))}
         </div>
       )}
+      <UraSceni />
       <div className="absolute bottom-[44px] right-[110px] opacity-60">
         <Znak pripona="TV" className="text-[40px]" />
       </div>
+
+      {/* svet je narisan ZADNJI: v njem so animirani sloji (lebdenje, kamera) - kar bi bilo narisano za njimi, bi postalo svoj velik sloj */}
+      <SvetX scena={scena} i={i} u={u} mirno={mirno} barva={barva} />
     </div>
   );
 }

@@ -19,21 +19,19 @@ const ODZIV: Record<Razpolozenje, TargetAndTransition> = {
   ponosen: { scale: [1, 1.12, 1.06], rotate: [0, -6, 6, -3, 0], y: [0, -20, -10], transition: { duration: 1.8, delay: 0.7, ease: "easeInOut" } },
 };
 
-/** Glava Fineseka: prihod, lebdenje, odziv na vsak utrip (ključ `i`). */
+/**
+ * Glava Fineseka: prihod, lebdenje, odziv na vsak utrip (ključ `i`). Lebdenje je CSS animacija na zunanjem elementu
+ * (majhen sloj na grafični kartici, ves čas scene brez risanja); prihod in odziv sta znotraj njega (rišeta samo v ta sloj).
+ */
 export function GlavaOdziv({ u, i, mirno, pogledX = 8, className = "" }: { u: Utrip; i: number; mirno?: boolean; pogledX?: number; className?: string }) {
   return (
-    <motion.div
-      className={className}
-      initial={mirno ? false : { opacity: 0, scale: 0.5, y: 80 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={mirno ? { duration: 0 } : { type: "spring", stiffness: 90, damping: 14 }}
-    >
-      <motion.div animate={mirno ? undefined : { y: [0, -12, 0] }} transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}>
+    <div className={`${mirno ? "" : "fos-tv-lebdi"} ${className}`}>
+      <motion.div initial={mirno ? false : { opacity: 0, scale: 0.5, y: 80 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={mirno ? { duration: 0 } : { type: "spring", stiffness: 90, damping: 14 }}>
         <motion.div key={mirno ? "mirno" : `odziv${i}`} animate={mirno ? undefined : ODZIV[u.razpolozenje]} style={{ transformOrigin: "50% 85%" }}>
           <FinesekGlava razpolozenje={u.razpolozenje} pogledX={pogledX} mirno={mirno} className="w-full" />
         </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -125,7 +123,10 @@ export function PodatekUtripa({ u, mirno, brezVrednosti, brezTraku }: { u: Utrip
 }
 
 const BARVE_KONFETOV = ["#22c55e", "#eab308", "#ee7a3a", "#3b82f6", "#f43f5e", "#a855f7", "#ffffff"];
-/** Konfeti čez območje (ob uspehu). Deterministični (isti na povezanih zaslonih). */
+/**
+ * Konfeti čez območje (ob uspehu). Deterministični (isti na povezanih zaslonih). CSS animacija (fos-tv-konfet):
+ * koščki padajo na grafični kartici, glavna nit jih ne računa.
+ */
 export function Konfeti({ n = 46, zamik = 1.2 }: { n?: number; zamik?: number }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -133,13 +134,21 @@ export function Konfeti({ n = 46, zamik = 1.2 }: { n?: number; zamik?: number })
         const x = (j * 137.5) % 100;
         const s = 10 + ((j * 7) % 14);
         return (
-          <motion.span
+          <span
             key={j}
-            className="absolute top-0 block rounded-[3px]"
-            style={{ left: `${x}%`, width: s, height: s * 0.55, background: BARVE_KONFETOV[j % BARVE_KONFETOV.length] }}
-            initial={{ y: -60, rotate: 0, opacity: 0 }}
-            animate={{ y: [-60, 1140], rotate: [0, 540 + ((j * 53) % 360)], opacity: [0, 1, 1, 0.8], x: [0, ((j % 5) - 2) * 40] }}
-            transition={{ duration: 3 + ((j * 13) % 10) / 10, delay: zamik + ((j * 31) % 100) / 120, ease: "easeIn" }}
+            className="fos-tv-konfet absolute top-0 block rounded-[3px]"
+            style={
+              {
+                left: `${x}%`,
+                width: s,
+                height: s * 0.55,
+                background: BARVE_KONFETOV[j % BARVE_KONFETOV.length],
+                "--dx": `${((j % 5) - 2) * 40}px`,
+                "--r": `${540 + ((j * 53) % 360)}deg`,
+                "--t": `${3 + ((j * 13) % 10) / 10}s`,
+                "--z": `${zamik + ((j * 31) % 100) / 120}s`,
+              } as React.CSSProperties
+            }
           />
         );
       })}

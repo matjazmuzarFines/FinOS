@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { Tv } from "lucide-react";
 import { Znak } from "@/components/Znak";
 import type { Prehod, TvOkno, TvVir } from "@/lib/tv";
 import { diapozitivi, polozaj, PREHOD_MS, type Diapozitiv as DiapozitivT } from "@/lib/tvPredvajanje";
 import { Diapozitiv, Oder } from "./Diapozitiv";
+import { OdmikUre } from "./scene/Ura";
+
+/**
+ * Diapozitiv se izriše enkrat. Predvajalnik tiktaka 4× na sekundo in vsakič pošlje nov `odmikMs` - ta se bere samo ob
+ * prikazu (začetek scene / videa), zato se ob spremembi samo odmika NE izriše znova (prej se je cela animirana scena
+ * z vsemi gibljivimi deli v Reactu izrisala 4× na sekundo - zatikanje na šibkem računalniku).
+ */
+const DiapozitivEnkrat = memo(Diapozitiv, (a, b) => a.d === b.d && a.url === b.url && a.vir === b.vir && a.mirno === b.mirno && a.zanka === b.zanka);
 
 const KRIVULJA = [0.22, 1, 0.36, 1] as const;
 /** Prehod 2 s (pred naslovom in pred vsebino - skupaj z naslovom 8 s). */
@@ -103,8 +111,10 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
       <div className="absolute inset-0 isolate">
       <AnimatePresence initial={false} custom={prehod}>
         {d && p ? (
-          <motion.div key={kljuc} custom={prehod} variants={PREHODI} initial="vstop" animate="zdaj" exit="izhod" className="absolute inset-0" style={{ zIndex: p.krog * 1000 + p.i + 1 }}>
-            <Diapozitiv d={d} url={url} vir={viri.find((v) => v.id === d.okno.id_vira)} odmikMs={p.odmikMs} zanka={seznam.length === 1} />
+          <motion.div key={kljuc} custom={prehod} variants={PREHODI} initial="vstop" animate="zdaj" exit="izhod" className="fos-tv-sloj absolute inset-0" style={{ zIndex: p.krog * 1000 + p.i + 1 }}>
+            <OdmikUre.Provider value={odmikUre}>
+              <DiapozitivEnkrat d={d} url={url} vir={viri.find((v) => v.id === d.okno.id_vira)} odmikMs={p.odmikMs} zanka={seznam.length === 1} />
+            </OdmikUre.Provider>
           </motion.div>
         ) : (
           <motion.div key="prazno" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0">
