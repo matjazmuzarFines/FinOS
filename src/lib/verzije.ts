@@ -3,6 +3,16 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "10.04",
+    datum: "20. 11. 2026",
+    spremembe: [
+      "FIN:TV: animirane scene so mirne - podatek je takoj viden in se ne premika (brez štetja številk in drsenja). Na komponento se premakne en del: kazalec merilnika, dvig vseh stolpcev hkrati, paket na traku, skok Fineseka do postaje ali list koledarja, nato kratek odziv Fineseka. Cesta, trak, lebdenje in približevanje kamere so odstranjeni.",
+      "FIN:TV: animacija scene se začne šele po prehodu med okni; pri prehodu Pojemanje staro okno ostane, dokler ga novo ne prekrije (ni več temne / črne vmesne slike). Okna s scenami imajo samo prehod Pojemanje.",
+      "FIN:TV: ura na animiranih scenah brez datuma - oznaka podatka (npr. DOBAVA ZAMUJA) se ne zaleti več vanjo.",
+      "FIN:TV: diagnostika na televizorju - /tv?k=KLJUČ&meri=1 pokaže sličice na sekundo, premore, velikost zaslona in različico brskalnika; &brez=animacije,prehod,glava,sence,ozadje,svet,ura izklopi posamezen del slike.",
+    ],
+  },
+  {
     verzija: "10.03",
     datum: "19. 11. 2026",
     spremembe: [

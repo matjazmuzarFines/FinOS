@@ -8,8 +8,10 @@ import type { Razpolozenje } from "@/lib/tvScene";
  * Glava Fineseka (pečica z obrazom) v SVG - za FIN:TV scene. Obraz (obrvi, oči, usta, rdečica) je narisan posebej in
  * se zvezno spremeni med počutji (usta in obrvi se preoblikujejo, zenice se zožijo / razširijo, oči mežikajo).
  * Po zgledu slik stopenj (FINES_Production data/finesek_obrazi) - tam so premajhne za 4K, zato vektorsko.
- * Dodatki: navdušen = iskrice, ponosen = medalja, zaskrbljen = potna kapljica in utripajoča rdeča lučka.
- * `mirno` = sličica / predogled (brez ponavljajočih animacij).
+ * Dodatki: navdušen = iskrice, ponosen = medalja, zaskrbljen = potna kapljica in rdeča lučka.
+ * MIRNA (2026-11-20, televizor): nič ne teče ves čas (brez utripanja lučke, kapljanja, iskric v zanki, mežikanja) in brez
+ * filtra zameglitve - vsaka sprememba SVG nariše znova celo glavo. Gibanje je samo ob menjavi počutja (obraz ~0,5 s).
+ * `mirno` = sličica / predogled (brez prehodov).
  */
 
 type Obraz = {
@@ -74,7 +76,7 @@ const OBRAZI: Record<Razpolozenje, Obraz> = {
 const OKO_X = [222, 378] as const;
 const OKO_Y = 218;
 const RJAVA = "#3b1606";
-const VZMET = { type: "spring", stiffness: 140, damping: 16 } as const;
+const PREOBLIKUJ = { duration: 0.5, ease: "easeInOut" } as const;
 
 const obrvPot = ([x1, y1, cx, cy, x2, y2]: Obraz["obrv"], zrcalno: boolean) => {
   const x = (v: number) => (zrcalno ? 600 - v : v);
@@ -107,8 +109,7 @@ type Props = {
 export function FinesekGlava({ razpolozenje, pogledX = 0, mirno, className = "" }: Props) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const o = OBRAZI[razpolozenje];
-  const prehod = mirno ? { duration: 0 } : VZMET;
-  const ponavljaj = (trajanje: number, zamik = 0) => (mirno ? { duration: 0 } : { duration: trajanje, repeat: Infinity, delay: zamik, ease: "easeInOut" as const });
+  const prehod = mirno ? { duration: 0 } : PREOBLIKUJ;
 
   return (
     <svg viewBox="-60 -60 720 540" className={className} role="img" aria-label={`Finesek - ${razpolozenje}`}>
@@ -159,9 +160,6 @@ export function FinesekGlava({ razpolozenje, pogledX = 0, mirno, className = "" 
         <clipPath id={`${id}-usta`}>
           <motion.path initial={false} animate={{ d: o.usta }} transition={prehod} />
         </clipPath>
-        <filter id={`${id}-sij`} x="-50%" y="-200%" width="200%" height="500%">
-          <feGaussianBlur stdDeviation="7" />
-        </filter>
       </defs>
 
       {/* senca pod pečico */}
@@ -175,17 +173,9 @@ export function FinesekGlava({ razpolozenje, pogledX = 0, mirno, className = "" 
       <rect x="18" y="26" width="564" height="12" rx="6" fill="#ffffff" opacity="0.55" />
       {/* zgornji pas z lučko */}
       <rect x="28" y="40" width="544" height="48" rx="20" fill={`url(#${id}-pas)`} />
-      <motion.rect x="170" y="58" width="260" height="11" rx="5.5" filter={`url(#${id}-sij)`} initial={false} animate={{ fill: o.lucka }} transition={{ duration: mirno ? 0 : 0.6 }} />
-      <motion.rect
-        x="170"
-        y="58"
-        width="260"
-        height="11"
-        rx="5.5"
-        initial={false}
-        animate={{ fill: o.lucka, opacity: razpolozenje === "zaskrbljen" && !mirno ? [1, 0.35, 1] : 1 }}
-        transition={razpolozenje === "zaskrbljen" ? ponavljaj(1.2) : { duration: mirno ? 0 : 0.6 }}
-      />
+      {/* lučka: sij = širši prosojen pravokotnik (brez filtra), barva se zamenja takoj */}
+      <rect x="160" y="51" width="280" height="25" rx="12.5" fill={o.lucka} opacity="0.35" />
+      <rect x="170" y="58" width="260" height="11" rx="5.5" fill={o.lucka} />
       {/* ročaj */}
       <rect x="22" y="118" width="22" height="206" rx="11" fill={`url(#${id}-rocaj)`} stroke="#6b6f78" strokeWidth="2" />
       {/* spodnji rob */}
@@ -234,21 +224,17 @@ export function FinesekGlava({ razpolozenje, pogledX = 0, mirno, className = "" 
       ))}
 
       {/* oči */}
-      {OKO_X.map((cx, i) => (
+      {OKO_X.map((cx) => (
         <g key={cx}>
           <motion.g initial={false} animate={{ scale: o.oci.zaprte ? 0.2 : o.oci.skala, opacity: o.oci.zaprte ? 0 : 1 }} transition={prehod}>
-            <motion.g
-              animate={mirno ? { scaleY: 1 } : { scaleY: [1, 1, 0.08, 1] }}
-              transition={mirno ? { duration: 0 } : { duration: 4.2, times: [0, 0.93, 0.965, 1], repeat: Infinity, delay: i * 0.03 }}
-             
-            >
+            <g>
               <circle cx={cx} cy={OKO_Y} r="40" fill={`url(#${id}-sarenica)`} stroke="#2a0f04" strokeWidth="5" />
               <motion.g initial={false} animate={{ x: pogledX, y: o.pogledY }} transition={prehod}>
                 <motion.circle cx={cx} cy={OKO_Y} initial={false} animate={{ r: o.oci.zenica }} transition={prehod} fill="#1a0802" />
                 <motion.circle cx={cx + 13} cy={OKO_Y - 14} initial={false} animate={{ r: o.oci.odsev }} transition={prehod} fill="#fff" />
                 <circle cx={cx - 13} cy={OKO_Y + 15} r="5" fill="#fff" opacity="0.9" />
               </motion.g>
-            </motion.g>
+            </g>
           </motion.g>
           {/* zaprte oči (ponosen): ^ ^ */}
           <motion.path
@@ -273,32 +259,15 @@ export function FinesekGlava({ razpolozenje, pogledX = 0, mirno, className = "" 
       {/* DODATKI */}
       <AnimatePresence>
         {razpolozenje === "zaskrbljen" && (
-          <motion.g key="kaplja" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.path
-              d="M 0 0 C 10 16 16 24 16 32 A 16 16 0 0 1 -16 32 C -16 24 -10 16 0 0 Z"
-              fill={`url(#${id}-kaplja)`}
-              stroke="#fff"
-              strokeOpacity="0.6"
-              strokeWidth="2"
-              initial={{ x: 478, y: 130 }}
-              animate={mirno ? { x: 478, y: 140 } : { x: 478, y: [128, 128, 168], opacity: [0, 1, 0] }}
-              transition={mirno ? { duration: 0 } : { duration: 2, times: [0, 0.2, 1], repeat: Infinity, repeatDelay: 0.4 }}
-            />
+          <motion.g key="kaplja" initial={mirno ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <path d="M 0 0 C 10 16 16 24 16 32 A 16 16 0 0 1 -16 32 C -16 24 -10 16 0 0 Z" transform="translate(478 140)" fill={`url(#${id}-kaplja)`} stroke="#fff" strokeOpacity="0.6" strokeWidth="2" />
           </motion.g>
         )}
         {razpolozenje === "navdusen" &&
           ISKRICE.map((s, i) => (
-            <motion.path
-              key={`iskrica${i}`}
-              d={ISKRICA}
-              fill="#fff3c4"
-              stroke="#facc15"
-              strokeWidth="2"
-              initial={{ x: s.x, y: s.y, scale: 0, rotate: 0 }}
-              animate={mirno ? { x: s.x, y: s.y, scale: s.s, rotate: 0 } : { x: s.x, y: s.y, scale: [0, s.s * 1.15, 0], rotate: [0, 90] }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={mirno ? { duration: 0 } : { duration: 1.6, repeat: Infinity, delay: s.d, ease: "easeInOut" }}
-            />
+            <motion.g key={`iskrica${i}`} initial={mirno ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <path d={ISKRICA} transform={`translate(${s.x} ${s.y}) scale(${s.s})`} fill="#fff3c4" stroke="#facc15" strokeWidth="2" />
+            </motion.g>
           ))}
         {razpolozenje === "ponosen" && (
           <motion.g

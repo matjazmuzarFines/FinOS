@@ -166,6 +166,10 @@
   Pod krovnim NI naročnika (krovni ima naloge več naročnikov) - glavne družine in kosi ("OCB 4 kos · OCA 2 kos", `druzine`).
   Delo in Zaključeni imata v Production Sync v TV tudi ročni gumb Sync.
   Ton: slab obraz = zaskrbljen (ne jezen), samo celica / ekipa, nikoli imena. Preizkus vsake: `/tv/scena?k=delo|zakljuceni|material|plan|pregled`.
+  MIRNA SCENA (2026-11-20): podatek takoj in miruje, v utripu se premakne en del sveta (`zamik` v SvetProps = prvi utrip
+  po prehodu), nato odziv glave (`ODZIV` / `ODZIV_PO` v Skupno.tsx); nič ne teče ves čas (finos_stil.txt razdelek 28).
+  Diagnostika na televizorju: `?meri=1` (`Meritev.tsx`: sl./s, premori, brskalnik) in `&brez=animacije,prehod,glava,
+  sence,ozadje,svet,ura` (`src/lib/tvMeritev.ts`, CSS `data-tv-brez`). Načrt in stanje: `FIN_TV_animacije_predelave.txt`.
   TV se predvaja NEPOSREDNO V BRSKALNIKU TELEVIZORJA (Samsung Crystal UHD, Tizen - šibek procesor, starejši Chromium):
   stalna gibanja in kamera so CSS animacije (`fos-tv-*` v globals.css), ne `motion` v JavaScriptu; `Predvajalnik` scene
   ne izrisuje ob vsakem tiku (`DiapozitivEnkrat`). Živa ura desno zgoraj: `scene/Ura.tsx` (`UraSceni`, popravek `OdmikUre`).

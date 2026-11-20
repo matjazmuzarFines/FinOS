@@ -8,6 +8,8 @@ import type { Prehod, TvOkno, TvVir } from "@/lib/tv";
 import { diapozitivi, polozaj, PREHOD_MS, type Diapozitiv as DiapozitivT } from "@/lib/tvPredvajanje";
 import { Diapozitiv, Oder } from "./Diapozitiv";
 import { OdmikUre } from "./scene/Ura";
+import { Meritev } from "./Meritev";
+import { brez, izklopi, meriVklop } from "@/lib/tvMeritev";
 
 /**
  * Diapozitiv se izriše enkrat. Predvajalnik tiktaka 4× na sekundo in vsakič pošlje nov `odmikMs` - ta se bere samo ob
@@ -41,7 +43,9 @@ const PREHODI: Variants = {
   izhod: (p: Prehod) =>
     ({
       brez: { opacity: 0, transition: { duration: 0 } },
-      pojemanje: { opacity: 0, transition: { duration: TRAJANJE } },
+      // staro okno ostane CELO pod novim, ki se preliva čez (prej sta pojemala oba = vmes temno / črno, posebej ko se
+      // nova scena na šibkem televizorju prvič riše z zamikom); 0.99 = izhod mora nekaj animirati, sicer izgine takoj
+      pojemanje: { opacity: 0.99, transition: { duration: TRAJANJE } },
       drsenje: { x: "-100%", transition: { duration: TRAJANJE, ease: KRIVULJA } },
       povecava: { opacity: 0, scale: 0.92, transition: { duration: TRAJANJE, ease: KRIVULJA } },
       // novo okno se odgrne čez staro - staro ostane, dokler ga zavesa ne pokrije
@@ -104,16 +108,29 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
     if (d && p) javi.current?.(d, p.i, seznam.length);
   }, [d?.kljuc, p?.krog]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const prehod: Prehod = d?.okno.prehod ?? "pojemanje";
+  // diagnostika (?meri=1, &brez=...) - prebere se v brskalniku po prikazu (strežnik je ne vidi)
+  const [diag, setDiag] = useState({ meri: false, mirno: false, brezPrehoda: false });
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- naslov strani se prebere samo v brskalniku (enkrat)
+    setDiag({ meri: meriVklop(), mirno: brez("animacije"), brezPrehoda: brez("prehod") });
+    const b = izklopi();
+    if (b.length) document.documentElement.dataset.tvBrez = b.join(" ");
+  }, []);
+
+  // okno z animirano sceno: samo prehod Pojemanje (povečava = zameglitev celega zaslona, zavesa = rezanje + filter -
+  // pretežko za brskalnik televizorja), tudi za njegovo naslovno stran
+  const izbran: Prehod = d?.okno.prehod ?? "pojemanje";
+  const sScenami = !!d && (!!d.scena || (!!d.naslovna && seznam.some((x) => x.okno.id === d.okno.id && !!x.scena)));
+  const prehod: Prehod = diag.brezPrehoda ? "brez" : sScenami && (izbran === "povecava" || izbran === "zavesa") ? "pojemanje" : izbran;
   return (
     <Oder className={className}>
       {/* lasten sloj (isolate): z-index diapozitivov raste s številko kroga (presega največji z-index) in bi prekril časovnico */}
       <div className="absolute inset-0 isolate">
       <AnimatePresence initial={false} custom={prehod}>
         {d && p ? (
-          <motion.div key={kljuc} custom={prehod} variants={PREHODI} initial="vstop" animate="zdaj" exit="izhod" className="fos-tv-sloj absolute inset-0" style={{ zIndex: p.krog * 1000 + p.i + 1 }}>
+          <motion.div key={kljuc} custom={prehod} variants={PREHODI} initial="vstop" animate="zdaj" exit="izhod" className={`${prehod === "drsenje" ? "fos-tv-sloj " : ""}absolute inset-0`} style={{ zIndex: p.krog * 1000 + p.i + 1 }}>
             <OdmikUre.Provider value={odmikUre}>
-              <DiapozitivEnkrat d={d} url={url} vir={viri.find((v) => v.id === d.okno.id_vira)} odmikMs={p.odmikMs} zanka={seznam.length === 1} />
+              <DiapozitivEnkrat d={d} url={url} vir={viri.find((v) => v.id === d.okno.id_vira)} odmikMs={p.odmikMs} zanka={seznam.length === 1} mirno={diag.mirno || undefined} />
             </OdmikUre.Provider>
           </motion.div>
         ) : (
@@ -123,6 +140,7 @@ export function Predvajalnik({ okna, viri = [], url, odmikUre = 0, ustavljeno, o
         )}
       </AnimatePresence>
       </div>
+      {diag.meri && <Meritev ime={d ? `${d.naslovna ? "naslov · " : ""}${d.scena ? `${d.scena.naslov} · ` : ""}${d.okno.naslov}${d.stStrani ? ` (${d.stStrani})` : ""}` : "prazno"} kljuc={kljuc} />}
       {d && p && !d.naslovna && <Casovnica key={`${d.kljuc}#${p.krog}`} odmikMs={p.odmikMs} trajanjeMs={d.trajanjeMs} ustavljeno={ustavljeno} />}
     </Oder>
   );

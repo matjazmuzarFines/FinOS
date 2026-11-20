@@ -182,3 +182,27 @@ KORAK 4 - ČE BRSKALNIK TELEVIZORJA NE ZMORE
   - zamegljeni prelivi ozadja (blur-3xl na treh velikih animiranih elementih),
   - me-cesta (background-position) in me-napaka (box-shadow) v prizorih Moj Fines (tečeta samo ob hoverju),
   - standard animacij prenesti v ../FINES_Standardi, če naj velja za vse Fines projekte.
+
+
+10. STANJE 2026-11-20 (odgovori uporabnika in narejeno)
+-------------------------------------------------------
+Odgovori: brskalnik televizorja neznan (vgrajen) - izmeri ?meri=1; slika celozaslonska. Na TV-ju prvi ~2 s zakasni (črna
+slika, nato skoči sredi animacije), animacije tečejo po korakih, zatikajo prehodi, začetki scen, menjave podatkov;
+navadna okna so v redu, barve in ikone pravilne. Gibanja čim manj: 1-2 animaciji na komponento + malo glave, številke
+naj ne skačejo. Računalnik ob TV-ju (korak 4) je verjetno potreben, če brskalnik ne bo zmogel.
+
+Narejeno (verzija 10.04, NI še preizkušeno na televizorju):
+  KORAK 0: ?meri=1 (Meritev.tsx) in &brez=animacije,prehod,glava,sence,ozadje,svet,ura (tvMeritev.ts). Pošiljanje
+           številk v /api/tv NI narejeno (rabi stolpec v bazi) - za zdaj se odčita z zaslona.
+  KORAK 1: mirna scena (glej finos_stil.txt razdelek 28, MIRNA SCENA): kamera, lebdenje, štetje, trak, cesta, vprašaj,
+           majanje, utripanje lučke, kapljanje, iskrice v zanki, mežikanje in filter zameglitve v glavi odstranjeni.
+  KORAK 2: gibanje prvega utripa po prehodu; okno s sceno samo Pojemanje; pri Pojemanju staro okno ostane celo pod novim.
+           Slika diapozitiva ima will-change samo pri Drsenju. Naslovna stran OSTANE (odločitev uporabnika: jasno je, kaj sledi).
+Meritev na računalniku brez grafične kartice (SW=1, 2× na sceno, stara proti novi): skripte ~-45 %, slog ~-80 %,
+raster -30 do -80 %, sestavljanje -30 do -45 %.
+
+NASLEDNJI KORAK NA TELEVIZORJU:
+  1. /tv?k=KLJUČ&meri=1 - zapiši sl./s, najdaljši premor, "začetek ... ms" za scene in naslove, Chrome različico, zaslon.
+  2. Če zatika: &meri=1&brez=sence, nato brez=ozadje, brez=glava, brez=prehod - kar izboljša, je krivec (KORAK 3).
+  3. Če "začetek" ostane > 300 ms (prvo risanje nove scene): naslednjo sceno vnaprej vstaviti skrito (pred prehodom)
+     ali naslovno stran pri scenah izklopiti. Če sl./s ostane nizko tudi z brez=animacije -> KORAK 4.

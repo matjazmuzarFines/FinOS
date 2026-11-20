@@ -481,16 +481,26 @@ PRAVILA
    - ANIMIRANE SCENE (za delavce, namesto strani PDF): levo zgoraj nadnaslov (ikona v oranžnem prelivu + ime komponente,
      oranžno, velike črke), velik naslov (celica) in podnaslov (oddelek · dan); levo velika glava Fineseka (pečica, obraz v
      SVG - počutje), desno EN podatek: čip oznake v barvi tona (PLAN DOSEŽEN zelena, SKORAJ rumena, ZAOSTAJAMO / ZA PLANOM
-     oranžna, PRED PLANOM zelena, HVALA ZA NADURE zlata), številka krovnega 170 px, naročnik, vrednost šteje navzgor (ure,
-     nikoli %), trak napredka, kratek stavek. Sij ozadja v barvi počutja. Ob vsakem utripu kamera približa glavo in se
-     oddalji, Finesek se odzove (navdušen poskoči + iskrice, vesel poskoči, zaskrbljen se strese + potna kapljica in
-     utripajoča rdeča lučka, ponosen se nagne + medalja, zaprte oči ^ ^); pike utripov spodaj, znak FIN:TV desno spodaj.
-     DESNO ZGORAJ ŽIVA URA (UraSceni): ure in minute 96 px (preliv belo-sivo, oranžno dvopičje), pod njimi dan in datum
-     30 px sivo; brez sekund in brez utripanja (izriše se samo ob menjavi minute).
+     oranžna, PRED PLANOM zelena, HVALA ZA NADURE zlata), številka krovnega 170 px, družine, vrednost (ure, nikoli %),
+     trak napredka, kratek stavek. Sij ozadja v barvi počutja. Pike utripov spodaj, znak FIN:TV desno spodaj.
+   - MIRNA SCENA (2026-11-20, televizor ne zmore veliko gibanja): podatek je TAKOJ viden in miruje (končna številka brez
+     štetja, brez drsenja in vzmeti); menjava utripa = preliv prosojnosti 0,3 s. V utripu se premakne EN del sveta:
+     Delo = kazalec merilnika (od prejšnjega položaja), Zaključeni = vsi stolpci se ob začetku dvignejo skupaj (enkrat),
+     Finesek gre na vrh trenutnega, konfeti (14) samo pri Skupaj; Material = paketi enkrat pripeljejo (pri "pride"),
+     trak miruje; Plan = Finesek skoči do postaje, cesta miruje; Pregled = odtrga se en list koledarja. Nato (2 s) kratek
+     odziv glave (navdušen / vesel poskok, zadovoljen nagib, zaskrbljen stresanje, ponosen nagib). Glava ne lebdi, kamere ni,
+     lučka / kapljica / iskrice mirujejo, oči ne mežikajo, obraz se med počutji preoblikuje 0,5 s. Gibanje prvega utripa se
+     začne šele PO prehodu med okni. Pravilo: v vsakem trenutku se premika največ en del in nič ne teče ves čas.
+     DESNO ZGORAJ ŽIVA URA (UraSceni): samo ure in minute 96 px (preliv belo-sivo, oranžno dvopičje), BREZ datuma (podatek
+     scene je segal do njega); brez sekund in brez utripanja (izriše se samo ob menjavi minute).
    - POSTAVITEV NA TV: predvaja se neposredno v brskalniku televizorja (Samsung Crystal UHD, Tizen) - šibek procesor.
-     Stalna gibanja in povečave zato kot CSS animacije preoblikovanja / prosojnosti (razredi fos-tv-* v globals.css), ne
-     v JavaScriptu; malo majhnih slojev (will-change samo za majhne dele, ki se sučejo / premikajo, nikoli za dele, ki
-     se povečujejo). Nova stalna animacija scene = CSS razred fos-tv-*.
+     Gibanje samo s preoblikovanjem / prosojnostjo; malo majhnih slojev (will-change samo za majhne dele, ki se sučejo /
+     premikajo, nikoli za dele, ki se povečujejo). Brez filtrov (feGaussianBlur, drop-shadow) na delih, ki se spreminjajo.
+     Barve brez color-mix() (temnejsa / svetlejsa v Skupno.tsx). Okno s sceno ima samo prehod Pojemanje (Povečava in
+     Zavesa sta pretežki), staro okno pri Pojemanju ostane celo pod novim (prej sta pojemala oba = vmes temno).
+   - DIAGNOSTIKA NA TV (tvMeritev.ts, Meritev.tsx): /tv?k=KLJUČ&meri=1 (ali /tv/scena?meri=1) = črn izpis zgoraj med
+     naslovom in uro: sličice na sekundo, najdaljši premor, dolga opravila JavaScripta, zaslon, brskalnik, zadnji
+     diapozitivi (premor na začetku, povprečje). &brez=animacije,prehod,glava,sence,ozadje,svet,ura izklopi del slike.
 
 29. STANDARD ANIMACIJ (velja za vse nove in popravljene animacije; izmerjeno 2026-11-19 s sledjo brskalnika)
    Cilj: animacija ne sme stati nič, ko je ne vidiš, in čim manj, ko jo. Najšibkejša naprava je brskalnik televizorja.
@@ -748,3 +758,11 @@ DNEVNIK POPRAVKOV UPORABNIKA
              (prej nevidna na vsaki ploščici), bleščica in trak besed s transform (grafična kartica), delci ozadja 30
              izrisov na sekundo in vezani na čas. -> razdelek 29 (STANDARD ANIMACIJ), globals.css (fos-shine,
              fos-border-anim, fos-trak), Moduli (Trak), Ozadje, scripts/animacije/meri.mjs.
+2026-11-20 - FIN:TV na televizorju: zakasni prvi 2 s (črna slika, nato skoči sredi animacije), animacije po korakih,
+             zatikajo prehodi in naslovi. Manj gibanja: podatki takoj in mirujejo, na komponento 1-2 animaciji (kazalec,
+             dvig vseh stolpcev skupaj, paket, skok, list koledarja) + kratek odziv glave; brez ceste, traku, lebdenja,
+             kamere, štetja številk. Diagnostika ?meri=1 (sličice na sekundo na televizorju) in &brez=.
+             -> razdelek 28 (MIRNA SCENA, DIAGNOSTIKA), Skupno, Sveti, Scena, FinesekGlava, Predvajalnik, Meritev,
+             tvMeritev.ts, globals.css (fos-tv-raste, data-tv-brez).
+2026-11-20 - Naslovna stran pred komponento OSTANE (jasno je, kaj sledi). Material: oznaka (DOBAVA ZAMUJA) je segala do
+             datuma pod uro -> datum ob uri odstranjen, podatek scene zbit (razmik 24 px). -> razdelek 28, Ura, Skupno.

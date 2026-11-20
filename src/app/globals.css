@@ -572,73 +572,31 @@ html[data-animacije="off"] .fos-intro {
   animation-iteration-count: 1 !important;
 }
 
-/* FIN:TV animirane scene (računalnik ob TV-ju je šibek, slika je 4K). Izmerjeno s sledjo brskalnika:
-   - stalna gibanja in povečava kamere tečejo kot CSS animacije preoblikovanja / prosojnosti = na grafični kartici,
-     brez JavaScripta in brez ponovnega risanja (povečava prek JS je vsako sličico na novo narisala cel zaslon);
-   - slojev je MALO in so MAJHNI: vsak velik sloj v 4K se sestavlja vsako sličico (več velikih slojev je bilo počasneje
-     kot brez njih). fos-tv-sloj zato samo za majhne dele, ki se sučejo / premikajo - NE za dele, ki se povečujejo
-     (sloj z will-change ostane narisan v začetni velikosti = zamegljen).
-   Niso okras - kot časovnica tečejo tudi ob reduced-motion (!important premaga splošno pravilo). Čas: --t, zamik: --z. */
+/* FIN:TV animirane scene - MIRNA SCENA (2026-11-20; predvaja se v brskalniku televizorja, šibek procesor):
+   nič ne teče ves čas; v utripu se premakne en del sveta in glava (motion, preoblikovanje). Tu ostanejo samo enkratne
+   CSS animacije preoblikovanja / prosojnosti. Slojev je MALO in so MAJHNI: fos-tv-sloj samo za majhne dele, ki se
+   sučejo / premikajo - NE za dele, ki se povečujejo (sloj z will-change ostane narisan v začetni velikosti = zamegljen).
+   Niso okras - tečejo tudi ob reduced-motion (!important premaga splošno pravilo). Čas: --t, zamik: --z. */
 .fos-tv-sloj {
   will-change: transform;
 }
-@keyframes fos-tv-kamera {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  35%,
-  55% {
-    transform: scale(1.14);
-  }
-}
-.fos-tv-kamera {
-  animation: fos-tv-kamera ease-in-out 1 both;
-  animation-duration: 1.9s !important;
-  animation-iteration-count: 1 !important;
-}
 .fos-tv-sij {
-  transition: opacity 1.2s ease-out !important;
+  transition: opacity 0.8s ease-out !important;
 }
-@keyframes fos-tv-lebdi {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-@keyframes fos-tv-tece {
+/* stolpci podija se ob začetku scene dvignejo skupaj (enkrat) */
+@keyframes fos-tv-raste {
   from {
-    transform: translateX(0);
+    transform: scaleY(0);
   }
   to {
-    transform: translateX(var(--pot));
+    transform: scaleY(1);
   }
 }
-@keyframes fos-tv-vprasaj {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-}
-@keyframes fos-tv-maje {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  33.333% {
-    transform: rotate(-3deg);
-  }
-  66.667% {
-    transform: rotate(3deg);
-  }
+.fos-tv-raste {
+  animation: fos-tv-raste cubic-bezier(0.22, 1, 0.36, 1) 1 both;
+  animation-duration: 1.2s !important;
+  animation-delay: var(--z, 0s);
+  animation-iteration-count: 1 !important;
 }
 @keyframes fos-tv-konfet-pot {
   from {
@@ -660,36 +618,29 @@ html[data-animacije="off"] .fos-intro {
     opacity: 0.8;
   }
 }
-.fos-tv-lebdi,
-.fos-tv-tece,
-.fos-tv-vprasaj,
-.fos-tv-maje {
-  animation-duration: var(--t) !important;
-  animation-delay: var(--z, 0s);
-  animation-iteration-count: infinite !important;
-}
-.fos-tv-lebdi {
-  --t: 3.4s;
-  animation-name: fos-tv-lebdi;
-  animation-timing-function: ease-in-out;
-}
-.fos-tv-tece {
-  animation-name: fos-tv-tece;
-  animation-timing-function: linear;
-}
-.fos-tv-vprasaj {
-  --t: 1.6s;
-  animation-name: fos-tv-vprasaj;
-  animation-timing-function: ease-in-out;
-}
-.fos-tv-maje {
-  --t: 1.2s;
-  animation-name: fos-tv-maje;
-  animation-timing-function: ease-in-out;
-}
 .fos-tv-konfet {
   animation: fos-tv-konfet-pot ease-in 1 both, fos-tv-konfet-vid ease-in 1 both;
   animation-duration: var(--t) !important;
   animation-delay: var(--z);
   animation-iteration-count: 1 !important;
+}
+
+/* FIN:TV diagnostika (&brez=... v naslovu, src/lib/tvMeritev.ts): izklop dela slike, da se na televizorju najde krivec */
+[data-tv-brez~="sence"] .fos-tv-scena,
+[data-tv-brez~="sence"] .fos-tv-scena * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+[data-tv-brez~="glava"] .fos-tv-glava {
+  visibility: hidden !important;
+}
+[data-tv-brez~="ozadje"] .fos-tv-ozadje {
+  display: none !important;
+}
+[data-tv-brez~="svet"] .fos-tv-svet {
+  display: none !important;
+}
+[data-tv-brez~="ura"] .fos-tv-ura {
+  display: none !important;
 }

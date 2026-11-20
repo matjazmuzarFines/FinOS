@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
 import { CalendarRange, FileText, Gauge, PackageCheck, Trophy, Workflow, type LucideIcon } from "lucide-react";
 import { Znak } from "@/components/Znak";
 import { PREHOD_MS } from "@/lib/tvPredvajanje";
 import { RAZPOLOZENJA, SVETI, TONI, utripOb, type Scena as ScenaT, type Svet } from "@/lib/tvScene";
 import { UraSceni } from "./Ura";
+import { svetlejsa, temnejsa } from "./Skupno";
 import { SvetKoledar, SvetMerilnik, SvetPodij, SvetPot, SvetTrak, type SvetProps } from "./Sveti";
 
 /**
@@ -41,7 +41,7 @@ const FOKUS: Record<Svet, string> = { merilnik: "40% 72%", podij: "28% 60%", tra
  */
 function OzadjeSceni({ barvaSveta, barvaPocutja, barvePocutij, fokus }: { barvaSveta: string; barvaPocutja: string; barvePocutij: string[]; fokus: string }) {
   return (
-    <>
+    <div className="fos-tv-ozadje absolute inset-0">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_100%_100%,#2b2b2f,#121214_60%)]" />
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 45% at 8% 0%, ${barvaSveta}40, ${barvaSveta}00 70%)` }} />
       {barvePocutij.map((b) => (
@@ -52,7 +52,7 @@ function OzadjeSceni({ barvaSveta, barvaPocutja, barvePocutij, fokus }: { barvaS
         style={{ backgroundImage: "linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px)", backgroundSize: "96px 96px", maskImage: "radial-gradient(ellipse at 40% 50%, black, transparent 80%)" }}
       />
       <div className="absolute inset-x-0 bottom-0 h-3" style={{ background: `linear-gradient(90deg, ${barvaSveta}, ${barvaSveta}80 60%, ${barvaSveta}00)` }} />
-    </>
+    </div>
   );
 }
 
@@ -68,6 +68,11 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
   // ura scene: začetek ob prikazu, nato tiktaka sama (setInterval samo za menjavo utripa - gibanje teče v motion)
   const [zacetek] = useState(() => Date.now() - odmikMs);
   const [i, setI] = useState(() => (mirno ? 0 : utripOb(scena, odmikMs - PREHOD_MS)));
+  // gibanje prvega prikazanega utripa se začne šele PO prehodu med okni (med prehodom sta na zaslonu dve sceni);
+  // kasnejši utripi se začnejo takoj
+  const [prviI] = useState(i);
+  const [zamikPrvi] = useState(() => Math.max(0, PREHOD_MS - odmikMs) / 1000 + 0.3);
+  const zamik = i === prviI ? zamikPrvi : 0.3;
   useEffect(() => {
     if (mirno) return;
     const t = setInterval(() => setI(utripOb(scena, Date.now() - zacetek - PREHOD_MS)), 100);
@@ -82,20 +87,15 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
   const Ikona = IKONE[scena.komponenta] ?? FileText;
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#121214] font-sans text-white">
+    <div className="fos-tv-scena absolute inset-0 overflow-hidden bg-[#121214] font-sans text-white">
       <OzadjeSceni barvaSveta={barva} barvaPocutja={RAZPOLOZENJA[u.razpolozenje].barva} barvePocutij={barvePocutij} fokus={FOKUS[svet]} />
 
       {/* naslov */}
-      <motion.div
-        className="absolute left-[110px] top-[70px] flex flex-col gap-3"
-        initial={mirno ? false : { opacity: 0, y: -40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={mirno ? { duration: 0 } : { type: "spring", stiffness: 110, damping: 16, delay: 0.2 }}
-      >
+      <div className="absolute left-[110px] top-[70px] flex flex-col gap-3">
         <span className="flex items-center gap-4 text-[30px] font-bold uppercase tracking-[0.16em]" style={{ color: barva }}>
           <span
             className="grid h-14 w-14 place-items-center rounded-2xl text-white"
-            style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${barva} 60%, white), ${barva} 45%, color-mix(in srgb, ${barva} 55%, black))`, boxShadow: `0 10px 40px -8px ${barva}` }}
+            style={{ background: `linear-gradient(135deg, ${svetlejsa(barva, 0.6)}, ${barva} 45%, ${temnejsa(barva, 0.55)})`, boxShadow: `0 10px 40px -8px ${barva}` }}
           >
             <Ikona className="h-8 w-8" strokeWidth={2} aria-hidden />
           </span>
@@ -103,19 +103,14 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
         </span>
         <h2 className="bg-[linear-gradient(180deg,#ffffff,#dcdcdf_60%,#9a9aa1)] bg-clip-text pb-2 font-display text-[110px] font-bold leading-[1] tracking-[-0.03em] text-transparent">{scena.naslov}</h2>
         <span className="text-[38px] font-medium text-[#9a9aa1]">{scena.podnaslov}</span>
-      </motion.div>
+      </div>
 
       {/* utripi (pike; pri poti so postaje) + znak */}
       {scena.utripi.length > 1 && svet !== "pot" && (
         <div className="absolute bottom-[56px] right-[330px] flex items-center gap-4">
           {scena.utripi.map((x, j) => (
-            <motion.span
-              key={x.kljuc + j}
-              className="h-4 rounded-full"
-              initial={false}
-              animate={{ width: j === i ? 64 : 16, backgroundColor: j === i ? TONI[x.ton] : j < i ? "#6b6b72" : "#2f2f34" }}
-              transition={{ duration: mirno ? 0 : 0.5 }}
-            />
+            // brez animacije (širina in barva bi se risali vsako sličico)
+            <span key={x.kljuc + j} className="h-4 rounded-full" style={{ width: j === i ? 64 : 16, backgroundColor: j === i ? TONI[x.ton] : j < i ? "#6b6b72" : "#2f2f34" }} />
           ))}
         </div>
       )}
@@ -124,8 +119,10 @@ export function Scena({ scena, odmikMs = 0, mirno }: Props) {
         <Znak pripona="TV" className="text-[40px]" />
       </div>
 
-      {/* svet je narisan ZADNJI: v njem so animirani sloji (lebdenje, kamera) - kar bi bilo narisano za njimi, bi postalo svoj velik sloj */}
-      <SvetX scena={scena} i={i} u={u} mirno={mirno} barva={barva} />
+      {/* svet je narisan ZADNJI: v njem so animirani deli - kar bi bilo narisano za njimi, bi postalo svoj velik sloj */}
+      <div className="fos-tv-svet absolute inset-0">
+        <SvetX scena={scena} i={i} u={u} mirno={mirno} barva={barva} zamik={zamik} />
+      </div>
     </div>
   );
 }
