@@ -475,24 +475,29 @@ export function scenePregleda(o: PlanTv, danes: string): Scena[] {
 
 // ---------------------------------------------------------------------
 // Prioritete krovnih (Production prioriteteTv.ts -> PrioriteteOddelkaTv, ena objava = en oddelek)
-// Ista razdelitev naročil kot stran Prioritete (potrjena naročila, FIFO po datumu odpreme). Za VSAK krovni iz plana
-// oddelka VSE odpreme - nič se ne odreže: daljši seznam gre čez več utripov (ODPREM_NA_STRAN vrstic na utrip).
+// Krovni iz plana oddelka v tekočem in naslednjem tednu; ista razdelitev naročil kot stran Prioritete (potrjena
+// naročila, FIFO po datumu odpreme). Vrstica = delovni nalog za naročilo: dan (dni do odpreme - TV računa vsak dan
+// sam), ident, CEL naziv, DN, količina, kupec · lokacija - delavec najde prave kose. Nič se ne odreže: strani table se
+// razdelijo po višini vrstic (dolg naziv = dve vrstici), daljši seznam gre čez več utripov.
 // ---------------------------------------------------------------------
 export type OdpremaTv = {
   /** dan odpreme (null = naročilo brez datuma) */
   datum: string | null;
+  ident: string;
+  naziv: string | null;
+  /** delovni nalog */
+  nalog: string;
   kos: number;
   /** kratko ime kupca (kratkoIme v Production) */
   kupec: string | null;
+  lokacija: string | null;
   narocilo: string;
-  /** glavne družine izdelkov odpreme (ODC, OCB) */
-  druzina: string | null;
-  /** nalog, ki pokrije odpremo, ima rok izdelave po odpremi (status ZAMUJA na Prioritetah) */
+  /** rok izdelave naloga je po odpremi (status ZAMUJA na Prioritetah) */
   zamuja: boolean;
 };
 export type PrioritetaKrovnegaTv = {
   krovni: string;
-  /** celica najzgodnejše postavitve v oddelku */
+  /** celica prve postavitve v obdobju */
   mesto: string;
   zacetek: string | null;
   /** odprti kosi krovnega po družinah (vsi nalogi, tudi za zalogo) */
@@ -505,12 +510,18 @@ export type PrioritetaKrovnegaTv = {
   narocil: number;
   odpreme: OdpremaTv[];
 };
-export type PrioriteteOddelkaTv = { koda: string; naziv: string; danes: string; krovni: PrioritetaKrovnegaTv[] };
+export type PrioriteteOddelkaTv = { koda: string; naziv: string; danes: string; od?: string; do?: string; krovni: PrioritetaKrovnegaTv[] };
 
-/** Vrstic na tabli odprem v enem utripu (več = naslednji utrip). */
-export const ODPREM_NA_STRAN = 6;
-/** Utrip table odprem (do 6 vrstic za branje - dlje kot en podatek). */
-export const UTRIP_ODPREM_MS = 9500;
+/** Utrip table odprem (več vrstic za branje - dlje kot en podatek). */
+export const UTRIP_ODPREM_MS = 10000;
+
+/**
+ * Razdelitev table na strani po višini (px na odru, izmerjeno): vrstica = osnova + vrstice naziva (~40 znakov v vrsti).
+ * Tabla ima za vrstice ~566 px - na stran gre, kar se vidi CELO.
+ */
+const TABLA = { prostor: 560, osnova: 110, vrsticaNaziva: 35, znakov: 40, najvec: 5 };
+export const vrsticNaziva = (naziv: string | null) => Math.max(1, Math.ceil((naziv ?? "").length / TABLA.znakov));
+const visinaVrstice = (naziv: string | null) => TABLA.osnova + TABLA.vrsticaNaziva * vrsticNaziva(naziv);
 
 /** Koledarski dnevi od `od` do `do` (negativno = do je prej). */
 const razlikaDni = (od: string, doo: string) => {
@@ -522,7 +533,19 @@ const razlikaDni = (od: string, doo: string) => {
 };
 
 /** Vrstica table odprem (izračunano za danes). */
-export type VrsticaOdpreme = { kljuc: string; dan: string; kos: number; druzina: string | null; kupec: string | null; stanje: string; ton: Ton; naslednja: boolean };
+export type VrsticaOdpreme = {
+  kljuc: string;
+  dan: string;
+  ident: string;
+  naziv: string | null;
+  nalog: string;
+  kos: number;
+  /** kupec · lokacija */
+  kupec: string | null;
+  stanje: string;
+  ton: Ton;
+  naslednja: boolean;
+};
 
 const kosov = (n: number) => `${celo(n)} kos`;
 const narocil = (n: number) => `${n} ${n === 1 ? "naročilo" : n === 2 ? "naročili" : n <= 4 ? "naročila" : "naročil"}`;
@@ -538,11 +561,12 @@ export function stanjeOdpreme(o: Pick<OdpremaTv, "datum" | "zamuja">, danes: str
   return { stanje: `Čez ${n} ${dni(n)}`, ton: n <= 3 ? "rumena" : "zelena" };
 }
 
-const poDatumu = (a: OdpremaTv, b: OdpremaTv) => (a.datum ?? "9999").localeCompare(b.datum ?? "9999") || a.narocilo.localeCompare(b.narocilo);
+const poDatumu = (a: OdpremaTv, b: OdpremaTv) =>
+  (a.datum ?? "9999").localeCompare(b.datum ?? "9999") || (a.nalog ?? "").localeCompare(b.nalog ?? "") || a.narocilo.localeCompare(b.narocilo);
 
 /**
  * Počutje krovnega (po najslabši / prvi odpremi): odprema zamuja (dan mimo), danes / jutri ali nalog prepozen =
- * zaskrbljen; v 3 delovnih dneh zadovoljen; kasneje vesel; brez naročil (za zalogo) zadovoljen.
+ * zaskrbljen; v 3 dneh zadovoljen; kasneje vesel; brez naročil (za zalogo) zadovoljen.
  */
 function povzetekKrovnega(k: PrioritetaKrovnegaTv, odpreme: OdpremaTv[], danes: string): Pick<Utrip, "razpolozenje" | "oznaka" | "ton" | "stavek"> {
   if (!odpreme.length) return { razpolozenje: "zadovoljen", oznaka: "Za zalogo", ton: "siva", stavek: `Ni naročil - ${kosov(k.kosov)} delamo na zalogo.` };
@@ -559,6 +583,25 @@ function povzetekKrovnega(k: PrioritetaKrovnegaTv, odpreme: OdpremaTv[], danes: 
   return { razpolozenje: "vesel", oznaka: "Prva odprema", ton: "zelena", stavek: `${osnova} - prva ${kratekDan(prva.datum)}` };
 }
 
+/** Vrstice razdeli na strani table, da se vse vidijo cele (dolg naziv vzame več prostora). */
+function straniTable(vrstice: VrsticaOdpreme[]): VrsticaOdpreme[][] {
+  const strani: VrsticaOdpreme[][] = [];
+  let stran: VrsticaOdpreme[] = [];
+  let visina = 0;
+  for (const v of vrstice) {
+    const h = visinaVrstice(v.naziv);
+    if (stran.length && (visina + h > TABLA.prostor || stran.length >= TABLA.najvec)) {
+      strani.push(stran);
+      stran = [];
+      visina = 0;
+    }
+    stran.push(v);
+    visina += h;
+  }
+  if (stran.length || !strani.length) strani.push(stran);
+  return strani;
+}
+
 /** Scene oddelka: EN krovni = ENA scena (po prvi odpremi - najnujnejši najprej), strani table odprem = utripi. */
 export function scenePrioritet(o: PrioriteteOddelkaTv, danes: string): Scena[] {
   const krovni = (o.krovni ?? [])
@@ -571,25 +614,27 @@ export function scenePrioritet(o: PrioriteteOddelkaTv, danes: string): Scena[] {
       // naslednja = prva odprema, ki še ni zamujena (zamujene so nad njo in rdeče)
       const iNaslednje = odpreme.findIndex((x) => !x.datum || x.datum >= danes);
       const vrstice: VrsticaOdpreme[] = odpreme.map((x, j) => ({
-        kljuc: `${x.narocilo}:${x.datum ?? "-"}:${j}`,
+        kljuc: `${x.nalog}:${x.narocilo}:${x.datum ?? "-"}:${j}`,
         dan: x.datum ? kratekDan(x.datum) : "brez datuma",
+        ident: x.ident ?? "",
+        naziv: x.naziv,
+        nalog: x.nalog ?? "",
         kos: x.kos,
-        druzina: x.druzina,
-        kupec: x.kupec,
+        kupec: [x.kupec, x.lokacija].filter(Boolean).join(" · ") || null,
         ...stanjeOdpreme(x, danes),
         naslednja: j === iNaslednje,
       }));
-      const strani = Math.max(1, Math.ceil(vrstice.length / ODPREM_NA_STRAN));
+      const strani = straniTable(vrstice);
       const povzetek = povzetekKrovnega(k, odpreme, danes);
-      const utripi: Utrip[] = Array.from({ length: strani }, (_, s) => ({
+      const utripi: Utrip[] = strani.map((stran, s) => ({
         kljuc: `${k.krovni}:${s}`,
         ...povzetek,
         glava: k.krovni,
         pod: besediloDruzin(k.druzine),
         vrednost: { st: k.naroceno, pripona: " kos", cela: true },
         trak: k.kosov > 0 ? Math.min(1, k.naroceno / k.kosov) : null,
-        odpreme: vrstice.slice(s * ODPREM_NA_STRAN, (s + 1) * ODPREM_NA_STRAN),
-        stran: { i: s + 1, n: strani },
+        odpreme: stran,
+        stran: { i: s + 1, n: strani.length },
       }));
       return {
         kljuc: `${o.koda}:prioritete:${k.krovni}`,

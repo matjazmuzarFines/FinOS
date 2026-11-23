@@ -102,8 +102,10 @@ export const demoPlan = (): PlanTv => ({
 
 /**
  * Prioritete krovnih: 2351 = primer iz dogovora 2026-11-23 (ODC, 9 kos naročenih v 6 naročilih, ostalo za zalogo; prva
- * odprema zamuja), 2360 ima 8 odprem (2 strani table), 2372 samo za zalogo.
+ * odprema zamuja, dolgi nazivi v dveh vrsticah), 2360 ima 8 odprem (več strani table), 2372 samo za zalogo.
  */
+const ODC = { ident: "100-305.1101", naziv: "Peč etažna ODC 6.80 3 etaže, 400 V, s parno napravo in kamnito ploščo" };
+const ODC2 = { ident: "100-305.1104", naziv: "Peč etažna ODC 4.60" };
 export const demoPrioritete = (): PrioriteteOddelkaTv => ({
   koda: "M",
   naziv: "Montaža",
@@ -118,12 +120,12 @@ export const demoPrioritete = (): PrioriteteOddelkaTv => ({
       naroceno: 9,
       narocil: 6,
       odpreme: [
-        { datum: dan(-1), kos: 1, kupec: "Pekarna Kaučič", narocilo: "26-0412", druzina: "ODC", zamuja: false },
-        { datum: dan(1), kos: 2, kupec: "Tim Zip", narocilo: "26-0418", druzina: "ODC", zamuja: false },
-        { datum: dan(4), kos: 1, kupec: "Mlinotest", narocilo: "26-0431", druzina: "ODC", zamuja: false },
-        { datum: dan(8), kos: 2, kupec: "Spar Slovenija", narocilo: "26-0440", druzina: "ODC", zamuja: true },
-        { datum: dan(12), kos: 1, kupec: "Pekarna Pečjak", narocilo: "26-0447", druzina: "ODC", zamuja: false },
-        { datum: dan(19), kos: 2, kupec: "Žito", narocilo: "26-0452", druzina: "ODC", zamuja: false },
+        { datum: dan(-1), ...ODC, nalog: "2601240", kos: 1, kupec: "Pekarna Kaučič", lokacija: "Ljubljana", narocilo: "26-0412", zamuja: false },
+        { datum: dan(1), ...ODC2, nalog: "2601241", kos: 2, kupec: "Tim Zip", lokacija: "Celje", narocilo: "26-0418", zamuja: false },
+        { datum: dan(4), ...ODC, nalog: "2601240", kos: 1, kupec: "Mlinotest", lokacija: "Ajdovščina", narocilo: "26-0431", zamuja: false },
+        { datum: dan(8), ...ODC2, nalog: "2601242", kos: 2, kupec: "Spar Slovenija", lokacija: "Ljubljana Črnuče", narocilo: "26-0440", zamuja: true },
+        { datum: dan(12), ...ODC, nalog: "2601240", kos: 1, kupec: "Pekarna Pečjak", lokacija: "Škofljica", narocilo: "26-0447", zamuja: false },
+        { datum: dan(19), ...ODC2, nalog: "2601242", kos: 2, kupec: "Žito", lokacija: null, narocilo: "26-0452", zamuja: false },
       ],
     },
     {
@@ -136,10 +138,13 @@ export const demoPrioritete = (): PrioriteteOddelkaTv => ({
       narocil: 8,
       odpreme: Array.from({ length: 8 }, (_, j) => ({
         datum: dan(3 + j * 2),
+        ident: j % 2 ? "100-301.2002" : "100-301.2001",
+        naziv: j % 2 ? "Peč konvekcijska OCA 10 GN" : "Peč konvekcijska HTB-5 NEW",
+        nalog: j % 2 ? "2601302" : "2601301",
         kos: j % 3 === 0 ? 2 : 1,
         kupec: ["Bäckerei Huber", "Pekarna Grosuplje", "Lidl", "Hofer", "Pekarna Blatnik", "Mercator", "Bäko", "Tuš"][j],
+        lokacija: ["Graz", "Grosuplje", null, "Maribor", "Vrhnika", null, "Wien", "Celje"][j],
         narocilo: `26-05${10 + j}`,
-        druzina: j % 2 ? "OCA" : "OCB",
         zamuja: false,
       })),
     },

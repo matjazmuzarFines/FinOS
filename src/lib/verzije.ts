@@ -6,7 +6,7 @@ export const VERZIJE: Verzija[] = [
     verzija: "10.05",
     datum: "23. 11. 2026",
     spremembe: [
-      "FIN:TV: nova komponenta Prioritete krovnih (za vsak oddelek svoja) - za vsak krovni nalog iz delovnega plana vse odpreme, ki čakajo nanj: dan odpreme, kosi, družina, kupec in stanje (zamuja, danes, jutri, čez N dni, nalog zamuja). Desno koliko kosov krovnega je naročenih in v koliko naročilih. Daljši seznam gre čez več strani, nič se ne odreže. Objavlja jo Production (potrebna migracija 031).",
+      "FIN:TV: nova komponenta Prioritete krovnih (za vsak oddelek svoja) - za vsak krovni nalog iz delovnega plana tekočega in naslednjega tedna vse odpreme po delovnih nalogih: dan in dni do odpreme (zamuja, danes, jutri, čez N dni, nalog zamuja - TV jih preračuna vsak dan), ident, cel naziv, delovni nalog, količina, kupec in lokacija. Desno koliko kosov krovnega je naročenih in v koliko naročilih. Daljši seznam gre čez več strani, nič se ne odreže. Objavlja jo Production (potrebna migracija 031).",
     ],
   },
   {

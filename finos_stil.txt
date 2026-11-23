@@ -493,15 +493,17 @@ PRAVILA
      začne šele PO prehodu med okni. Pravilo: v vsakem trenutku se premika največ en del in nič ne teče ves čas.
      DESNO ZGORAJ ŽIVA URA (UraSceni): samo ure in minute 96 px (preliv belo-sivo, oranžno dvopičje), BREZ datuma (podatek
      scene je segal do njega); brez sekund in brez utripanja (izriše se samo ob menjavi minute).
-   - PRIORITETE KROVNIH (svet "odpreme", modra #0ea5e9, ikona Truck): ena scena = en krovni ("Krovni 2351", podnaslov
-     celica · družine s kosi), krovni po prvi odpremi (najnujnejši najprej). Levo TABLA ODPREM (kot tabla odhodov, 1190 px):
-     glava Odprema | Kosi | Kupec | Stanje (pri več straneh "Stran 1 / 2"), vrstica = dan ("tor 24. 11."), kosi (oranžno) ×
-     družina, kupec (kratko ime), stanje kot čip (Zamuja N dni rdeče, Danes / Nalog zamuja oranžno, Jutri / Čez 2-3 dni
-     rumeno, Čez N dni zeleno, Brez datuma sivo). Naslednja odprema (prva, ki ni zamujena) modro obrobljena, kamion ob datumu
-     pripelje z leve (edino gibanje). Največ 6 vrstic na utrip - daljši seznam gre na naslednji utrip, NIKOLI se ne odreže.
-     Desno: glava Fineseka, oznaka (Odprema zamuja / danes / jutri / kmalu, Nalog zamuja, Prva odprema, Za zalogo), "9 kos
-     NAROČENIH", trak naročeni / vsi kosi krovnega, stavek "6 naročil · 15 kos za zalogo - ...". Krovni brez naročil: "Ni
-     naročil - krovni gre na zalogo". Zaskrbljen samo ob zamudi, odpremi danes / jutri ali nalogu, ki zamuja.
+   - PRIORITETE KROVNIH (svet "odpreme", modra #0ea5e9, ikona Truck): samo krovni, ki so v delovnem planu oddelka v
+     TEKOČEM in NASLEDNJEM tednu (kot workflow). Ena scena = en krovni ("Krovni 2351", podnaslov celica · družine s kosi),
+     krovni po prvi odpremi (najnujnejši najprej). Levo TABLA ODPREM (1190 px), glava Odprema | Izdelek · nalog · kupec |
+     Količina (pri več straneh "Stran 1 / 2"). Vrstica = en delovni nalog za eno naročilo: levo dan ("tor 24. 11.") in pod
+     njim čip dni do odpreme (Zamuja N dni rdeče, Danes / Nalog zamuja oranžno, Jutri / Čez 2-3 dni rumeno, Čez N dni
+     zeleno; TV ga vsak dan preračuna sam); na sredini ident (mono, oranžno) + "DN 2601240", pod njim CEL naziv (nikoli
+     skrajšan, dolg v dveh vrsticah), pod njim kupec · lokacija (sivo, lahko skrajšano); desno količina "2 kos". Strani
+     table se razdelijo po višini vrstic (nič se ne odreže), 10 s na stran. Naslednja odprema modro obrobljena, kamion ob
+     datumu pripelje z leve (edino gibanje). Desno: glava Fineseka, oznaka (Odprema zamuja / danes / jutri / kmalu, Nalog
+     zamuja, Prva odprema, Za zalogo), "9 kos NAROČENIH", trak naročeni / vsi kosi krovnega, stavek "6 naročil · 15 kos za
+     zalogo - ...". Zaskrbljen samo ob zamudi, odpremi danes / jutri ali nalogu, ki zamuja.
    - POSTAVITEV NA TV: predvaja se neposredno v brskalniku televizorja (Samsung Crystal UHD, Tizen) - šibek procesor.
      Gibanje samo s preoblikovanjem / prosojnostjo; malo majhnih slojev (will-change samo za majhne dele, ki se sučejo /
      premikajo, nikoli za dele, ki se povečujejo). Brez filtrov (feGaussianBlur, drop-shadow) na delih, ki se spreminjajo.
@@ -778,5 +780,9 @@ DNEVNIK POPRAVKOV UPORABNIKA
              ven, kosi, kupec, stanje), enako kot iskanje krovnega na strani Prioritete v Production. -> razdelek 28,
              migracija 031, tvScene.ts (scenePrioritet), Sveti.tsx (SvetOdpreme), Scena, Diapozitiv, tv.ts,
              tvSceneDemo.ts; Production prioriteteTv.ts, tvObjava.ts, tvOpravila.ts, tvStanje.ts, sync.ts, SyncTv, Prioritete.
+2026-11-23 - Prioritete krovnih: samo krovni iz plana tekočega in naslednjega tedna; v krovnem za vsak nalog dan / dni do
+             odpreme, ident, cel naziv, delovni nalog, količina, kupec + lokacija (delavec najde prave kose med 25 ODC).
+             -> razdelek 28, tvScene.ts (straniTable), Sveti.tsx (SvetOdpreme); Production prioriteteTv.ts, tvPlan.ts
+             (izracunajPlanOddelka).
 2026-11-20 - Naslovna stran pred komponento OSTANE (jasno je, kaj sledi). Material: oznaka (DOBAVA ZAMUJA) je segala do
              datuma pod uro -> datum ob uri odstranjen, podatek scene zbit (razmik 24 px). -> razdelek 28, Ura, Skupno.
