@@ -2,7 +2,7 @@
  * Meritev animacij (standard: finos_stil.txt, razdelek 29). Odpre stran v nameščenem Edgeu, počaka 8 s (uvod) in
  * 15 s snema sled brskalnika v mirovanju (brez miške): koliko dela teče ves čas.
  *
- *   node scripts/animacije/meri.mjs prej  http://127.0.0.1:3010/
+ *   node scripts/animacije/meri.mjs prej  http://127.0.0.1:3000/
  *   node scripts/animacije/meri.mjs potem http://127.0.0.1:3011/      (tretji argument = pot za posnetek .jpg)
  *
  * Izpis: skripta (JavaScript), slog, risanje, raster (ploščice, ki se narišejo znova), kartica, sestavljanje.

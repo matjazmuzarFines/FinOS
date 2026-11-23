@@ -1,12 +1,12 @@
 /**
  * Promo video "Moj Fines" (42 s, 1920 × 1080, 30 sl./s) - posnetek strani /promo sličico za sličico in sestava z glasbo.
  *
- *   1. npm run build && npx next start -p 3010        (aplikacija mora teči)
+ *   1. npm run lokalno                                  (aplikacija mora teči na portu 3000)
  *   2. node scripts/promo/posnemi.mjs                  -> promo-izvoz/MojFines_teaser.mp4
  *
  * Možnosti (spremenljivke okolja):
  *   CASI=2000,7500     samo posnetki teh trenutkov (ms) v promo-izvoz/vzorci - za hiter pregled
- *   URL=...            naslov strani (privzeto http://127.0.0.1:3010/promo?render=1)
+ *   URL=...            naslov strani (privzeto http://127.0.0.1:3000/promo?render=1)
  * Brskalnik: nameščen Microsoft Edge (playwright-core, brez prenosa brskalnika). Ura v brskalniku je "zamrznjena" in
  * se premika samo za 1/30 s na sličico - vsaka sličica je natančna. Glasba: data/*.mp3 (rez na udarcu, glej REZ / ZAMIK spodaj),
  * ffmpeg mora biti v PATH.
@@ -16,7 +16,7 @@ import { mkdirSync, readdirSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 
-const URL = process.env.URL ?? "http://127.0.0.1:3010/promo?render=1";
+const URL = process.env.URL ?? "http://127.0.0.1:3000/promo?render=1";
 const FPS = 30;
 const TRAJANJE = 42_000;
 const IZVOZ = "promo-izvoz";

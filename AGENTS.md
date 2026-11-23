@@ -2,6 +2,7 @@
 
 > FIN:OS = **Fines Operating System**: sistem za notranje vodenje podjetja FINES d.o.o.
 > Skupna pravila so v `../FINES_Standardi/app_instructions.md`. Ta datoteka jih **dopolni in, kjer je to izrecno napisano, nadomesti**.
+> Lokalni build, porti (FinOS = 3000), verzije in ostala splošna pravila veljajo SAMO iz standarda - tu se ne ponavljajo.
 > Vizualni slog (prelivi, animacije, sence) in vsi popravki uporabnika so v **`finos_stil.txt`** - ta ima prednost pred razdelkom "Standardne komponente" v skupnih navodilih.
 
 ## Deli aplikacije
@@ -211,7 +212,6 @@
 - Ikone: `lucide-react`.
 - Povleci in spusti: `@dnd-kit/core` (miška, dotik, tipkovnica), za zlaganje seznamov `@dnd-kit/sortable`.
 - Grafi (ko bodo potrebni): po pravilih iz `finos_stil.txt` (prelivi, animiran izris).
-- Lokalno: port **3010** (`next start -H 0.0.0.0 -p 3010`), da ne trči z ostalimi Fines projekti.
 
 ## Struktura
 - `src/app/globals.css` - barvni žetoni + FinOS razredi (`fos-glass`, `fos-text-grad`, `fos-text-fines`, `fos-fines-fill`, `fos-shine`, `fos-border-anim`, `fos-grid`, `fos-noise`).
@@ -292,7 +292,7 @@
   dostop do ničesar - FIN:ME preizkusi Super Admin z "Ogled kot").
 - Promo video "Moj Fines" (teaser za zaposlene, 42 s, 16:9, špica 38-42 s): stran `/promo` (`src/components/promo/Promo.tsx`,
   vse gibanje izračunano iz časa t; izmišljeni podatki - klici baze na tej strani vrnejo napako -> testni podatki).
-  Posnetek: `npm run build`, `next start -p 3010`, `node scripts/promo/posnemi.mjs` (playwright-core + nameščen Edge,
+  Posnetek: aplikacija lokalno (standard), `node scripts/promo/posnemi.mjs` (playwright-core + nameščen Edge,
   zamrznjena ura, 30 sl./s; glasba data/*.mp3 - začetek do 34,2 s + konec skladbe, zaključni udarec na 38 s; ffmpeg)
   -> `promo-izvoz/MojFines_teaser.mp4` (mapa v .gitignore). `CASI=1000,5000` = samo vzorčne sličice.
 - 7.01: produkcija - 020 in 021 v migrations (osnutkov ni). `021_krmilnik_naprave.sql`: `fos_krmilniki` (ključ samo kot
@@ -311,7 +311,7 @@
   Dostopi (s Pravicami), FIN:ME.
 - 6.02: vstop FIN:ME = krog (`MeKrog`), prizori Fineseka `src/components/finesek/MePrizori.tsx` (Finesek ima zdaj `roki`,
   `rokaStran`, `vRoki`, `dodatek`, pozo `potuje`), popupi `fos-popup` (globals.css). POZOR: `next dev` sam doda blok
-  "nextjs-agent-rules" na konec AGENTS.md - pred commitom ga odstrani (za preizkus raje `next build` + `next start`).
+  "nextjs-agent-rules" na konec AGENTS.md - pred commitom ga odstrani.
 - 6.01: FIN:ME (Moj Fines, `/moj-fines`): `ME_VSTOPI` v nav.ts, `JazOkvir` / `useJaz()`
   (`src/components/me/Jaz.tsx`: zaposleni računa, ekipa = posredni podrejeni, vodja, Super Admin "Ogled kot"),
   Moj čas = `RegistracijaCasa` z `idJaz` (svoj dan = predlog popravka v `DanOkno` nacin "predlog", dan podrejenega =
