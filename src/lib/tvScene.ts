@@ -51,16 +51,20 @@ export type Utrip = {
   danes?: boolean;
   /** koledar (Pregled): delovni dnevi do roka */
   dni?: number;
+  /** tabla odprem (Prioritete krovnih): vrstice te strani seznama in katera stran je (1 / 2) */
+  odpreme?: VrsticaOdpreme[];
+  stran?: { i: number; n: number };
 };
 
 /** Svet = postavitev in animacija komponente (vsaka komponenta svoj svet, da TV ni vedno enak). */
-export type Svet = "merilnik" | "podij" | "trak" | "pot" | "koledar";
+export type Svet = "merilnik" | "podij" | "trak" | "pot" | "koledar" | "odpreme";
 export const SVETI: Record<string, { svet: Svet; barva: string }> = {
   fp_delo_vceraj: { svet: "merilnik", barva: "#3b82f6" },
   fp_zakljuceni_krovni: { svet: "podij", barva: "#eab308" },
   fp_pripravljenost_mat: { svet: "trak", barva: "#a855f7" },
   fp_plan_workflow: { svet: "pot", barva: "#14b8a6" },
   fp_plan_pregled: { svet: "koledar", barva: "#f43f5e" },
+  fp_prioritete_krovnih: { svet: "odpreme", barva: "#0ea5e9" },
 };
 
 export type Scena = {
@@ -72,6 +76,8 @@ export type Scena = {
   podnaslov: string;
   utripi: Utrip[];
   trajanjeMs: number;
+  /** trajanje enega utripa, če ni UTRIP_MS (npr. tabla odprem - več vrstic za branje) */
+  utripMs?: number;
 };
 
 /** Uvod scene (naslov, Finesek pride) in en utrip. */
@@ -81,9 +87,10 @@ export const UTRIP_MS = 5500;
 export const MAX_UTRIPOV = 4;
 
 /** Kateri utrip je na vrsti ob času `t` (ms od začetka scene; med prehodom negativno = prvi). */
-export const utripOb = (s: Pick<Scena, "utripi">, t: number) => Math.max(0, Math.min(s.utripi.length - 1, Math.floor((t - UVOD_MS) / UTRIP_MS)));
+export const utripOb = (s: Pick<Scena, "utripi" | "utripMs">, t: number) =>
+  Math.max(0, Math.min(s.utripi.length - 1, Math.floor((t - UVOD_MS) / (s.utripMs ?? UTRIP_MS))));
 
-const trajanje = (n: number) => UVOD_MS + Math.max(1, n) * UTRIP_MS;
+const trajanje = (n: number, utripMs = UTRIP_MS) => UVOD_MS + Math.max(1, n) * utripMs;
 
 /** 7,6 (ena decimalka, vejica); `kratko`: 28 namesto 28,0 */
 export const ure = (x: number, kratko = false) => {
@@ -467,6 +474,137 @@ export function scenePregleda(o: PlanTv, danes: string): Scena[] {
 }
 
 // ---------------------------------------------------------------------
+// Prioritete krovnih (Production prioriteteTv.ts -> PrioriteteOddelkaTv, ena objava = en oddelek)
+// Ista razdelitev naročil kot stran Prioritete (potrjena naročila, FIFO po datumu odpreme). Za VSAK krovni iz plana
+// oddelka VSE odpreme - nič se ne odreže: daljši seznam gre čez več utripov (ODPREM_NA_STRAN vrstic na utrip).
+// ---------------------------------------------------------------------
+export type OdpremaTv = {
+  /** dan odpreme (null = naročilo brez datuma) */
+  datum: string | null;
+  kos: number;
+  /** kratko ime kupca (kratkoIme v Production) */
+  kupec: string | null;
+  narocilo: string;
+  /** glavne družine izdelkov odpreme (ODC, OCB) */
+  druzina: string | null;
+  /** nalog, ki pokrije odpremo, ima rok izdelave po odpremi (status ZAMUJA na Prioritetah) */
+  zamuja: boolean;
+};
+export type PrioritetaKrovnegaTv = {
+  krovni: string;
+  /** celica najzgodnejše postavitve v oddelku */
+  mesto: string;
+  zacetek: string | null;
+  /** odprti kosi krovnega po družinah (vsi nalogi, tudi za zalogo) */
+  druzine?: DruzinaKosov[];
+  /** odprti kosi v krovnem */
+  kosov: number;
+  /** od tega naročenih (dodeljenih naročilom) */
+  naroceno: number;
+  /** različnih naročil */
+  narocil: number;
+  odpreme: OdpremaTv[];
+};
+export type PrioriteteOddelkaTv = { koda: string; naziv: string; danes: string; krovni: PrioritetaKrovnegaTv[] };
+
+/** Vrstic na tabli odprem v enem utripu (več = naslednji utrip). */
+export const ODPREM_NA_STRAN = 6;
+/** Utrip table odprem (do 6 vrstic za branje - dlje kot en podatek). */
+export const UTRIP_ODPREM_MS = 9500;
+
+/** Koledarski dnevi od `od` do `do` (negativno = do je prej). */
+const razlikaDni = (od: string, doo: string) => {
+  const ms = (iso: string) => {
+    const [l, m, d] = iso.split("-").map(Number);
+    return Date.UTC(l, m - 1, d);
+  };
+  return Math.round((ms(doo) - ms(od)) / 86_400_000);
+};
+
+/** Vrstica table odprem (izračunano za danes). */
+export type VrsticaOdpreme = { kljuc: string; dan: string; kos: number; druzina: string | null; kupec: string | null; stanje: string; ton: Ton; naslednja: boolean };
+
+const kosov = (n: number) => `${celo(n)} kos`;
+const narocil = (n: number) => `${n} ${n === 1 ? "naročilo" : n === 2 ? "naročili" : n <= 4 ? "naročila" : "naročil"}`;
+
+/** Stanje odpreme za danes (koledarski dnevi): zamuja (dan mimo), danes, nalog prepozen, jutri, čez N dni. */
+export function stanjeOdpreme(o: Pick<OdpremaTv, "datum" | "zamuja">, danes: string): { stanje: string; ton: Ton } {
+  if (!o.datum) return { stanje: "Brez datuma", ton: "siva" };
+  const n = razlikaDni(danes, o.datum);
+  if (n < 0) return { stanje: `Zamuja ${-n} ${dni(n)}`, ton: "rdeca" };
+  if (n === 0) return { stanje: "Danes", ton: "oranzna" };
+  if (o.zamuja) return { stanje: "Nalog zamuja", ton: "oranzna" };
+  if (n === 1) return { stanje: "Jutri", ton: "rumena" };
+  return { stanje: `Čez ${n} ${dni(n)}`, ton: n <= 3 ? "rumena" : "zelena" };
+}
+
+const poDatumu = (a: OdpremaTv, b: OdpremaTv) => (a.datum ?? "9999").localeCompare(b.datum ?? "9999") || a.narocilo.localeCompare(b.narocilo);
+
+/**
+ * Počutje krovnega (po najslabši / prvi odpremi): odprema zamuja (dan mimo), danes / jutri ali nalog prepozen =
+ * zaskrbljen; v 3 delovnih dneh zadovoljen; kasneje vesel; brez naročil (za zalogo) zadovoljen.
+ */
+function povzetekKrovnega(k: PrioritetaKrovnegaTv, odpreme: OdpremaTv[], danes: string): Pick<Utrip, "razpolozenje" | "oznaka" | "ton" | "stavek"> {
+  if (!odpreme.length) return { razpolozenje: "zadovoljen", oznaka: "Za zalogo", ton: "siva", stavek: `Ni naročil - ${kosov(k.kosov)} delamo na zalogo.` };
+  const zaZalogo = k.kosov > k.naroceno ? ` · ${kosov(k.kosov - k.naroceno)} za zalogo` : "";
+  const osnova = `${narocil(k.narocil)}${zaZalogo}`;
+  if (odpreme.some((o) => o.datum && o.datum < danes)) return { razpolozenje: "zaskrbljen", oznaka: "Odprema zamuja", ton: "rdeca", stavek: `${osnova} - najprej ta!` };
+  const prva = odpreme[0];
+  const n = prva.datum ? razlikaDni(danes, prva.datum) : null;
+  if (n === 0) return { razpolozenje: "zaskrbljen", oznaka: "Odprema danes", ton: "oranzna", stavek: `${osnova} - prva gre ven danes!` };
+  if (odpreme.some((o) => o.zamuja)) return { razpolozenje: "zaskrbljen", oznaka: "Nalog zamuja", ton: "oranzna", stavek: `${osnova} - rok naloga je po odpremi.` };
+  if (n === null) return { razpolozenje: "zadovoljen", oznaka: "Odpreme", ton: "siva", stavek: osnova };
+  if (n === 1) return { razpolozenje: "zaskrbljen", oznaka: "Odprema jutri", ton: "oranzna", stavek: `${osnova} - prva gre ven jutri.` };
+  if (n <= 3) return { razpolozenje: "zadovoljen", oznaka: "Odprema kmalu", ton: "rumena", stavek: `${osnova} - prva ${kratekDan(prva.datum)}` };
+  return { razpolozenje: "vesel", oznaka: "Prva odprema", ton: "zelena", stavek: `${osnova} - prva ${kratekDan(prva.datum)}` };
+}
+
+/** Scene oddelka: EN krovni = ENA scena (po prvi odpremi - najnujnejši najprej), strani table odprem = utripi. */
+export function scenePrioritet(o: PrioriteteOddelkaTv, danes: string): Scena[] {
+  const krovni = (o.krovni ?? [])
+    .filter((k) => k.kosov > 0 || k.odpreme?.length)
+    .map((k) => ({ k, odpreme: [...(k.odpreme ?? [])].sort(poDatumu) }));
+  const prvaOdprema = (x: { odpreme: OdpremaTv[] }) => x.odpreme[0]?.datum ?? "9999";
+  return krovni
+    .sort((a, b) => prvaOdprema(a).localeCompare(prvaOdprema(b)) || (a.k.zacetek ?? "").localeCompare(b.k.zacetek ?? "") || a.k.krovni.localeCompare(b.k.krovni, "sl", { numeric: true }))
+    .map(({ k, odpreme }) => {
+      // naslednja = prva odprema, ki še ni zamujena (zamujene so nad njo in rdeče)
+      const iNaslednje = odpreme.findIndex((x) => !x.datum || x.datum >= danes);
+      const vrstice: VrsticaOdpreme[] = odpreme.map((x, j) => ({
+        kljuc: `${x.narocilo}:${x.datum ?? "-"}:${j}`,
+        dan: x.datum ? kratekDan(x.datum) : "brez datuma",
+        kos: x.kos,
+        druzina: x.druzina,
+        kupec: x.kupec,
+        ...stanjeOdpreme(x, danes),
+        naslednja: j === iNaslednje,
+      }));
+      const strani = Math.max(1, Math.ceil(vrstice.length / ODPREM_NA_STRAN));
+      const povzetek = povzetekKrovnega(k, odpreme, danes);
+      const utripi: Utrip[] = Array.from({ length: strani }, (_, s) => ({
+        kljuc: `${k.krovni}:${s}`,
+        ...povzetek,
+        glava: k.krovni,
+        pod: besediloDruzin(k.druzine),
+        vrednost: { st: k.naroceno, pripona: " kos", cela: true },
+        trak: k.kosov > 0 ? Math.min(1, k.naroceno / k.kosov) : null,
+        odpreme: vrstice.slice(s * ODPREM_NA_STRAN, (s + 1) * ODPREM_NA_STRAN),
+        stran: { i: s + 1, n: strani },
+      }));
+      return {
+        kljuc: `${o.koda}:prioritete:${k.krovni}`,
+        komponenta: "fp_prioritete_krovnih",
+        nadnaslov: "Prioritete krovnih",
+        naslov: `Krovni ${k.krovni}`,
+        podnaslov: [k.mesto || o.naziv, besediloDruzin(k.druzine)].filter(Boolean).join(" · "),
+        utripi,
+        utripMs: UTRIP_ODPREM_MS,
+        trajanjeMs: trajanje(utripi.length, UTRIP_ODPREM_MS),
+      };
+    });
+}
+
+// ---------------------------------------------------------------------
 // Vstop: koda vira + en element objave -> scene. Nova animirana komponenta = nova veja tukaj.
 // ---------------------------------------------------------------------
 const jeObjekt = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
@@ -479,5 +617,6 @@ export function sceneElementa(koda: string, podatek: unknown, danes: string): Sc
   if (koda.startsWith("fp_pripravljenost_mat") && Array.isArray(podatek.krovni)) return sceneMateriala(podatek as unknown as MaterialOddelkaTv);
   if (koda.startsWith("fp_plan_workflow") && Array.isArray(podatek.celice)) return scenePlana(podatek as unknown as PlanTv, danes);
   if (koda.startsWith("fp_plan_pregled") && Array.isArray(podatek.celice)) return scenePregleda(podatek as unknown as PlanTv, danes);
+  if (koda.startsWith("fp_prioritete_krovnih") && Array.isArray(podatek.krovni)) return scenePrioritet(podatek as unknown as PrioriteteOddelkaTv, danes);
   return [];
 }

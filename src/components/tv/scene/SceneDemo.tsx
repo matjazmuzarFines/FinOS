@@ -4,18 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { TvOkno, TvVir } from "@/lib/tv";
 import { RAZPOLOZENJA, type Razpolozenje } from "@/lib/tvScene";
-import { DEMO_DELO, demoMaterial, demoPlan, demoZakljuceni } from "@/lib/tvSceneDemo";
+import { DEMO_DELO, demoMaterial, demoPlan, demoPrioritete, demoZakljuceni } from "@/lib/tvSceneDemo";
 import { Oder } from "../Diapozitiv";
 import { Predvajalnik } from "../Predvajalnik";
 import { FinesekGlava } from "./FinesekGlava";
 
-/** Testne komponente (?k=delo / zakljuceni / material / plan / pregled; brez = vse po vrsti). */
+/** Testne komponente (?k=delo / zakljuceni / material / plan / pregled / prioritete; brez = vse po vrsti). */
 const KOMPONENTE: { k: string; koda: string; ime: string; ikona: string; podatki: () => unknown }[] = [
   { k: "delo", koda: "fp_delo_vceraj_m", ime: "Delo - prejšnji dan · Montaža", ikona: "Gauge", podatki: () => DEMO_DELO },
   { k: "zakljuceni", koda: "fp_zakljuceni_krovni_m", ime: "Zaključeni krovni · Montaža", ikona: "Trophy", podatki: demoZakljuceni },
   { k: "material", koda: "fp_pripravljenost_mat_m", ime: "Pripravljenost materiala · Montaža", ikona: "PackageCheck", podatki: demoMaterial },
   { k: "plan", koda: "fp_plan_workflow_m", ime: "Delovni plan · Montaža", ikona: "Workflow", podatki: demoPlan },
   { k: "pregled", koda: "fp_plan_pregled_m", ime: "Delovni plan - pregled · Montaža", ikona: "CalendarRange", podatki: demoPlan },
+  { k: "prioritete", koda: "fp_prioritete_krovnih_m", ime: "Prioritete krovnih · Montaža", ikona: "Truck", podatki: demoPrioritete },
 ];
 
 const brezDatotek = () => undefined;

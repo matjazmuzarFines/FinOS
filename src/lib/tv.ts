@@ -111,6 +111,7 @@ export const TEST_VIRI: TvVir[] = [
   { id: -2, koda: "fp_plan_pregled_p", ime: "Delovni plan - pregled · Proizvodnja", opis: "Do kdaj: roki krovnih nalogov po celicah. Ob Shrani plan za vsak teden plana - TV kaže tekoči teden.", aplikacija: "fp", ikona: "CalendarRange", vklopljen: true, objava: null },
   { id: -3, koda: "fp_delo_vceraj_p", ime: "Delo - prejšnji dan · Proizvodnja", opis: "Štempljane ure prejšnjega delovnega dne proti planu po celicah (krog, ure po krovnih nalogih, razlika do plana v urah). Objavi se ob uvozu poročanega dela.", aplikacija: "fp", ikona: "Gauge", vklopljen: true, objava: null },
   { id: -4, koda: "fp_zakljuceni_krovni_p", ime: "Zaključeni krovni · Proizvodnja", opis: "Produktivnost krovnih nalogov, zaključenih v zadnjih 30 dneh (normativne / štempljane ure), po celicah - en krovni en stolpec. Objavi se ob uvozu poročanega dela.", aplikacija: "fp", ikona: "Trophy", vklopljen: true, objava: null },
+  { id: -5, koda: "fp_prioritete_krovnih_p", ime: "Prioritete krovnih · Proizvodnja", opis: "Za vsak krovni nalog iz delovnega plana vse odpreme, ki čakajo nanj: kdaj gre katero naročilo ven, koliko kosov, stanje. Objavi se ob syncu naročil, odprem, nalogov in materiala.", aplikacija: "fp", ikona: "Truck", vklopljen: true, objava: null },
 ];
 const poslusalci = new Set<() => void>();
 const nastavi = (s: Partial<Stanje>) => {

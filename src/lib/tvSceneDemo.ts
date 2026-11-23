@@ -1,5 +1,5 @@
 import { datumIso } from "@/lib/tvObjava";
-import type { DeloOddelka, MaterialOddelkaTv, PlanTv, ZakljuceniOddelkaTv } from "@/lib/tvScene";
+import type { DeloOddelka, MaterialOddelkaTv, PlanTv, PrioriteteOddelkaTv, ZakljuceniOddelkaTv } from "@/lib/tvScene";
 
 /**
  * Testni podatki animiranih scen (/tv/scena) - enaka oblika, kot jo objavi Production (tvObjava.ts). Datumi plana in
@@ -97,5 +97,52 @@ export const demoPlan = (): PlanTv => ({
         { krovni: "2415", druzine: [{ d: "OCB", kos: 8 }], od: dan(4), do: dan(9), ure: 40, brezKapacitete: 0, prosta: false },
       ],
     },
+  ],
+});
+
+/**
+ * Prioritete krovnih: 2351 = primer iz dogovora 2026-11-23 (ODC, 9 kos naročenih v 6 naročilih, ostalo za zalogo; prva
+ * odprema zamuja), 2360 ima 8 odprem (2 strani table), 2372 samo za zalogo.
+ */
+export const demoPrioritete = (): PrioriteteOddelkaTv => ({
+  koda: "M",
+  naziv: "Montaža",
+  danes: dan(0),
+  krovni: [
+    {
+      krovni: "2351",
+      mesto: "Montaža 1",
+      zacetek: dan(-2),
+      druzine: [{ d: "ODC", kos: 24 }],
+      kosov: 24,
+      naroceno: 9,
+      narocil: 6,
+      odpreme: [
+        { datum: dan(-1), kos: 1, kupec: "Pekarna Kaučič", narocilo: "26-0412", druzina: "ODC", zamuja: false },
+        { datum: dan(1), kos: 2, kupec: "Tim Zip", narocilo: "26-0418", druzina: "ODC", zamuja: false },
+        { datum: dan(4), kos: 1, kupec: "Mlinotest", narocilo: "26-0431", druzina: "ODC", zamuja: false },
+        { datum: dan(8), kos: 2, kupec: "Spar Slovenija", narocilo: "26-0440", druzina: "ODC", zamuja: true },
+        { datum: dan(12), kos: 1, kupec: "Pekarna Pečjak", narocilo: "26-0447", druzina: "ODC", zamuja: false },
+        { datum: dan(19), kos: 2, kupec: "Žito", narocilo: "26-0452", druzina: "ODC", zamuja: false },
+      ],
+    },
+    {
+      krovni: "2360",
+      mesto: "Montaža 2",
+      zacetek: dan(1),
+      druzine: [{ d: "OCB", kos: 10 }, { d: "OCA", kos: 4 }],
+      kosov: 14,
+      naroceno: 12,
+      narocil: 8,
+      odpreme: Array.from({ length: 8 }, (_, j) => ({
+        datum: dan(3 + j * 2),
+        kos: j % 3 === 0 ? 2 : 1,
+        kupec: ["Bäckerei Huber", "Pekarna Grosuplje", "Lidl", "Hofer", "Pekarna Blatnik", "Mercator", "Bäko", "Tuš"][j],
+        narocilo: `26-05${10 + j}`,
+        druzina: j % 2 ? "OCA" : "OCB",
+        zamuja: false,
+      })),
+    },
+    { krovni: "2372", mesto: "Montaža 1", zacetek: dan(6), druzine: [{ d: "PUL", kos: 6 }], kosov: 6, naroceno: 0, narocil: 0, odpreme: [] },
   ],
 });

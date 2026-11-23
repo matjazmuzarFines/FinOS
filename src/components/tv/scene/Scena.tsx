@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarRange, FileText, Gauge, PackageCheck, Trophy, Workflow, type LucideIcon } from "lucide-react";
+import { CalendarRange, FileText, Gauge, PackageCheck, Trophy, Truck, Workflow, type LucideIcon } from "lucide-react";
 import { Znak } from "@/components/Znak";
 import { PREHOD_MS } from "@/lib/tvPredvajanje";
 import { RAZPOLOZENJA, SVETI, TONI, utripOb, type Scena as ScenaT, type Svet } from "@/lib/tvScene";
 import { UraSceni } from "./Ura";
 import { svetlejsa, temnejsa } from "./Skupno";
-import { SvetKoledar, SvetMerilnik, SvetPodij, SvetPot, SvetTrak, type SvetProps } from "./Sveti";
+import { SvetKoledar, SvetMerilnik, SvetOdpreme, SvetPodij, SvetPot, SvetTrak, type SvetProps } from "./Sveti";
 
 /**
  * Animirana scena FIN:TV (oder 1920 × 1080, stalne temne barve). Skupno vsem: levo zgoraj nadnaslov v barvi SVETA
@@ -22,6 +22,7 @@ const IKONE: Record<string, LucideIcon> = {
   fp_plan_workflow: Workflow,
   fp_plan_pregled: CalendarRange,
   fp_pripravljenost_mat: PackageCheck,
+  fp_prioritete_krovnih: Truck,
 };
 
 const SVET_KOMPONENTA: Record<Svet, (p: SvetProps) => React.ReactNode> = {
@@ -30,10 +31,11 @@ const SVET_KOMPONENTA: Record<Svet, (p: SvetProps) => React.ReactNode> = {
   trak: SvetTrak,
   pot: SvetPot,
   koledar: SvetKoledar,
+  odpreme: SvetOdpreme,
 };
 
 /** Kje je Finesek (sij počutja v ozadju). */
-const FOKUS: Record<Svet, string> = { merilnik: "40% 72%", podij: "28% 60%", trak: "50% 70%", pot: "50% 70%", koledar: "28% 55%" };
+const FOKUS: Record<Svet, string> = { merilnik: "40% 72%", podij: "28% 60%", trak: "50% 70%", pot: "50% 70%", koledar: "28% 55%", odpreme: "80% 35%" };
 
 /**
  * Ozadje scene. Sij počutja: en element na barvo, menjava = prelivanje prosojnosti (CSS, grafična kartica) - prej se je

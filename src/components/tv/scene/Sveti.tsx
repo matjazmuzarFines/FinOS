@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { AnimatePresence, motion, useAnimate } from "motion/react";
 import { Check, Clock, HelpCircle, Truck } from "lucide-react";
 import { TONI, ure, type Scena, type Utrip } from "@/lib/tvScene";
-import { GlavaOdziv, KRIVULJA, Konfeti, Oznaka, PodatekUtripa, PRELIV, Vrednost, besediloVrednosti, temnejsa } from "./Skupno";
+import { GlavaOdziv, KRIVULJA, Konfeti, Oznaka, PodatekUtripa, PRELIV, Vrednost, besediloVrednosti, svetlejsa, temnejsa } from "./Skupno";
 
 /**
  * SVETI animiranih scen - vsaka komponenta svojo postavitev (da TV ni vedno enak), Finesek povsod.
@@ -16,6 +16,8 @@ import { GlavaOdziv, KRIVULJA, Konfeti, Oznaka, PodatekUtripa, PRELIV, Vrednost,
  *   trak (Pripravljenost materiala): paketi enkrat pripeljejo (pri "pride"), trak miruje; manjkajoči = črtkani obrisi.
  *   pot (Delovni plan): cesta miruje, Finesek skoči do naslednje postaje, kartica nad postajo se prelije.
  *   koledar (Pregled): koledar odtrga liste do števila delovnih dni do roka, Finesek kuka izza koledarja.
+ *   odpreme (Prioritete krovnih): tabla VSEH odprem krovnega (datum, kosi, družina, kupec, stanje) miruje; kamion
+ *     pripelje do naslednje odpreme; daljši seznam = več strani (utripov), menjava s prelivom prosojnosti.
  * Oder 1920 × 1080; glava strani (naslov) je levo zgoraj do ~330 px - sveti so pod njo / desno.
  */
 
@@ -417,6 +419,98 @@ export function SvetKoledar({ i, u, mirno, barva, zamik }: SvetProps) {
       <div className="absolute" style={{ left: K.levo + K.sirina - 40, top: K.vrh - 120, width: 270, transform: "rotate(12deg)" }}>
         <GlavaOdziv u={u} i={i} mirno={mirno} zamik={zamik} pogledX={8} className="w-full" />
       </div>
+    </>
+  );
+}
+
+// =====================================================================
+// ODPREME - Prioritete krovnih (tabla odprem kot tabla odhodov)
+// =====================================================================
+const O = { levo: 110, vrh: 380, sirina: 1190, glava: 54, vrsta: 92, desno: 1370 };
+
+export function SvetOdpreme({ i, u, mirno, barva, zamik }: SvetProps) {
+  const vrstice = u.odpreme ?? [];
+  const ton = TONI[u.ton];
+  return (
+    <>
+      {/* tabla: glava stolpcev + vrstice strani (menjava strani = preliv prosojnosti) */}
+      <div className="absolute overflow-hidden rounded-[32px] border-2 border-white/10" style={{ left: O.levo, top: O.vrh, width: O.sirina, height: O.glava + 6 * O.vrsta + 24, background: "linear-gradient(170deg, rgb(43 43 47 / 0.9), rgb(18 18 20 / 0.95))", boxShadow: "0 40px 90px -40px #000" }}>
+        <div className="flex items-center gap-6 px-8 text-[22px] font-bold uppercase tracking-[0.14em] text-[#8a8a91]" style={{ height: O.glava, borderBottom: `3px solid ${barva}55` }}>
+          <span className="w-[310px]">Odprema</span>
+          <span className="w-[190px]">Kosi</span>
+          <span className="flex-1">Kupec</span>
+          <span className="w-[220px] text-right">{u.stran && u.stran.n > 1 ? `Stran ${u.stran.i} / ${u.stran.n}` : "Stanje"}</span>
+        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={mirno ? "mirno" : `stran${i}`} className="absolute inset-x-0 px-3" style={{ top: O.glava + 10 }} {...PRELIV} initial={mirno ? false : PRELIV.initial}>
+            {vrstice.length ? (
+              vrstice.map((v) => {
+                const b = TONI[v.ton];
+                return (
+                  <div
+                    key={v.kljuc}
+                    className="relative flex items-center gap-6 rounded-[20px] px-5"
+                    style={{ height: O.vrsta - 8, marginBottom: 8, background: v.naslednja ? `linear-gradient(90deg, ${barva}33, ${barva}0d)` : "rgb(255 255 255 / 0.03)", boxShadow: v.naslednja ? `inset 0 0 0 3px ${barva}` : undefined }}
+                  >
+                    <span className="flex w-[310px] shrink-0 items-center gap-3 whitespace-nowrap font-display text-[40px] font-bold text-white">
+                      {v.naslednja ? (
+                        // kamion pripelje do naslednje odpreme (EDINO gibanje sveta, enkrat na utrip)
+                        <motion.span
+                          className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl text-white ${mirno ? "" : "fos-tv-sloj"}`}
+                          style={{ background: `linear-gradient(135deg, ${svetlejsa(barva, 0.6)}, ${barva} 50%, ${temnejsa(barva, 0.55)})` }}
+                          initial={mirno ? false : { x: -360, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={mirno ? { duration: 0 } : { duration: 1.3, delay: zamik, ease: KRIVULJA }}
+                        >
+                          <Truck className="h-9 w-9" strokeWidth={2.4} aria-hidden />
+                        </motion.span>
+                      ) : (
+                        <span className="h-14 w-14 shrink-0" />
+                      )}
+                      {v.dan}
+                    </span>
+                    <span className="flex w-[190px] shrink-0 items-baseline gap-2">
+                      <span className="font-display text-[48px] font-bold" style={{ color: v.naslednja ? svetlejsa(barva, 0.75) : "#ee7a3a" }}>
+                        {v.kos}
+                      </span>
+                      <span className="truncate text-[28px] font-semibold text-[#b5b5bb]">{v.druzina ? `× ${v.druzina}` : "kos"}</span>
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[32px] font-semibold text-[#b5b5bb]">{v.kupec ?? ""}</span>
+                    <span className="w-[220px] shrink-0 text-right">
+                      <span className="inline-block whitespace-nowrap rounded-full border-2 px-4 py-1.5 text-[23px] font-bold uppercase tracking-[0.04em]" style={{ color: b, borderColor: `${b}88`, background: `${b}1f` }}>
+                        {v.stanje}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="grid place-items-center text-center text-[44px] font-semibold text-[#9a9aa1]" style={{ height: 5 * O.vrsta }}>
+                Ni naročil - krovni gre na zalogo.
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      {/* povzetek desno: oznaka, naročeni kosi, delež v krovnem, stavek (miruje, menja se s prelivom) */}
+      <div className="absolute flex flex-col gap-5" style={{ left: O.desno, right: 110, top: 540 }}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={mirno ? "mirno" : `povzetek${u.oznaka}`} className="flex flex-col gap-4" {...PRELIV} initial={mirno ? false : PRELIV.initial}>
+            <Oznaka u={u} velikost={30} />
+            <div className="flex flex-col">
+              <Vrednost v={u.vrednost} barva={ton} velikost={110} />
+              <span className="mt-1 text-[28px] font-bold uppercase tracking-[0.12em] text-[#9a9aa1]">naročenih</span>
+            </div>
+            {u.trak != null && (
+              <div className="h-5 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full" style={{ width: `${Math.min(1, u.trak) * 100}%`, background: `linear-gradient(90deg, ${temnejsa(ton, 0.55)}, ${ton})` }} />
+              </div>
+            )}
+            <p className="line-clamp-2 text-[34px] font-semibold leading-tight text-[#dcdcdf]">{u.stavek}</p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      <GlavaOdziv u={u} i={i} mirno={mirno} zamik={zamik} pogledX={-8} className="absolute left-[1470px] top-[270px] w-[250px]" />
     </>
   );
 }

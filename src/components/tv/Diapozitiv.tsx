@@ -17,6 +17,7 @@ import {
   TreePalm,
   TriangleAlert,
   Trophy,
+  Truck,
   UserPlus,
   Workflow,
   Gauge,
@@ -46,7 +47,7 @@ export const IKONE_OBVESTIL: Record<string, LucideIcon> = {
   TriangleAlert,
 };
 /** Ikone komponent (fos_tv_viri.ikona). */
-export const IKONE_VIROV: Record<string, LucideIcon> = { Workflow, Gauge, CalendarRange, FileText, CalendarDays, Trophy, GraduationCap, ShieldCheck, PackageCheck };
+export const IKONE_VIROV: Record<string, LucideIcon> = { Workflow, Gauge, CalendarRange, FileText, CalendarDays, Trophy, GraduationCap, ShieldCheck, PackageCheck, Truck };
 
 /**
  * Oder: platno 1920 × 1080, pomanjšano / povečano na velikost okvirja (letterbox, črni robovi). Isti izris za TV,

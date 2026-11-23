@@ -173,6 +173,13 @@
   TV se predvaja NEPOSREDNO V BRSKALNIKU TELEVIZORJA (Samsung Crystal UHD, Tizen - šibek procesor, starejši Chromium):
   stalna gibanja in kamera so CSS animacije (`fos-tv-*` v globals.css), ne `motion` v JavaScriptu; `Predvajalnik` scene
   ne izrisuje ob vsakem tiku (`DiapozitivEnkrat`). Živa ura desno zgoraj: `scene/Ura.tsx` (`UraSceni`, popravek `OdmikUre`).
+- FIN:TV Prioritete krovnih - `031_fin_tv_prioritete_krovnih.sql` (dogovor 2026-11-23, odpreme so se izgubile ob prehodu s
+  PDF na animacije): `fp_prioritete_krovnih_p/m/e/t` (ikona Truck). Za VSAK krovni iz plana oddelka z odprtimi kosi VSE
+  odpreme (datum, kosi, družina, kupec, `zamuja` = rok naloga po odpremi) - enak izračun kot stran Prioritete v
+  Production s privzetimi nastavitvami (potrjena naročila, samo izdelki; Production `prioriteteTv.ts`,
+  `objaviPrioriteteNaTv`, ob uvozu naročil / odprem / nalogov / materiala, Shrani plan, Sync v TV; velja 3 dni). FIN:TV
+  `scenePrioritet`: EN krovni = ENA scena (najprej po prvi odpremi), tabla odprem (svet `odpreme`) po `ODPREM_NA_STRAN`
+  vrstic na utrip - nič se ne odreže; kamion pripelje do naslednje odpreme. Preizkus `/tv/scena?k=prioritete`.
 - ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
   < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika
   (+8,0 h / -5,0 h), nikoli v %. Velja za vse aplikacije (tudi KPI in ploščice v FinOS).

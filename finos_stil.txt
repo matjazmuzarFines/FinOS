@@ -493,6 +493,15 @@ PRAVILA
      začne šele PO prehodu med okni. Pravilo: v vsakem trenutku se premika največ en del in nič ne teče ves čas.
      DESNO ZGORAJ ŽIVA URA (UraSceni): samo ure in minute 96 px (preliv belo-sivo, oranžno dvopičje), BREZ datuma (podatek
      scene je segal do njega); brez sekund in brez utripanja (izriše se samo ob menjavi minute).
+   - PRIORITETE KROVNIH (svet "odpreme", modra #0ea5e9, ikona Truck): ena scena = en krovni ("Krovni 2351", podnaslov
+     celica · družine s kosi), krovni po prvi odpremi (najnujnejši najprej). Levo TABLA ODPREM (kot tabla odhodov, 1190 px):
+     glava Odprema | Kosi | Kupec | Stanje (pri več straneh "Stran 1 / 2"), vrstica = dan ("tor 24. 11."), kosi (oranžno) ×
+     družina, kupec (kratko ime), stanje kot čip (Zamuja N dni rdeče, Danes / Nalog zamuja oranžno, Jutri / Čez 2-3 dni
+     rumeno, Čez N dni zeleno, Brez datuma sivo). Naslednja odprema (prva, ki ni zamujena) modro obrobljena, kamion ob datumu
+     pripelje z leve (edino gibanje). Največ 6 vrstic na utrip - daljši seznam gre na naslednji utrip, NIKOLI se ne odreže.
+     Desno: glava Fineseka, oznaka (Odprema zamuja / danes / jutri / kmalu, Nalog zamuja, Prva odprema, Za zalogo), "9 kos
+     NAROČENIH", trak naročeni / vsi kosi krovnega, stavek "6 naročil · 15 kos za zalogo - ...". Krovni brez naročil: "Ni
+     naročil - krovni gre na zalogo". Zaskrbljen samo ob zamudi, odpremi danes / jutri ali nalogu, ki zamuja.
    - POSTAVITEV NA TV: predvaja se neposredno v brskalniku televizorja (Samsung Crystal UHD, Tizen) - šibek procesor.
      Gibanje samo s preoblikovanjem / prosojnostjo; malo majhnih slojev (will-change samo za majhne dele, ki se sučejo /
      premikajo, nikoli za dele, ki se povečujejo). Brez filtrov (feGaussianBlur, drop-shadow) na delih, ki se spreminjajo.
@@ -764,5 +773,10 @@ DNEVNIK POPRAVKOV UPORABNIKA
              kamere, štetja številk. Diagnostika ?meri=1 (sličice na sekundo na televizorju) in &brez=.
              -> razdelek 28 (MIRNA SCENA, DIAGNOSTIKA), Skupno, Sveti, Scena, FinesekGlava, Predvajalnik, Meritev,
              tvMeritev.ts, globals.css (fos-tv-raste, data-tv-brez).
+2026-11-23 - FIN:TV: s prehodom s PDF na animacije so se izgubile prioritete / odpreme izdelkov -> nova komponenta
+             "Prioritete krovnih" po oddelkih: za vsak krovni iz delovnega plana vse odpreme (kdaj gre katero naročilo
+             ven, kosi, kupec, stanje), enako kot iskanje krovnega na strani Prioritete v Production. -> razdelek 28,
+             migracija 031, tvScene.ts (scenePrioritet), Sveti.tsx (SvetOdpreme), Scena, Diapozitiv, tv.ts,
+             tvSceneDemo.ts; Production prioriteteTv.ts, tvObjava.ts, tvOpravila.ts, tvStanje.ts, sync.ts, SyncTv, Prioritete.
 2026-11-20 - Naslovna stran pred komponento OSTANE (jasno je, kaj sledi). Material: oznaka (DOBAVA ZAMUJA) je segala do
              datuma pod uro -> datum ob uri odstranjen, podatek scene zbit (razmik 24 px). -> razdelek 28, Ura, Skupno.
