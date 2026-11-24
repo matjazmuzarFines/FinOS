@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>FIN:OS krmilnik</title>
     <link rel="stylesheet" href="krmilnik.css" />
+    <link rel="stylesheet" href="finesek.css" />
   </head>
   <body>
     <div class="okvir">
@@ -29,7 +30,31 @@
 
     <!-- potrdilo žiga čez cel zaslon -->
     <div class="potrdilo" id="potrdilo" hidden>
-      <div class="potrdilo-kartica">
+      <div class="potrdilo-kartica" id="potrdilo-kartica">
+        <!-- Finesek v kotu potrdila: maha (prihod), malica (sedi in je), odhod (pomaha in odide) - krmilnik.js fineskovPrizor -->
+        <div class="fz" id="finesek" hidden aria-hidden="true">
+          <div class="fz-platno">
+            <div class="fz-odeja"></div>
+            <div class="fz-senca"></div>
+            <div class="fz-lik">
+              <div class="fz-spredaj">
+                <div class="fz-del fz-noga-l"><img src="finesek/noga-leva.webp" alt="" /></div>
+                <div class="fz-del fz-noga-d"><img src="finesek/noga-desna.webp" alt="" /></div>
+                <div class="fz-del fz-roka-l"><img src="finesek/roka-leva.webp" alt="" /></div>
+                <div class="fz-del fz-roka-d"><img src="finesek/roka-desna.webp" alt="" /></div>
+                <img class="fz-telo" src="finesek/telo-spredaj.webp" alt="" />
+                <div class="fz-hrana" id="finesek-hrana"></div>
+                <div class="fz-drobtine"><i></i><i></i><i></i></div>
+              </div>
+              <div class="fz-stran">
+                <div class="fz-del fz-snoga-z"><img src="finesek/noga-desna.webp" alt="" /></div>
+                <div class="fz-del fz-snoga-s"><img src="finesek/noga-desna.webp" alt="" /></div>
+                <img class="fz-telo-stran" src="finesek/telo-stran.webp" alt="" />
+                <div class="fz-del fz-sroka"><img src="finesek/roka-desna.webp" alt="" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="potrdilo-ikona" id="potrdilo-ikona"></div>
         <div class="potrdilo-naslov" id="potrdilo-naslov"></div>
         <div class="potrdilo-opis" id="potrdilo-opis"></div>

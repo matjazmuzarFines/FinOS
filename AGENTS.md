@@ -186,6 +186,21 @@
 - ENOTNA LOGIKA %: "%" je VEDNO PRODUKTIVNOST = normativne / štempljane ure × 100 (>= 100 % zeleno, 85-99 % rumeno,
   < 85 % rdeče, ob številki oznaka PRODUKTIVNOST). Poraba ur (štempljano proti planu) vedno v URAH kot razlika
   (+8,0 h / -5,0 h), nikoli v %. Velja za vse aplikacije (tudi KPI in ploščice v FinOS).
+- `032_kartice_24_bitov.sql`: `fos_kartica` - stari sistem je hranil spodnjih 24 bitov kartice (12446662), čitalec pošlje
+  cel UID (0247327686 = 0x0EBDEBC6). Najprej natančno ujemanje, sicer kratka (< 16777216) = dolga % 16777216; dve dolgi z
+  različnim zgornjim bajtom sta različni kartici. Migracija dodeli zaposlenega že zapisanim žigom neznanih kartic.
+- `033_krmilnik_dnevnik.sql`: `fos_krmilnik_dnevnik` (debug dnevnik krmilnikov; vrsta zagon / kartica / odgovor / info /
+  preklic / povezava / nastavitve / ura / napaka, `id_ziga` = lokalni_id žiga poveže kartico in odgovor, `podatki` jsonb).
+  Piše samo strežnik: krmilnik (1.2.0) hrani dnevnik v SQLite in ga pošlje v `/api/krmilnik` (`{ dnevnik: [...] }`).
+  Stran Nastavitve registracije -> Dnevnik krmilnikov (`DnevnikKrmilnikov.tsx`, `?naprava=&datum=`). Nov dogodek na
+  krmilniku = klic `dnevnik(vrsta, ...)` v fines_krmilnik.py (+ vnos v `VRSTE`, če je nova vrsta).
+- Krmilnik 1.2.0: navaden žig se shrani v SQLite in zaslon TAKOJ pokaže "Zabeleženo"; nit pošiljanja (`POSLJI` event) ga
+  pošlje takoj, zaslon dopiše ime prek `/api/rezultat?id=` (kartice v JS po vrsti, nobena se ne zavrže). Info / Prekliči
+  počakata FIN:OS. Ena keep-alive povezava (`klic`). Vercel regija `fra1` (vercel.json) = ob bazi (Supabase eu-central-1).
+- Krmilnik 1.3.0: VARNOSTNA VRSTA - zaslon žig najprej zapiše v localStorage (`fos_krmilnik_vrsta`, lokalni_id + čas
+  prislona), nato `/api/zig`; odstrani ga šele, ko je v SQLite (WAL, synchronous FULL); zaostale pošilja vsake 3 s.
+  Finesek v potrdilu: `krmilnik/ui/finesek.css` (uvožen tudi v globals.css), `fineskovPrizor` v krmilnik.js,
+  `FinesekPotrdila` v KrmilnikPredogled.tsx (ista oznaka - ob spremembi uskladi oba).
 - `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
   vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`

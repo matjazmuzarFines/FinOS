@@ -14,7 +14,8 @@ import { adminKlient, BREZ_KLJUCA } from "@/lib/supabaseStreznik";
  */
 export const dynamic = "force-dynamic";
 
-async function naprava(req: Request) {
+/** `stik` = zapiši zadnji stik in verzijo (GET vsako minuto). Pri POST ga ne čakamo - fos_krmilnik_zig ga zapiše sam. */
+async function naprava(req: Request, stik: boolean) {
   const admin = adminKlient();
   if (!admin) return napakaApi(BREZ_KLJUCA, 500);
   const kljuc = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
@@ -24,12 +25,12 @@ async function naprava(req: Request) {
   if (error) return napakaApi(error.message, 500);
   if (!data || !data.visible) return napakaApi("Ključ naprave ni veljaven ali je naprava onemogočena.", 401);
   const verzija = req.headers.get("x-verzija")?.slice(0, 40) ?? null;
-  await admin.from("fos_krmilniki").update({ zadnji_stik: new Date().toISOString(), ...(verzija ? { verzija } : {}) }).eq("id", data.id);
+  if (stik) await admin.from("fos_krmilniki").update({ zadnji_stik: new Date().toISOString(), ...(verzija ? { verzija } : {}) }).eq("id", data.id);
   return { admin, naprava: data as { id: number; ime: string; lokacija: string } };
 }
 
 export async function GET(req: Request) {
-  const n = await naprava(req);
+  const n = await naprava(req, true);
   if (n instanceof NextResponse) return n;
   const { data, error } = await n.admin.from("fos_tipke").select("tipka, besedilo, funkcija, prikaz").eq("visible", true).order("tipka");
   if (error) return napakaApi(error.message, 500);
@@ -38,13 +39,43 @@ export async function GET(req: Request) {
 }
 
 type Zig = { lokalni_id: string; st_kartice: string; cas: string; tipka: number | null };
+type Dnevnik = { lokalni_id: string; cas: string; vrsta: string; st_kartice?: string | null; tipka?: number | null; id_ziga?: string | null; uspeh?: boolean | null; sporocilo?: string | null; trajanje_ms?: number | null; podatki?: unknown };
+
+const besedilo = (v: unknown, n: number) => (v == null ? null : String(v).slice(0, n));
+const celo = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
+
+/** Dnevnik krmilnika (033) - isti lokalni_id samo enkrat. Brez tabele vrne ok: false (krmilnik poskusi kasneje). */
+async function shraniDnevnik(admin: NonNullable<ReturnType<typeof adminKlient>>, idKrmilnika: number, verzija: string | null, vnosi: Dnevnik[]) {
+  const vrstice = vnosi
+    .filter((d) => d?.lokalni_id && d.vrsta && !Number.isNaN(new Date(d.cas).getTime()))
+    .map((d) => ({
+      id_krmilnika: idKrmilnika,
+      lokalni_id: String(d.lokalni_id).slice(0, 64),
+      cas: new Date(d.cas).toISOString(),
+      vrsta: String(d.vrsta).slice(0, 30),
+      st_kartice: besedilo(d.st_kartice, 40),
+      tipka: celo(d.tipka),
+      id_ziga: besedilo(d.id_ziga, 64),
+      uspeh: typeof d.uspeh === "boolean" ? d.uspeh : null,
+      sporocilo: besedilo(d.sporocilo, 1000),
+      trajanje_ms: celo(d.trajanje_ms),
+      podatki: d.podatki && typeof d.podatki === "object" ? d.podatki : {},
+      verzija,
+    }));
+  if (!vrstice.length) return { ok: true, shranjenih: 0 };
+  const { error } = await admin.from("fos_krmilnik_dnevnik").upsert(vrstice, { onConflict: "id_krmilnika,lokalni_id", ignoreDuplicates: true });
+  return error ? { ok: false, napaka: error.message } : { ok: true, shranjenih: vrstice.length };
+}
 
 export async function POST(req: Request) {
-  const n = await naprava(req);
+  const zacetek = Date.now();
+  const n = await naprava(req, false);
   if (n instanceof NextResponse) return n;
-  const telo = (await req.json().catch(() => null)) as { zigi?: Zig[] } | null;
+  const telo = (await req.json().catch(() => null)) as { zigi?: Zig[]; dnevnik?: Dnevnik[] } | null;
   const zigi = Array.isArray(telo?.zigi) ? telo.zigi.slice(0, 200) : [];
-  if (!zigi.length) return napakaApi("Ni žigov.");
+  const vnosi = Array.isArray(telo?.dnevnik) ? telo.dnevnik.slice(0, 500) : [];
+  if (!zigi.length && !vnosi.length) return napakaApi("Ni žigov.");
+  const dnevnik = vnosi.length ? await shraniDnevnik(n.admin, n.naprava.id, req.headers.get("x-verzija")?.slice(0, 40) ?? null, vnosi) : undefined;
 
   const rezultati = [];
   for (const z of zigi) {
@@ -65,5 +96,6 @@ export async function POST(req: Request) {
     });
     rezultati.push(error ? { lokalni_id: z.lokalni_id, ok: false, napaka: error.message } : { lokalni_id: z.lokalni_id, ...(data as object), trajno: true });
   }
-  return NextResponse.json({ rezultati });
+  // ms = čas obdelave na strežniku (dnevnik krmilnika: koliko je strežnik, koliko pot)
+  return NextResponse.json({ rezultati, ...(dnevnik ? { dnevnik } : {}), ms: Date.now() - zacetek });
 }

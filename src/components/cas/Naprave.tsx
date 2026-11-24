@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Copy, Cpu, Download, KeyRound, Plus, Power, Wifi, WifiOff } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Copy, Cpu, Download, KeyRound, Plus, Power, ScrollText, Wifi, WifiOff } from "lucide-react";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { POLJE } from "@/components/ui/Polje";
 import { obvesti } from "@/components/ui/Obvestila";
@@ -141,6 +141,9 @@ export function Naprave() {
                   </span>
                 </span>
                 <span className="flex shrink-0 gap-2">
+                  <ButtonLink href={`/administracija/registracija/nastavitve/dnevnik?naprava=${n.id}`} hint="Odpri dnevnik te naprave - vsi dogodki in odgovori" variant="neutral" icon={ScrollText} className="!h-9 !px-3 !text-xs">
+                    Dnevnik
+                  </ButtonLink>
                   <Button hint="Ustvari nov ključ - star preneha delovati" variant="primary" icon={KeyRound} onClick={() => novKljuc(n)} className="!h-9 !px-3 !text-xs" disabled={!n.visible}>
                     Nov ključ
                   </Button>

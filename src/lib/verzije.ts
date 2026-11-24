@@ -3,6 +3,39 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "10.10",
+    datum: "24. 11. 2026",
+    spremembe: [
+      "Krmilnik (program 1.3.0): žig je varen tudi, ko program krmilnika ravno ne teče (ponovni zagon po napaki) - zaslon ga shrani pri sebi in ga preda programu, ko spet dela (isti žig se ne podvoji, velja čas prislona). Zapis na kartico SD je odporen na izpad elektrike.",
+      "Krmilnik: v kotu potrdila Finesek - ob prihodu pomaha, ob malici sedi na odeji in je (burger, pica ali sendvič, »Dober tek!«), ob odhodu pomaha, se obrne in odide. Enako v predogledu krmilnika (Nastavitve -> Krmilnik).",
+    ],
+  },
+  {
+    verzija: "10.09",
+    datum: "24. 11. 2026",
+    spremembe: [
+      "Krmilnik (program 1.2.0): potrdilo »Zabeleženo« se pokaže takoj ob prislonu kartice (žig je shranjen na krmilniku), ime ali opozorilo se dopiše, ko odgovori FIN:OS. Žigi gredo v vrsto in se pošiljajo v ozadju - več ljudi lahko štemplja zapored, nobena kartica se ne izgubi (prej se je kartica med čakanjem na odgovor zavrgla).",
+      "Krmilnik: povezava do FIN:OS ostane odprta, strežnik pri žigu naredi en klic baze manj, FIN:OS teče v Frankfurtu (fra1) ob bazi - prej v ZDA.",
+      "Nastavitve registracije -> Dnevnik krmilnikov (potrebna migracija 033): vsak dogodek na krmilniku - prebrana kartica, odgovor FIN:OS s časom od prislona, Info / Preklic, izpad in vrnitev povezave, nastavitve, zagon, napake. Filtri po napravi, dnevu, vrsti, samo težave, iskanje; klik na vrstico pokaže vse podatke. Gumb Dnevnik pri vsaki napravi.",
+    ],
+  },
+  {
+    verzija: "10.08",
+    datum: "24. 11. 2026",
+    spremembe: [
+      "Krmilnik: kartice iz starega sistema (kratka številka, npr. 12446662) se zdaj prepoznajo tudi, ko čitalec pošlje dolgo številko iste kartice (npr. 0247327686). Že zapisani žigi takih kartic se dodelijo zaposlenemu (potrebna migracija 032).",
+    ],
+  },
+  {
+    verzija: "10.07",
+    datum: "23. 11. 2026",
+    spremembe: [
+      "Krmilnik (ura za štempljanje, program 1.1.0): pokončen zaslon - ura je zgoraj čez celo širino, tipke pod njo in večje (prej se je ura stisnila v ozek stolpec). Ležeč zaslon ostane kot prej.",
+      "Krmilnik: izhod na namizje za vzdrževanje - Alt+F4 in takoj po ponovnem odprtju še enkrat Alt+F4.",
+      "Nastavitve -> Krmilnik: predogled ima tudi pokončne zaslone (480 × 800, 600 × 1024, 800 × 1280).",
+    ],
+  },
+  {
     verzija: "10.06",
     datum: "23. 11. 2026",
     spremembe: [

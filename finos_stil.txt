@@ -424,6 +424,23 @@ PRAVILA
      velika oranžna sijoča ura z utripajočim dvopičjem in sekundami, "Prisloni kartico" z utripajočo ikono kartice
      (izbrana tipka: oranžno "Odmor - prisloni kartico", velja 10 s). Desno tipke 2 v vrsti (številka v oranžnem
      kvadratku, Info "i", Prekliči "↶"), izbrana oranžno obrobljena s sijem.
+   - POKONČEN ZASLON (480 × 800 ...): LCD z uro zgoraj čez celo širino, tipke 2 v vrsti pod njim; velikosti v vmin
+     (krajša stranica), zato je ležeč enak kot prej. Predogled ima tudi pokončne ločljivosti.
+   - Ob prislonu kartice TAKOJ zeleno ✓ "Zabeleženo" + čas (· tipka) s piskom - žig je shranjen na krmilniku; ko
+     odgovori FIN:OS (navadno < 1 s), se potrdilo zamenja s pozdravom / opozorilom (drugi pisk samo ob težavi). Brez
+     odgovora v 6 s "- poslano bo, ko bo povezava". Naslednja kartica takoj zamenja potrdilo (vrsta, nič se ne izgubi).
+   - FINESEK V POTRDILU (krmilnik/ui/finesek.css - ista datoteka v globals.css za predogled; deli finesek/*.webp,
+     hrana finesek/hrana-*.svg tudi v public/finesek): levo v kartici potrdila (višina 30 vmin), samo ob potrjenem žigu
+     z imenom. Prihod = pomaha; tipka z besedo malica / kosilo / obrok = sedi na rdeče-beli odeji, v rokah naključno
+     burger / pica / sendvič, vsakih 1,8 s ugrizne (hrana gor, glava se stisne, drobtine), naslov "Dober tek, Ime!";
+     odhod = pomaha, se obrne (s strani) in odide desno ter izgine. Samo transform / opacity (šibek Pi).
+   - VARNOST ŽIGA: navaden žig gre najprej v localStorage zaslona, nato v SQLite programa (WAL, synchronous FULL), nato
+     v FIN:OS; iz vsake vrste se odstrani šele, ko je v naslednji. Isti lokalni_id + čas prislona povsod.
+   - DNEVNIK KRMILNIKOV (Nastavitve registracije, razdelek Naprave; pri napravi bel gumb Dnevnik): filtri v stekleni
+     kartici (naprava, dan s puščicama, iskanje, Samo težave, V živo = vsakih 5 s), čipi vrst s številom; 6 številk
+     dneva (Žigov, Potrjenih zeleno, Neznana kartica / Brez odgovora rumeno, Napak rdeče, Prislon -> odgovor v ms);
+     tabela s temno glavo (čas z ms, naprava, vrsta z ikono v barvi, kartica mono, zaposleni + tipka, stanje, sporočilo,
+     trajanje); klik razpre JSON dogodka in podatkov ter ostale dogodke istega žiga. Vrstice brez stekla in animacij.
    - Potrdilo čez cel zaslon 3,5 s s piskom: zeleno ✓ "Dober dan, Matej!" / "Nasvidenje, Matej!" + čas · tipka; brez
      povezave "Zabeleženo - poslano bo, ko bo povezava"; rumeno "Kartica ni dodeljena"; modro Info (današnji žigi kot
      čipi); rumeno "Zadnji žig je preklican"; rdeče napaka z nizkim piskom.
@@ -786,3 +803,13 @@ DNEVNIK POPRAVKOV UPORABNIKA
              (izracunajPlanOddelka).
 2026-11-20 - Naslovna stran pred komponento OSTANE (jasno je, kaj sledi). Material: oznaka (DOBAVA ZAMUJA) je segala do
              datuma pod uro -> datum ob uri odstranjen, podatek scene zbit (razmik 24 px). -> razdelek 28, Ura, Skupno.
+2026-11-23 - Krmilnik na pokončnem zaslonu: ura stisnjena v ozek stolpec levo -> pri pokončnem ura zgoraj, tipke spodaj,
+             večje; izhod na namizje z dvakrat Alt+F4. -> razdelek 27, krmilnik/ui (krmilnik.css), kiosk.sh, KrmilnikPredogled.
+2026-11-24 - Krmilnik: sporočilo ob prislonu je prišlo šele po ~2 s -> takoj "Zabeleženo", ime se dopiše; vrsta žigov
+             (več ljudi zapored, nič se ne izgubi). Manjka dnevnik krmilnika (debug: vsak žig, prenos, odgovor, status)
+             -> stran Dnevnik krmilnikov. -> razdelek 27, krmilnik (fines_krmilnik.py, ui), DnevnikKrmilnikov, Naprave,
+             nav.ts, /api/krmilnik, migracija 033, vercel.json (fra1).
+2026-11-24 - Krmilnik: žig se ne sme izgubiti ob izpadu wifija, zrušitvi ali ponovnem zagonu -> vrsta na zaslonu
+             (localStorage) + SQLite WAL. V kot potrdila Finesek: prihod maha, malica sedi in je (sendvič / pica /
+             hamburger), odhod pomaha in odide. -> razdelek 27, krmilnik/ui (finesek.css, krmilnik.js, finesek/),
+             fines_krmilnik.py, KrmilnikPredogled (FinesekPotrdila), globals.css.

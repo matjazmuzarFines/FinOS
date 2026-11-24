@@ -82,15 +82,15 @@ USB ključek po namestitvi ni več potreben (program se skopira na Raspberry Pi)
 |---|---|
 | Ali dela? | FIN:OS -> Krmilnik -> Naprave: "na zvezi" / zadnji stik |
 | Posodobitev programa | nova mapa `krmilnik` na USB ključku, dvoklik `namesti.sh` (nastavitve in čakajoči žigi ostanejo) |
-| Dnevnik | `journalctl -u fines-krmilnik -f` |
+| Dnevnik | FIN:OS -> Nastavitve registracije -> **Dnevnik krmilnikov** (vsak žig, odgovor, izpad povezave ...); na napravi `journalctl -u fines-krmilnik -f` |
 | Ponovni zagon programa | `sudo systemctl restart fines-krmilnik` |
 | Zamenjava ključa | FIN:OS -> Nov ključ -> Prenesi nastavitve, nov `config.json` v mapo `krmilnik` na USB, dvoklik `namesti.sh` |
-| Izhod iz celega zaslona (vzdrževanje) | priklopi tipkovnico, `Alt+F4` (zaslon se čez 2 s odpre znova - za delo: `sudo systemctl stop fines-krmilnik`) |
+| Izhod iz celega zaslona (vzdrževanje) | priklopi tipkovnico, `Alt+F4` -> zaslon se čez 2 s odpre znova -> takoj še enkrat `Alt+F4` = ostane namizje (do ponovnega zagona). Program v ozadju teče naprej (žigi s čitalca se ne izgubijo). Verzija 1.0.0 tega še ne zna: tam `Ctrl+Alt+T` (terminal) in `pkill -f kiosk.sh; pkill chromium` |
 
 ## Datoteke
 
 * `fines_krmilnik.py` - program (čakalna vrsta SQLite v `/var/lib/fines-krmilnik`, lokalni strežnik zaslona, pošiljanje)
-* `ui/` - zaslon (ura, tipke, potrdilo žiga: "Dober dan, Matej!" / "Nasvidenje, Matej!", Info, Prekliči)
+* `ui/` - zaslon (ležeč: ura levo, tipke desno; pokončen: ura zgoraj, tipke spodaj; ura, tipke, potrdilo žiga: "Dober dan, Matej!" / "Nasvidenje, Matej!", Info, Prekliči)
 * `namesti.sh` - namestitev / posodobitev, `kiosk.sh` - zažene zaslon čez cel zaslon
 * `config.example.json` - primer nastavitev (prava so v `/etc/fines-krmilnik/config.json`)
 

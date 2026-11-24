@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarClock, CalendarPlus, CalendarRange, Clock, ClockPlus, Database, DoorOpen, EyeOff, FilePenLine, Hourglass, Keyboard, KeyRound, LogIn, MousePointerClick, Scale, Settings, Stethoscope, Tags, TicketCheck, TreePalm, Tv, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, CalendarClock, CalendarPlus, CalendarRange, Clock, ClockPlus, Database, DoorOpen, EyeOff, FilePenLine, Hourglass, Keyboard, KeyRound, LogIn, MousePointerClick, Scale, ScrollText, Settings, Stethoscope, Tags, TicketCheck, TreePalm, Tv, Users, type LucideIcon } from "lucide-react";
 
 /**
  * Navigacija FIN:OS - en vir za ploščice, drobtine in gumb nazaj.
@@ -110,6 +110,13 @@ export const REGISTRACIJA_NASTAVITVE: { naslov: string; ploscice: Ploscica[] }[]
         hint: "Odpri tipke krmilnika",
         icon: Keyboard,
       },
+      {
+        href: "/administracija/registracija/nastavitve/dnevnik",
+        naslov: "Dnevnik krmilnikov",
+        opis: "Vsak dogodek na krmilnikih: kartice, odgovori FIN:OS, povezava, napake.",
+        hint: "Odpri dnevnik krmilnikov",
+        icon: ScrollText,
+      },
     ],
   },
 ];
@@ -193,7 +200,7 @@ export const ME_VSTOPI: MeVstop[] = [
  * Nova taka stran = nov vnos. SIROKE_STRANI veljajo tudi za podstrani, SIROKE_TOCNO samo za to pot (npr. registracija -
  * njene nastavitve s ploščicami ostanejo standardne).
  */
-const SIROKE_STRANI = ["/administracija/tv", "/administracija/registracija/nastavitve/urniki", "/administracija/registracija/nastavitve/statistike", "/administracija/registracija/nastavitve/krmilnik", "/administracija/registracija/nastavitve/obveznost"];
+const SIROKE_STRANI = ["/administracija/tv", "/administracija/registracija/nastavitve/urniki", "/administracija/registracija/nastavitve/statistike", "/administracija/registracija/nastavitve/krmilnik", "/administracija/registracija/nastavitve/dnevnik", "/administracija/registracija/nastavitve/obveznost"];
 const SIROKE_TOCNO = ["/administracija/registracija", "/moj-fines/cas"];
 export const jeSiroka = (pot: string) => SIROKE_TOCNO.includes(pot) || SIROKE_STRANI.some((s) => pot === s || pot.startsWith(`${s}/`));
 /** Širina vsebine in glave: standardna ali čez celo širino z odmikom od roba. */
