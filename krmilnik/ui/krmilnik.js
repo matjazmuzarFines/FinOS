@@ -1,13 +1,13 @@
 /*
  * FIN:OS krmilnik - zaslon. Potek kot na starem krmilniku:
  *   prisloni kartico           -> žig brez tipke (prihod / odhod - smer določi FIN:OS)
- *   pritisni tipko, nato kartico -> žig s tipko (npr. Odmor); tipka velja 10 s, ponoven pritisk jo prekliče
+ *   pritisni tipko, nato kartico -> žig s tipko (npr. Odmor); tipka velja 5 s (odštevanje levo spodaj), ponoven pritisk jo prekliče
  *   Info + kartica             -> današnji žigi;  Prekliči + kartica -> prekliče zadnji žig (5 min)
  * Čitalec kartic = USB tipkovnica: "natipka" številko in Enter. Brez povezave se žig shrani in pošlje kasneje.
  */
 const $ = (id) => document.getElementById(id);
 const DNEVI = ["nedelja", "ponedeljek", "torek", "sreda", "četrtek", "petek", "sobota"];
-const VELJA_TIPKA_MS = 10000;
+const VELJA_TIPKA_MS = 5000; // izbrana tipka velja 5 s (odštevanje levo spodaj)
 const POTRDILO_MS = 3500;
 
 let tipke = [];
@@ -25,7 +25,6 @@ function ura() {
   $("minute").textContent = dv(d.getMinutes());
   $("sekunde").textContent = dv(d.getSeconds());
   $("datum").textContent = `${DNEVI[d.getDay()]}, ${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
-  if (izbrana && Date.now() > izbranaDo) izberi(null);
 }
 setInterval(ura, 1000);
 ura();
@@ -88,6 +87,42 @@ function izberi(t) {
   document.querySelectorAll(".tipka").forEach((b) => b.classList.toggle("izbrana", t != null && Number(b.dataset.tipka) === t.tipka));
   $("sporocilo").classList.toggle("izbrana", !!t);
   $("sporocilo-besedilo").textContent = t ? `${t.besedilo} - prisloni kartico` : "Prisloni kartico";
+  prilagodiSporocilo();
+  odstevaj(!!t);
+}
+
+// besedilo pod uro je vedno v ENI vrsti (dolga tipka, npr. "Privatni izhod", bi ga prelomila in potisnila tipke
+// navzdol) - predolgo se pomanjša do 60 %
+function prilagodiSporocilo() {
+  const el = $("sporocilo");
+  el.style.fontSize = "";
+  const osnova = parseFloat(getComputedStyle(el).fontSize);
+  let v = osnova;
+  while (el.scrollWidth > el.clientWidth && v > osnova * 0.6) {
+    v -= osnova * 0.05;
+    el.style.fontSize = `${v}px`;
+  }
+}
+addEventListener("resize", prilagodiSporocilo);
+
+// odštevanje 5 -> 1 (številka + obroč, ki se prazni); na 0 se tipka odznači
+function odstevaj(vklop) {
+  const el = $("odstevanje");
+  clearInterval(odstevaj.t);
+  el.hidden = !vklop;
+  if (!vklop) return;
+  const obroc = $("odstevanje-obroc");
+  obroc.classList.remove("tece");
+  void obroc.getBoundingClientRect(); // animacija obroča se začne znova
+  obroc.style.animationDuration = `${VELJA_TIPKA_MS}ms`;
+  obroc.classList.add("tece");
+  const tik = () => {
+    const ostane = izbranaDo - Date.now();
+    if (ostane <= 0) return izberi(null);
+    $("odstevanje-st").textContent = String(Math.ceil(ostane / 1000));
+  };
+  tik();
+  odstevaj.t = setInterval(tik, 100);
 }
 
 // ---- čitalec kartic (USB tipkovnica) ----
@@ -213,9 +248,10 @@ async function pocakajOdgovor(lid, t, st, ura, naZvezi) {
 }
 
 // ---- Finesek v kotu potrdila ----
-// maha = prihod, malica = tipka z "malica" v besedilu (sedi in je), odhod = pomaha in odide. Hrana naključno.
+// maha = prihod / konec druge odsotnosti, malica = začetek odmora (sedi in je, hrana naključno), delo = konec odmora
+// (čelada, kladivo), odhod = odhod / začetek druge odsotnosti (pomaha in odide). Vlogo žiga pove FIN:OS (r.vloga).
 const HRANA = ["burger", "pica", "sendvic"]; // finesek/hrana-*.svg (enake datoteke v public/finesek za predogled)
-const MALICA = /malic|kosil|obrok|hran|jest/i;
+const ODMOR = /odmor|malic|kosil|obrok|pavz/i; // enako JE_ODMOR v src/lib/krmilnikStanje.ts
 const fz = $("finesek");
 function fineskovPrizor(prizor) {
   const kartica = $("potrdilo-kartica");
@@ -231,6 +267,7 @@ function fineskovPrizor(prizor) {
   fz.style.height = `${h}px`;
   fz.style.setProperty("--s", String(s));
   kartica.style.setProperty("--fz-w", `${640 * s + 8}px`);
+  kartica.style.setProperty("--fz-h", `${h}px`);
   if (prizor === "malica") {
     $("finesek-hrana").innerHTML = `<img src="finesek/hrana-${HRANA[Math.floor(Math.random() * HRANA.length)]}.svg" alt="" />`;
   }
@@ -241,8 +278,69 @@ function fineskovPrizor(prizor) {
 }
 function prizorZiga(r, t) {
   if (!r.ok || r.akcija !== "zig" || !r.poslano || r.znana === false) return null;
-  if (t && MALICA.test(t.besedilo || "")) return "malica";
+  const tipka = r.tipka_ziga || t?.besedilo || "";
+  if (r.vloga === "zacetek") return ODMOR.test(tipka) ? "malica" : "odhod";
+  if (r.vloga === "konec") return ODMOR.test(tipka) ? "delo" : "maha";
+  if (r.vloga) return r.vloga === "odhod" ? "odhod" : "maha";
+  // starejši FIN:OS (brez vloge): po tipki in smeri
+  if (t && ODMOR.test(t.besedilo || "")) return "malica";
   return r.smer === "odhod" ? "odhod" : "maha";
+}
+
+// ---- Info: stanje in današnji žigi ----
+const BARVA_STANJA = { prisoten: "var(--ok)", odsoten: "var(--warn)", odsel: "var(--ink-400)", ni: "var(--ink-400)" };
+const NAJVEC_VRSTIC = 7;
+function prikaziInfo(r) {
+  const info = $("info");
+  const kartica = $("potrdilo-kartica");
+  if (!r || r.akcija !== "info" || !r.ok) {
+    info.hidden = true;
+    kartica.classList.remove("je-info");
+    return null;
+  }
+  $("info-ime").textContent = [r.ime, r.priimek].filter(Boolean).join(" ");
+  const tabela = $("info-tabela");
+  tabela.innerHTML = "";
+  const celica = (razred, besedilo, vloga) => {
+    const el = document.createElement("span");
+    el.className = razred;
+    if (vloga) {
+      el.dataset.vloga = vloga;
+      el.appendChild(document.createElement("i"));
+    }
+    el.appendChild(document.createTextNode(besedilo));
+    tabela.appendChild(el);
+  };
+  let barva = "var(--ink-400)";
+  let vrstice;
+  if (r.stanje && Array.isArray(r.dnevnik_dneva)) {
+    // FIN:OS: stanje in vloge žigov (Prihod, Odmor, Konec odmora, Odhod ...)
+    barva = BARVA_STANJA[r.stanje.stanje] || barva;
+    $("info-stanje-naslov").textContent = r.stanje.naslov;
+    $("info-stanje-od").textContent = r.stanje.od ? `${r.stanje.stanje === "odsel" ? "ob" : "od"} ${r.stanje.od}` : "";
+    $("info-tabela-naslov").textContent = "Danes";
+    vrstice = r.dnevnik_dneva.map((v) => ({ ura: v.ura, oznaka: v.oznaka, vloga: v.vloga, trajanje: v.trajanje_min != null ? trajanjeMin(v.trajanje_min) : "" }));
+  } else {
+    // brez povezave (samo žigi s tega krmilnika) ali starejši FIN:OS - brez velikega stanja
+    $("info-stanje-naslov").textContent = r.poslano === false ? "Brez povezave" : "Današnji žigi";
+    $("info-stanje-od").textContent = "";
+    $("info-tabela-naslov").textContent = r.poslano === false ? "Žigi s tega krmilnika" : "Danes";
+    vrstice = (r.zigi ?? []).map((z) => ({ ura: z.cas, oznaka: z.tipka || "Žig", vloga: "", trajanje: "" }));
+  }
+  const skrite = Math.max(0, vrstice.length - NAJVEC_VRSTIC);
+  if (skrite) celica("info-prazno", `… še ${skrite} prej`);
+  for (const v of vrstice.slice(-NAJVEC_VRSTIC)) {
+    celica("info-cas", v.ura);
+    celica("info-oznaka", v.oznaka, v.vloga || "drugo");
+    celica("info-trajanje", v.trajanje);
+  }
+  if (!vrstice.length) celica("info-prazno", "Danes še ni žigov.");
+  info.hidden = false;
+  kartica.classList.add("je-info");
+  return barva;
+}
+function trajanjeMin(min) {
+  return min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")} min` : `${min} min`;
 }
 
 function potrdi(r, t, st, ura, zPiskom, posodobitev = false) {
@@ -260,15 +358,7 @@ function potrdi(r, t, st, ura, zPiskom, posodobitev = false) {
     naslov = r.napaka || "Napaka";
     opis = ime ? `${ime} - poskusi znova` : "Poskusi znova";
   } else if (r.akcija === "info") {
-    ikona = "i";
-    barva = "#60a5fa";
-    naslov = ime || "Današnji žigi";
-    opis = r.zigi?.length ? "Današnji žigi:" : "Danes še ni žigov.";
-    for (const z of r.zigi ?? []) {
-      const li = document.createElement("li");
-      li.textContent = `${z.cas}${z.tipka ? ` · ${z.tipka}` : ""}`;
-      seznam.appendChild(li);
-    }
+    barva = prikaziInfo(r);
   } else if (r.akcija === "preklic") {
     ikona = "↶";
     barva = "var(--warn)";
@@ -286,13 +376,37 @@ function potrdi(r, t, st, ura, zPiskom, posodobitev = false) {
     // takoj po prislonu: shranjeno na krmilniku, odgovor FIN:OS pride v trenutku
     naslov = "Zabeleženo";
     opis = `${ura}${t ? ` · ${t.besedilo}` : ""}${r.na_zvezi ? "" : " - poslano bo, ko bo povezava"}`;
+  } else if (r.poslano && r.vloga) {
+    // FIN:OS pove vlogo žiga: prihod / odhod / začetek odsotnosti (Odmor, Poslovni izhod ...) / konec odsotnosti
+    const tipka = r.tipka_ziga || "";
+    if (r.vloga === "prihod") {
+      naslov = `Dober dan${ime ? `, ${ime}` : ""}!`;
+      opis = `${ura} · Prihod${tipka ? ` · ${tipka}` : ""}`;
+      // tipka odsotnosti brez prihoda (malica, poslovni ... so mogoči samo ob prisotnosti) - šteje kot prihod
+      if (r.opozorilo) {
+        barva = "var(--warn)";
+        opis = `${ura} · ${r.opozorilo}`;
+      }
+    } else if (r.vloga === "odhod") {
+      naslov = `Nasvidenje${ime ? `, ${ime}` : ""}!`;
+      opis = `${ura} · Odhod${tipka ? ` · ${tipka}` : ""}`;
+    } else if (r.vloga === "zacetek") {
+      barva = "var(--warn)";
+      naslov = r.oznaka || tipka;
+      opis = `${ime ? `${ime} · ` : ""}od ${ura}${ODMOR.test(tipka) ? " · Dober tek!" : ""}`;
+    } else {
+      naslov = r.oznaka || "Nazaj na delu";
+      opis = `${ime ? `${ime} · ` : ""}${ura}${r.trajanje_min != null ? ` · trajalo ${trajanjeMin(r.trajanje_min)}` : ""}`;
+    }
   } else {
+    // starejši FIN:OS (brez vloge) ali brez povezave
     const prihod = r.smer !== "odhod";
-    const malica = t && MALICA.test(t.besedilo || "");
-    naslov = r.poslano ? (malica ? `Dober tek${ime ? `, ${ime}` : ""}!` : prihod ? `Dober dan${ime ? `, ${ime}` : ""}!` : `Nasvidenje${ime ? `, ${ime}` : ""}!`) : "Zabeleženo";
-    opis = `${ura}${t ? ` · ${t.besedilo}` : r.poslano ? (prihod ? " · Prihod" : " · Odhod") : ""}${r.poslano ? "" : " - poslano bo, ko bo povezava"}`;
+    const sTipko = r.poslano && !prihod && t;
+    naslov = r.poslano ? (sTipko ? t.besedilo : prihod ? `Dober dan${ime ? `, ${ime}` : ""}!` : `Nasvidenje${ime ? `, ${ime}` : ""}!`) : "Zabeleženo";
+    opis = `${sTipko && ime ? `${ime} · ` : ""}${ura}${t && !sTipko ? ` · ${t.besedilo}` : !t && r.poslano ? (prihod ? " · Prihod" : " · Odhod") : ""}${r.poslano ? "" : " - poslano bo, ko bo povezava"}`;
   }
   if (zPiskom) pisk(r.ok && r.znana !== false);
+  if (r.akcija !== "info") prikaziInfo(null);
   fineskovPrizor(prizorZiga(r, t));
   const p = $("potrdilo");
   p.style.setProperty("--barva", barva);

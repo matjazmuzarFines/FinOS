@@ -23,6 +23,11 @@
             <span class="kartica"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
             <span id="sporocilo-besedilo">Prisloni kartico</span>
           </div>
+          <!-- izbrana tipka velja 5 s: odštevanje 5 -> 1 levo spodaj, nato se tipka odznači -->
+          <div class="odstevanje" id="odstevanje" hidden>
+            <svg viewBox="0 0 40 40"><circle class="odstevanje-ozadje" cx="20" cy="20" r="17" /><circle class="odstevanje-obroc" id="odstevanje-obroc" cx="20" cy="20" r="17" /></svg>
+            <span id="odstevanje-st">5</span>
+          </div>
         </section>
         <section class="tipke" id="tipke"></section>
       </main>
@@ -41,8 +46,10 @@
                 <div class="fz-del fz-noga-l"><img src="finesek/noga-leva.webp" alt="" /></div>
                 <div class="fz-del fz-noga-d"><img src="finesek/noga-desna.webp" alt="" /></div>
                 <div class="fz-del fz-roka-l"><img src="finesek/roka-leva.webp" alt="" /></div>
-                <div class="fz-del fz-roka-d"><img src="finesek/roka-desna.webp" alt="" /></div>
+                <div class="fz-del fz-roka-d"><img src="finesek/roka-desna.webp" alt="" /><img class="fz-kladivo" src="finesek/kladivo.svg" alt="" /></div>
                 <img class="fz-telo" src="finesek/telo-spredaj.webp" alt="" />
+                <img class="fz-celada" src="finesek/celada.svg" alt="" />
+                <div class="fz-deska"><img src="finesek/deska.svg" alt="" /><i class="fz-iskra"></i></div>
                 <div class="fz-hrana" id="finesek-hrana"></div>
                 <div class="fz-drobtine"><i></i><i></i><i></i></div>
               </div>
@@ -54,6 +61,13 @@
               </div>
             </div>
           </div>
+        </div>
+        <!-- Info: znak i + INFO, ime, veliko stanje (Prisoten od / Odmor od / Odšel ob), tabela današnjih žigov -->
+        <div class="info" id="info" hidden>
+          <div class="info-glava"><span class="info-znak">i</span><span class="info-napis">Info</span><span class="info-ime" id="info-ime"></span></div>
+          <div class="info-stanje"><span class="info-pika"></span><span class="info-stanje-naslov" id="info-stanje-naslov"></span><span class="info-stanje-od" id="info-stanje-od"></span></div>
+          <div class="info-tabela-naslov" id="info-tabela-naslov">Danes</div>
+          <div class="info-tabela" id="info-tabela"></div>
         </div>
         <div class="potrdilo-ikona" id="potrdilo-ikona"></div>
         <div class="potrdilo-naslov" id="potrdilo-naslov"></div>

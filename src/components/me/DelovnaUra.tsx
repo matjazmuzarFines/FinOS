@@ -50,8 +50,10 @@ export function DelovnaUra({ j, demo }: { j: Jaz; /** promo video: brez testnih 
   // v bazi žig vpiše strežnik za prijavljen račun - "Ogled kot" ne sme štempljati za drugega
   const zaklenjeno = !vklopljeno || (j.ogled && dog.vir === "baza");
   const zadnji = d.zigi.at(-1);
-  const prisoten = zadnji?.smer === "prihod";
-  const prvi = d.zigi.find((z) => z.smer === "prihod");
+  // na odsotnosti s tipko (tudi od začetka dneva, npr. službeni) = ni na delu; naslednja kartica = povratek
+  const naOdsotnosti = zadnji?.vloga === "tipka";
+  const prisoten = zadnji?.smer === "prihod" && !naOdsotnosti;
+  const prvi = d.zigi.find((z) => z.smer === "prihod" && z.vloga !== "tipka");
   const stat = (idS: number | null) => n.statistike.find((s) => s.id === idS);
   const tipka = (idT: number | null) => n.tipke.find((t) => t.id === idT);
   const tipke = n.tipke.filter((t) => t.visible && t.prikaz.includes("fin_me")).sort((a, b) => a.tipka - b.tipka);
@@ -60,7 +62,7 @@ export function DelovnaUra({ j, demo }: { j: Jaz; /** promo video: brez testnih 
     ? { besedilo: "Danes še nisi prišel", barva: "#9a9aa1" }
     : prisoten
       ? { besedilo: `Na delu od ${fmtCas(prvi?.knjizen ?? zadnji.cas)}`, barva: "#22c55e" }
-      : zadnji.id_tipke != null
+      : naOdsotnosti
         ? { besedilo: `${tipka(zadnji.id_tipke)?.besedilo ?? stat(zadnji.id_statistike)?.ime ?? "Odsoten"} od ${fmtCas(zadnji.cas)}`, barva: "#f59e0b" }
         : { besedilo: `Odšel ob ${fmtCas(zadnji.cas)}`, barva: "#9a9aa1" };
 
@@ -75,7 +77,7 @@ export function DelovnaUra({ j, demo }: { j: Jaz; /** promo video: brez testnih 
       } else {
         await zigOnline(id, t?.id ?? null);
         const ura = `${String(zdaj.getHours()).padStart(2, "0")}:${String(zdaj.getMinutes()).padStart(2, "0")}`;
-        setPotrdilo({ besedilo: t ? `${ura} · ${t.besedilo}` : `${ura} · ${prisoten ? "Odhod" : "Prihod"}`, ok: true, kljuc: zdaj.getTime() });
+        setPotrdilo({ besedilo: t ? `${ura} · ${t.besedilo}` : `${ura} · ${prisoten ? "Odhod" : naOdsotnosti ? "Povratek" : "Prihod"}`, ok: true, kljuc: zdaj.getTime() });
       }
     } catch (e) {
       obvesti((e as Error).message, "napaka");
@@ -193,12 +195,14 @@ export function DelovnaUra({ j, demo }: { j: Jaz; /** promo video: brez testnih 
           <div className="grid grid-cols-2 gap-2">
             {tipke.map((t) => {
               const I = t.funkcija === "info" ? Info : t.funkcija === "preklici" ? Undo2 : null;
+              // malica, poslovni, privatni ... samo ob prisotnosti; Izredno / delo od doma (interval Prihod s tipko) tudi odsoten
+              const samoPrisoten = !t.funkcija && !prisoten && !naOdsotnosti && !n.intervali.some((x) => x.visible && x.vrsta === "prihod" && x.id_tipke === t.id);
               return (
                 <button
                   key={t.id}
                   type="button"
-                  title={t.funkcija === "info" ? "Pokaži današnje žige in ure" : t.funkcija === "preklici" ? "Prekliči zadnji žig iz Mojega Finesa" : `Žig s tipko ${t.tipka}: ${t.besedilo}`}
-                  disabled={zaklenjeno || delam}
+                  title={samoPrisoten ? `${t.besedilo}: najprej Prihod - tipka je mogoča samo, ko si na delu` : t.funkcija === "info" ? "Pokaži današnje žige in ure" : t.funkcija === "preklici" ? "Prekliči zadnji žig iz Mojega Finesa" : `Žig s tipko ${t.tipka}: ${t.besedilo}`}
+                  disabled={zaklenjeno || delam || samoPrisoten}
                   onClick={() => zig(t)}
                   className={`flex h-12 items-center gap-2 rounded-[12px] border px-2.5 text-left text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${
                     t.funkcija === "info" && info ? "border-fines-400/60 bg-fines-500/15 text-white" : "border-white/10 bg-white/[0.05] text-ink-100 hover:border-fines-400/40 hover:bg-white/[0.09]"

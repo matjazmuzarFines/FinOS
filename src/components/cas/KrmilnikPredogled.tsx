@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { CreditCard, MonitorSmartphone, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FunkcijaTipke } from "@/lib/casNastavitve";
+import { JE_ODMOR, oznakaKonca, type Vloga } from "@/lib/krmilnikStanje";
 import { Panel } from "./Skupno";
 
 /** Tipka v predogledu (osnutek s strani Krmilnik - pokaže se še pred shranjevanjem). */
@@ -17,17 +18,21 @@ const ZASLONI = [
   { id: "600p", w: 600, h: 1024, ime: '7" HD pokončen (600 × 1024)' },
   { id: "800p", w: 800, h: 1280, ime: '10" pokončen (800 × 1280)' },
 ] as const;
+const VELJA_TIPKA_MS = 5000;
+const rokTipke = () => Date.now() + VELJA_TIPKA_MS;
 const DNEVI = ["nedelja", "ponedeljek", "torek", "sreda", "četrtek", "petek", "sobota"];
 const FINES = "linear-gradient(135deg, #f19a66, #ee7a3a 30%, #ca5010 70%, #8f380b)";
 
 /** Finesek v kotu potrdila (kot krmilnik/ui - slog krmilnik/ui/finesek.css, uvožen v globals.css). */
-export type PrizorFineseka = "maha" | "malica" | "odhod";
-export type Potrdilo = { barva: string; ikona: string; naslov: string; opis: string; zigi?: string[]; prizor?: PrizorFineseka; hrana?: string; id?: number };
+export type PrizorFineseka = "maha" | "malica" | "delo" | "odhod";
+/** Info kot na krmilniku: znak i + INFO, ime, veliko stanje, tabela današnjih žigov. */
+export type InfoPredogleda = { ime: string; stanje: string; od: string; barva: string; vrstice: { ura: string; oznaka: string; vloga: Vloga; trajanje?: string }[] };
+export type Potrdilo = { barva: string; ikona: string; naslov: string; opis: string; zigi?: string[]; info?: InfoPredogleda; prizor?: PrizorFineseka; hrana?: string; id?: number };
 const HRANA = ["burger", "pica", "sendvic"];
-const MALICA = /malic|kosil|obrok|hran|jest/i;
+const BARVA_VLOGE: Record<Vloga, string> = { prihod: "#22c55e", konec: "#2dd4bf", zacetek: "#f59e0b", odhod: "#9a9aa1" };
 
 /** Ista oznaka kot krmilnik/ui/index.html (#finesek) - deli /finesek/*.webp, prizor = razred fz--{prizor}. */
-function FinesekPotrdila({ prizor, hrana, h }: { prizor: PrizorFineseka; hrana?: string; h: number }) {
+function FinesekPotrdila({ prizor, hrana, h, pokoncen, vmin }: { prizor: PrizorFineseka; hrana?: string; h: number; pokoncen: boolean; vmin: number }) {
   const s = h / 750;
   const del = (razred: string, slika: string) => (
     <div className={`fz-del ${razred}`}>
@@ -36,7 +41,12 @@ function FinesekPotrdila({ prizor, hrana, h }: { prizor: PrizorFineseka; hrana?:
     </div>
   );
   return (
-    <div className={`fz fz--${prizor}`} aria-hidden style={{ width: 640 * s, height: h, left: h * 0.05, bottom: h * 0.05, ["--s" as string]: s }}>
+    <div
+      className={`fz fz--${prizor}`}
+      aria-hidden
+      // kot krmilnik.css: ležeče levo spodaj, pokončno na sredini nad besedilom
+      style={{ width: 640 * s, height: h, ...(pokoncen ? { left: `calc(50% - ${(640 * s + 8) / 2}px)`, top: vmin * 3, bottom: "auto" } : { left: vmin * 1.5, bottom: vmin * 1.5 }), ["--s" as string]: s }}
+    >
       <div className="fz-platno">
         <div className="fz-odeja" />
         <div className="fz-senca" />
@@ -45,9 +55,21 @@ function FinesekPotrdila({ prizor, hrana, h }: { prizor: PrizorFineseka; hrana?:
             {del("fz-noga-l", "noga-leva")}
             {del("fz-noga-d", "noga-desna")}
             {del("fz-roka-l", "roka-leva")}
-            {del("fz-roka-d", "roka-desna")}
+            <div className="fz-del fz-roka-d">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/finesek/roka-desna.webp" alt="" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="fz-kladivo" src="/finesek/kladivo.svg" alt="" />
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="fz-telo" src="/finesek/telo-spredaj.webp" alt="" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="fz-celada" src="/finesek/celada.svg" alt="" />
+            <div className="fz-deska">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/finesek/deska.svg" alt="" />
+              <i className="fz-iskra" />
+            </div>
             <div className="fz-hrana">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {hrana && <img src={`/finesek/hrana-${hrana}.svg`} alt="" />}
@@ -70,6 +92,54 @@ function FinesekPotrdila({ prizor, hrana, h }: { prizor: PrizorFineseka; hrana?:
     </div>
   );
 }
+/** Info (kot krmilnik.css .info-*): mere v vmin naprave. */
+function InfoKrmilnika({ info, vm }: { info: InfoPredogleda; vm: (x: number) => number }) {
+  const crta = "1px solid rgb(255 255 255 / 0.08)";
+  return (
+    <div>
+      <div className="flex items-center" style={{ gap: vm(1.4) }}>
+        <span className="grid place-items-center rounded-full border-2 border-[#9a9aa1] font-bold italic text-[#dcdcdf]" style={{ width: vm(4.6), height: vm(4.6), fontSize: vm(3), fontFamily: "Georgia, serif" }}>
+          i
+        </span>
+        <span className="font-bold uppercase text-[#9a9aa1]" style={{ fontSize: vm(2.4), letterSpacing: "0.22em" }}>
+          Info
+        </span>
+        <span className="ml-auto font-bold" style={{ fontSize: vm(3.4) }}>
+          {info.ime}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center" style={{ columnGap: vm(2.2), marginTop: vm(2.2) }}>
+        <span className="rounded-full" style={{ width: vm(2.8), height: vm(2.8), background: info.barva, boxShadow: `0 0 16px ${info.barva}` }} />
+        <span className="font-extrabold uppercase" style={{ fontSize: vm(8.4), lineHeight: 1.05, color: info.barva }}>
+          {info.stanje}
+        </span>
+        <span className="font-semibold text-[#dcdcdf]" style={{ fontSize: vm(4.4) }}>
+          {info.od}
+        </span>
+      </div>
+      <div className="font-bold uppercase text-[#ee7a3a]" style={{ marginTop: vm(2.4), paddingBottom: vm(0.8), borderBottom: "2px solid rgb(238 122 58 / 0.5)", fontSize: vm(2.2), letterSpacing: "0.22em" }}>
+        Danes
+      </div>
+      <div className="grid" style={{ gridTemplateColumns: "auto 1fr auto", fontSize: vm(3.3) }}>
+        {info.vrstice.map((v) => (
+          <Fragment key={v.ura + v.oznaka}>
+            <span className="font-mono font-bold text-[#ffb27d]" style={{ padding: `${vm(0.9)}px ${vm(3)}px ${vm(0.9)}px 0`, borderBottom: crta }}>
+              {v.ura}
+            </span>
+            <span className="flex items-center font-semibold" style={{ gap: vm(1.4), padding: `${vm(0.9)}px 0`, borderBottom: crta }}>
+              <i className="shrink-0 rounded-full" style={{ width: vm(1.8), height: vm(1.8), background: BARVA_VLOGE[v.vloga] }} />
+              {v.oznaka}
+            </span>
+            <span className="text-right text-[#9a9aa1]" style={{ padding: `${vm(0.9)}px 0 ${vm(0.9)}px ${vm(3)}px`, borderBottom: crta }}>
+              {v.trajanje ?? ""}
+            </span>
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Vodenje od zunaj (promo video): izbrana tipka, potrdilo, stanje zveze. */
 export type NadzorPredogleda = { izbrana: number | null; potrdilo: Potrdilo | null; brezPovezave: boolean };
 
@@ -82,11 +152,20 @@ export function KrmilnikPredogled({ tipke, ime, samoZaslon, nadzor }: { tipke: T
   const [zaslon, setZaslon] = useState<(typeof ZASLONI)[number]>(ZASLONI[0]);
   const [sirina, setSirina] = useState(0);
   const [zdaj, setZdaj] = useState(() => new Date());
-  const [izbrana, setIzbrana] = useState<number | null>(null);
+  const [izbrana, setIzbranaS] = useState<number | null>(null);
+  /** kot krmilnik: izbrana tipka velja 5 s (odštevanje levo spodaj), nato se odznači */
+  const [izbranaDo, setIzbranaDo] = useState(0);
+  const setIzbrana = (t: number | null) => {
+    setIzbranaS(t);
+    setIzbranaDo(t == null ? 0 : rokTipke());
+  };
   const [potrdilo, setPotrdilo] = useState<Potrdilo | null>(null);
   const [brezPovezave, setBrezPovezave] = useState(false);
   const okvir = useRef<HTMLDivElement>(null);
   const zadnjiPrislon = useRef(0);
+  /** besedilo tipke začete odsotnosti (naslednji žig brez tipke je njen konec) - kot vloge na strežniku */
+  const odprta = useRef<string | null>(null);
+  const prisoten = useRef(false);
 
   useEffect(() => {
     const t = setInterval(() => setZdaj(new Date()), 1000);
@@ -99,8 +178,16 @@ export function KrmilnikPredogled({ tipke, ime, samoZaslon, nadzor }: { tipke: T
     return () => ro.disconnect();
   }, []);
   useEffect(() => {
+    if (!izbranaDo) return;
+    const t = setTimeout(() => {
+      setIzbranaS(null);
+      setIzbranaDo(0);
+    }, izbranaDo - Date.now());
+    return () => clearTimeout(t);
+  }, [izbranaDo]);
+  useEffect(() => {
     if (!potrdilo) return;
-    const t = setTimeout(() => setPotrdilo(null), potrdilo.zigi ? 5000 : 3500);
+    const t = setTimeout(() => setPotrdilo(null), potrdilo.zigi || potrdilo.info ? 7000 : 3500);
     return () => clearTimeout(t);
   }, [potrdilo]);
 
@@ -122,25 +209,42 @@ export function KrmilnikPredogled({ tipke, ime, samoZaslon, nadzor }: { tipke: T
   const kartica = () => {
     const t = tipka;
     setIzbrana(null);
-    if (t?.funkcija === "info") return setPotrdilo({ barva: "#60a5fa", ikona: "i", naslov: "Matej", opis: "Današnji žigi:", zigi: ["06:52", "10:02 · Odmor", "10:31"] });
+    if (t?.funkcija === "info")
+      return setPotrdilo({
+        barva: "#22c55e",
+        ikona: "",
+        naslov: "",
+        opis: "",
+        info: {
+          ime: "Matej Novak",
+          stanje: "Prisoten",
+          od: "od 06:52",
+          barva: "#22c55e",
+          vrstice: [
+            { ura: "06:52", oznaka: "Prihod", vloga: "prihod" },
+            { ura: "10:02", oznaka: "Odmor", vloga: "zacetek" },
+            { ura: "10:31", oznaka: "Konec odmora", vloga: "konec", trajanje: "29 min" },
+          ],
+        },
+      });
     if (t?.funkcija === "preklici") return setPotrdilo({ barva: "#f59e0b", ikona: "↶", naslov: "Zadnji žig je preklican", opis: "Matej" });
     if (brezPovezave) return setPotrdilo({ barva: "#22c55e", ikona: "✓", naslov: "Zabeleženo", opis: `${ura}${t ? ` · ${t.besedilo}` : ""} - poslano bo, ko bo povezava` });
-    // kot krmilnik: takoj "Zabeleženo" (shranjeno na napravi), ime dopiše odgovor FIN:OS
+    // kot krmilnik: takoj "Zabeleženo" (shranjeno na napravi), nato vloga žiga od FIN:OS (krmilnikStanje.ts)
     const id = ++zadnjiPrislon.current;
     setPotrdilo({ barva: "#22c55e", ikona: "✓", naslov: "Zabeleženo", opis: `${ura}${t ? ` · ${t.besedilo}` : ""}` });
+    const konec = !t ? odprta.current : null;
+    const zacetek = t && prisoten.current ? t.besedilo : null;
+    const nov: Potrdilo = konec
+      ? { barva: "#22c55e", ikona: "✓", naslov: oznakaKonca(konec), opis: `Matej · ${ura} · trajalo 29 min`, prizor: JE_ODMOR.test(konec) ? "delo" : "maha" }
+      : zacetek
+        ? { barva: "#f59e0b", ikona: "✓", naslov: zacetek, opis: `Matej · od ${ura}${JE_ODMOR.test(zacetek) ? " · Dober tek!" : ""}`, prizor: JE_ODMOR.test(zacetek) ? "malica" : "odhod" }
+        : prisoten.current
+          ? { barva: "#22c55e", ikona: "✓", naslov: "Nasvidenje, Matej!", opis: `${ura} · Odhod`, prizor: "odhod" }
+          : { barva: "#22c55e", ikona: "✓", naslov: "Dober dan, Matej!", opis: `${ura} · Prihod${t ? ` · ${t.besedilo}` : ""}`, prizor: "maha" };
+    odprta.current = zacetek;
+    prisoten.current = !prisoten.current;
     setTimeout(() => {
-      if (zadnjiPrislon.current !== id) return;
-      // prizor Fineseka: malica (tipka z "malica"), odhod (druga tipka), sicer prihod - pomaha
-      const malica = !!t && MALICA.test(t.besedilo);
-      setPotrdilo({
-        barva: "#22c55e",
-        ikona: "✓",
-        naslov: malica ? "Dober tek, Matej!" : t ? "Nasvidenje, Matej!" : "Dober dan, Matej!",
-        opis: `${ura} · ${t ? t.besedilo : "Prihod"}`,
-        prizor: malica ? "malica" : t ? "odhod" : "maha",
-        hrana: HRANA[id % HRANA.length],
-        id,
-      });
+      if (zadnjiPrislon.current === id) setPotrdilo({ ...nov, hrana: HRANA[id % HRANA.length], id });
     }, 400);
   };
 
@@ -195,10 +299,19 @@ export function KrmilnikPredogled({ tipke, ime, samoZaslon, nadzor }: { tipke: T
                         {dv(zdaj.getSeconds())}
                       </small>
                     </span>
-                    <span className="flex items-center font-bold" style={{ gap: pokoncen ? vm(2) : vw(1.2), fontSize: p(3.6, 5.2), color: tipka ? "#ffb27d" : "#dcdcdf" }}>
-                      <CreditCard className="text-[#ee7a3a]" style={{ width: p(5, 7), height: p(5, 7) }} aria-hidden />
+                    {/* kot krmilnik: vedno ena vrsta (dolga tipka ne potisne tipk navzdol) */}
+                    <span className="flex max-w-full items-center overflow-hidden whitespace-nowrap font-bold" style={{ gap: pokoncen ? vm(2) : vw(1.2), padding: `0 ${vm(2)}px`, fontSize: p(3.6, 5.2) * ((tipka?.besedilo.length ?? 0) > 14 ? 0.85 : 1), color: tipka ? "#ffb27d" : "#dcdcdf" }}>
+                      <CreditCard className="shrink-0 text-[#ee7a3a]" style={{ width: p(5, 7), height: p(5, 7) }} aria-hidden />
                       {tipka ? `${tipka.besedilo} - prisloni kartico` : "Prisloni kartico"}
                     </span>
+                    {tipka && !nadzor && izbranaDo > 0 && (
+                      <span
+                        className="absolute grid place-items-center rounded-full border-[3px] border-[#ee7a3a] font-mono font-extrabold text-[#ffb27d]"
+                        style={{ left: vm(2), ...(pokoncen ? { top: vm(2.4) } : { bottom: vm(2) }), width: p(9, 11), height: p(9, 11), fontSize: p(4.4, 6) }}
+                      >
+                        {Math.max(1, Math.ceil((izbranaDo - zdaj.getTime()) / 1000))}
+                      </span>
+                    )}
                   </div>
 
                   <div className="grid min-h-0" style={{ gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: p(1.6, 2.4) }}>
@@ -233,24 +346,31 @@ export function KrmilnikPredogled({ tipke, ime, samoZaslon, nadzor }: { tipke: T
               {potrdiloT && (
                 <div className="absolute inset-0 grid place-items-center bg-[rgb(18_18_20/0.86)]">
                   <div
-                    className="relative text-center"
+                    className={`relative ${potrdiloT.info ? "text-left" : "text-center"}`}
                     style={{
                       ...(pokoncen ? { width: vw(90), padding: `${vm(6)}px ${vm(5)}px` } : { minWidth: vw(55), maxWidth: vw(88), padding: `${vm(4)}px ${vw(4)}px` }),
-                      ...(potrdiloT.prizor ? { paddingLeft: (pokoncen ? vm(5) : vw(4)) + (640 * vm(30)) / 750 + 8 } : {}),
+                      ...(potrdiloT.info ? { width: Math.min(vw(88), vm(150)) } : {}),
+                      ...(potrdiloT.prizor ? (pokoncen ? { paddingTop: vm(30) + vm(4) } : { paddingLeft: vw(4) + (640 * vm(30)) / 750 + 8 }) : {}),
                       borderRadius: 28,
                       background: "linear-gradient(160deg,#2b2b2f,#18181b)",
                       border: `2px solid ${potrdiloT.barva}`,
                       boxShadow: `0 0 60px -10px ${potrdiloT.barva}`,
                     }}
                   >
-                    {potrdiloT.prizor && <FinesekPotrdila key={potrdiloT.id} prizor={potrdiloT.prizor} hrana={potrdiloT.hrana} h={vm(30)} />}
-                    <div style={{ fontSize: p(12, 20), lineHeight: 1, color: potrdiloT.barva }}>{potrdiloT.ikona}</div>
-                    <div className="font-extrabold" style={{ marginTop: vm(1.5), fontSize: p(6, 8) }}>
-                      {potrdiloT.naslov}
-                    </div>
-                    <div className="text-[#dcdcdf]" style={{ marginTop: vm(1), fontSize: p(3.4, 5) }}>
-                      {potrdiloT.opis}
-                    </div>
+                    {potrdiloT.prizor && <FinesekPotrdila key={potrdiloT.id} prizor={potrdiloT.prizor} hrana={potrdiloT.hrana} h={vm(30)} pokoncen={pokoncen} vmin={vm(1)} />}
+                    {potrdiloT.info ? (
+                      <InfoKrmilnika info={potrdiloT.info} vm={vm} />
+                    ) : (
+                      <>
+                        {!(pokoncen && potrdiloT.prizor) && <div style={{ fontSize: p(12, 20), lineHeight: 1, color: potrdiloT.barva }}>{potrdiloT.ikona}</div>}
+                        <div className="font-extrabold" style={{ marginTop: vm(1.5), fontSize: p(6, 8) }}>
+                          {potrdiloT.naslov}
+                        </div>
+                        <div className="text-[#dcdcdf]" style={{ marginTop: vm(1), fontSize: p(3.4, 5) }}>
+                          {potrdiloT.opis}
+                        </div>
+                      </>
+                    )}
                     {potrdiloT.zigi && (
                       <div className="flex flex-wrap justify-center" style={{ marginTop: vm(2), gap: pokoncen ? vm(1.6) : `${vm(1)}px ${vw(1)}px`, fontSize: p(3, 4.4) }}>
                         {potrdiloT.zigi.map((z) => (

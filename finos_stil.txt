@@ -422,7 +422,8 @@ PRAVILA
    - Zaslon krmilnika (krmilnik/ui, 800 × 480 in več, brez kazalca): glava = znak FIN:OS, ime naprave, desno stanje zveze
      (zelena pika Na zvezi / rumena Brez povezave · čaka N); spodaj oranžna črta. Levo temen "LCD" zaslon: dan in datum,
      velika oranžna sijoča ura z utripajočim dvopičjem in sekundami, "Prisloni kartico" z utripajočo ikono kartice
-     (izbrana tipka: oranžno "Odmor - prisloni kartico", velja 10 s). Desno tipke 2 v vrsti (številka v oranžnem
+     (izbrana tipka: oranžno "Odmor - prisloni kartico" v ENI vrsti - dolgo se pomanjša, velja 5 s: levo spodaj
+     odštevanje 5 -> 1 v oranžnem obroču, ki se prazni; pokončno levo zgoraj ob datumu). Desno tipke 2 v vrsti (številka v oranžnem
      kvadratku, Info "i", Prekliči "↶"), izbrana oranžno obrobljena s sijem.
    - POKONČEN ZASLON (480 × 800 ...): LCD z uro zgoraj čez celo širino, tipke 2 v vrsti pod njim; velikosti v vmin
      (krajša stranica), zato je ležeč enak kot prej. Predogled ima tudi pokončne ločljivosti.
@@ -432,8 +433,19 @@ PRAVILA
    - FINESEK V POTRDILU (krmilnik/ui/finesek.css - ista datoteka v globals.css za predogled; deli finesek/*.webp,
      hrana finesek/hrana-*.svg tudi v public/finesek): levo v kartici potrdila (višina 30 vmin), samo ob potrjenem žigu
      z imenom. Prihod = pomaha; tipka z besedo malica / kosilo / obrok = sedi na rdeče-beli odeji, v rokah naključno
-     burger / pica / sendvič, vsakih 1,8 s ugrizne (hrana gor, glava se stisne, drobtine), naslov "Dober tek, Ime!";
+     burger / pica / sendvič, vsakih 1,8 s ugrizne (hrana gor, glava se stisne, drobtine);
      odhod = pomaha, se obrne (s strani) in odide desno ter izgine. Samo transform / opacity (šibek Pi).
+     Po VLOGI žiga (FIN:OS, src/lib/krmilnikStanje.ts): prihod = maha; odhod = odhod; začetek odmora (tipka z besedo
+     odmor / malica / kosilo / obrok / pavza) = malica; začetek druge odsotnosti = odhod; konec odmora = DELO (rumena
+     čelada, kladivo zabija žebelj v desko, iskra); konec druge odsotnosti = maha. Pokončno: Finesek na sredini nad
+     besedilom, brez kljukice.
+   - BESEDILA POTRDILA: prihod "Dober dan, Ime!" / "07:02 · Prihod"; odhod "Nasvidenje, Ime!"; začetek odsotnosti
+     (oranžno) naslov = tipka ("Odmor") in "Ime · od 10:02" (+ "Dober tek!" pri odmoru); konec = "Konec odmora" /
+     "Konec poslovnega izhoda" (znane tipke v sklonu, ostale "Zdravnik - konec") in "Ime · 10:31 · trajalo 29 min".
+   - INFO: kartica levo poravnana; zgoraj znak i v sivem krogu + INFO (siv, razprto), desno ime; veliko stanje z
+     barvno piko (PRISOTEN od zeleno, ODMOR / Poslovni izhod od oranžno, ODŠEL ob sivo, Danes še ni prihoda); oranžen
+     naslov DANES s črto; tabela: čas (mono, oranžen), pika v barvi vloge (prihod zelena, začetek oranžna, konec
+     turkizna, odhod siva) + oznaka, desno trajanje odsotnosti; največ 7 vrstic ("… še N prej"). 7 s.
    - VARNOST ŽIGA: navaden žig gre najprej v localStorage zaslona, nato v SQLite programa (WAL, synchronous FULL), nato
      v FIN:OS; iz vsake vrste se odstrani šele, ko je v naslednji. Isti lokalni_id + čas prislona povsod.
    - DNEVNIK KRMILNIKOV (Nastavitve registracije, razdelek Naprave; pri napravi bel gumb Dnevnik): filtri v stekleni
@@ -813,3 +825,10 @@ DNEVNIK POPRAVKOV UPORABNIKA
              (localStorage) + SQLite WAL. V kot potrdila Finesek: prihod maha, malica sedi in je (sendvič / pica /
              hamburger), odhod pomaha in odide. -> razdelek 27, krmilnik/ui (finesek.css, krmilnik.js, finesek/),
              fines_krmilnik.py, KrmilnikPredogled (FinesekPotrdila), globals.css.
+2026-11-24 - Krmilnik Info nelogičen (nametani žigi, velik moder "i") -> znak i v krogu + INFO, veliko stanje (Prisoten /
+             Odmor od), jasna tabela današnjih žigov. Pri odmoru in tipkah ne "Dober dan / Nasvidenje", ampak "Odmor" /
+             "Konec odmora" ...; animacija malice pri začetku odmora, ob koncu odmora delovna (čelada, kladivo).
+             -> razdelek 27, krmilnik/ui, krmilnikStanje.ts, /api/krmilnik, KrmilnikPredogled.
+2026-11-24 - Krmilnik: dolga tipka ("Privatni izhod") je prelomila besedilo pod uro in potisnila tipke -> ena vrsta,
+             pomanjšano; izbrana tipka velja 5 s z odštevanjem 5 -> 1 levo spodaj. -> razdelek 27, krmilnik/ui,
+             KrmilnikPredogled.

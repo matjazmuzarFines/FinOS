@@ -43,7 +43,13 @@
     Dokler ni zagnan, aplikacija pravila / obveznost bere ločeno (`naloziPravila`) in pade na testne (`virPravil` = "test",
     samo v brskalniku) - urniki iz 010 delajo naprej.
   - Knjiženje (`src/lib/knjizenje.ts`, čista funkcija `knjizi`): krmilnik VEDNO zapiše dejanski čas, knjižen čas je izračun.
-    Smer žiga samodejna (odsoten -> prihod, prisoten -> izhod); `Zig` = čas, `id_tipke` (null = brez), vir. Izmena = prihod
+    Smer žiga samodejna PO STANJU (ne po parnosti, 10.13): odsoten -> prihod, prisoten -> izhod / začetek odsotnosti s
+    tipko, na odsotnosti -> kartica brez tipke ali ista tipka = povratek, druga tipka odsotnosti = nova odsotnost, tipka
+    z intervalom Izhod = izhod (Izredno = prihod / izhod s tipko kot delo od doma). Tipka odsotnosti (malica, poslovni,
+    privatni) SAMO ob prisotnosti - odsoten = prihod + napaka `tipka_brez_prisotnosti` (krmilnik: `opozorilo`, FIN:ME
+    Delovna ura te tipke do prihoda zaklene).
+    Isto pravilo `knjizi` (knjizenje.ts) in `vlogeDneva` (krmilnikStanje.ts) - ob spremembi uskladi oba. SQL
+    `fos_krmilnik_zig.smer` je še po parnosti (samo za star zaslon brez `vloga`). `Zig` = čas, `id_tipke` (null = brez), vir. Izmena = prihod
     brez tipke do izhoda brez tipke. Interval prihoda = prvi interval vrste Prihod (vrstni red), ki velja na dan in v okno
     katerega pade prihod; izven oken = dejanski čas + napaka, izmena se šteje normalno (najbližje okno). Izhod brez tipke =
     prvi interval vrste Izhod z oknom, ki vsebuje izhod (pravila konca + presežka); izven = dejanski čas + napaka.
@@ -201,6 +207,11 @@
   prislona), nato `/api/zig`; odstrani ga šele, ko je v SQLite (WAL, synchronous FULL); zaostale pošilja vsake 3 s.
   Finesek v potrdilu: `krmilnik/ui/finesek.css` (uvožen tudi v globals.css), `fineskovPrizor` v krmilnik.js,
   `FinesekPotrdila` v KrmilnikPredogled.tsx (ista oznaka - ob spremembi uskladi oba).
+- Krmilnik 1.4.0: VLOGA ŽIGA in stanje (`src/lib/krmilnikStanje.ts`: `vlogeDneva`, `stanjeDneva`, `oznakaKonca` - sklon
+  znanih tipk) računa `/api/krmilnik` po RPC (`dodajStanje`; fos_krmilnik_zig ostane nespremenjen, napaka ne podre žiga):
+  žig -> `vloga` (prihod / odhod / zacetek / konec), `oznaka`, `tipka_ziga`, `trajanje_min`, `stanje_dneva`; Info ->
+  `stanje`, `dnevnik_dneva`. Tipka je odsotnost, če nima intervala vrste Izhod (kot knjizenje.ts). Kartica -> zaposleni
+  kot 032 (24 bitov). Krmilnik brez teh polj (star FIN:OS) pokaže osnovna besedila.
 - `024_kosare_super_admin.sql`: `fos_ima_dostop` - košare s predpono `fos-` (fos-tv ...) sme Super Admin tudi brez
   vklopljene aplikacije (kot tabele `fos_`); ostali prek aplikacije s to košaro.
 - Pravila za nove tabele: ID `bigint generated always as identity`, tuji ključi `id_<tabela>`, `visible`, `created_at`, `updated_at`

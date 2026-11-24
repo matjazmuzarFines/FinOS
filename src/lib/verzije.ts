@@ -3,6 +3,34 @@ export type Verzija = { verzija: string; datum: string; spremembe: string[] };
 
 export const VERZIJE: Verzija[] = [
   {
+    verzija: "10.13",
+    datum: "24. 11. 2026",
+    spremembe: [
+      "Registracija časa in krmilnik: smer žiga se določa po stanju (odsoten / na delu / na odsotnosti), ne več po tem, ali je žig sod ali lih. Po malici, odmoru, privatnem, službenem ali izrednem izhodu je naslednja kartica brez tipke vedno povratek (»Konec odmora«), tudi če je bil prej kakšen odvečen žig.",
+      "Ista tipka še enkrat med odsotnostjo (npr. ob vrnitvi z malice ponovno Malica) je povratek, ne nov izhod. Druga tipka med odsotnostjo (Malica -> Privatni izhod) začne novo odsotnost.",
+      "Izredno deluje kot delo od doma: odsoten = izredni prihod (npr. 5:30 pred začetkom), nato teče prisotnost (malica ... normalno), na delu = izredni izhod (npr. 15:30 po koncu).",
+      "Malica, poslovni in privatni izhod so mogoči samo ob prisotnosti. Brez prihoda se žig šteje kot prihod z napako (koledar) in rumenim opozorilom na krmilniku »… brez prihoda - zabeleženo kot prihod«; v FIN:ME Delovni uri so te tipke do prihoda zaklenjene. Poslovna pot zjutraj = najprej Prihod, nato Poslovni.",
+      "Krmilnik (program 1.4.2): pravilen konec tudi za tipke »Poslovno«, »Privatno«, »Službeno«. FIN:ME Delovna ura na odsotnosti kaže »Odmor od ...« in potrdilo »Povratek«.",
+    ],
+  },
+  {
+    verzija: "10.12",
+    datum: "24. 11. 2026",
+    spremembe: [
+      "Krmilnik (program 1.4.1): besedilo pod uro je vedno v eni vrsti - dolga tipka (»Privatni izhod - prisloni kartico«) se pomanjša in ne potisne več tipk navzdol.",
+      "Krmilnik: izbrana tipka velja 5 sekund - levo spodaj odštevanje 5 → 1 v oranžnem obroču, nato se tipka sama odznači (na pokončnem zaslonu levo zgoraj). Enako v predogledu krmilnika.",
+    ],
+  },
+  {
+    verzija: "10.11",
+    datum: "24. 11. 2026",
+    spremembe: [
+      "Krmilnik (program 1.4.0): potrdilo pove vrsto žiga - Dober dan / Nasvidenje pri prihodu in odhodu, pri tipkah ime odsotnosti (»Odmor«, »Poslovni izhod« ... od 10:02) in ob vrnitvi njen konec (»Konec odmora«, »Konec poslovnega izhoda« ... trajalo 29 min). Vrsto določi FIN:OS iz vseh današnjih žigov (tudi z drugih krmilnikov in FIN:ME).",
+      "Krmilnik: nov Info - znak i v krogu in INFO, ime, veliko trenutno stanje (PRISOTEN od 07:02 / ODMOR od 10:02 / ODŠEL ob 15:00) in tabela današnjih žigov (čas, kaj se je zgodilo, trajanje odsotnosti). Brez povezave samo žigi s tega krmilnika.",
+      "Krmilnik: Finesek ob začetku odmora sedi in je, ob koncu odmora si nadene čelado in zabija žebelj s kladivom; ob drugih izhodih pomaha in odide. Na pokončnem zaslonu je Finesek nad besedilom. Enako v predogledu krmilnika.",
+    ],
+  },
+  {
     verzija: "10.10",
     datum: "24. 11. 2026",
     spremembe: [

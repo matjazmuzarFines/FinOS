@@ -1,6 +1,7 @@
 /* ---------------------------------------------------------------------------------------------------------------
    Finesek v kotu potrdila (deli = finesek/*.webp, platno 640 × 750 kot src/components/finesek/Finesek.tsx).
-   Prizori: fz--maha (prihod), fz--malica (sedi na odeji in je), fz--odhod (pomaha, se obrne in odide desno).
+   Prizori: fz--maha (prihod), fz--malica (začetek odmora: sedi na odeji in je), fz--delo (konec odmora: čelada,
+   kladivo), fz--odhod (odhod / izhod s tipko: pomaha, se obrne in odide desno).
    Samo transform / opacity, CSS animacije (šibek procesor). Merilo --s nastavi krmilnik.js.
    ISTA datoteka je uvožena v src/app/globals.css (predogled krmilnika v FIN:OS) - spremembe veljajo za oba.
    --------------------------------------------------------------------------------------------------------------- */
@@ -151,7 +152,10 @@
 }
 .fz-hrana,
 .fz-drobtine,
-.fz-odeja {
+.fz-odeja,
+.fz-celada,
+.fz-deska,
+.fz-del .fz-kladivo {
   display: none;
 }
 
@@ -287,6 +291,91 @@
   animation: fzk-roka-tek 0.34s ease-in-out infinite alternate;
 }
 
+/* --- KONEC ODMORA: spet na delu - čelada, kladivo, zabija žebelj --- */
+.fz--delo .fz-lik {
+  animation: fzk-pojav 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.fz--delo .fz-celada {
+  display: block;
+  position: absolute;
+  left: 104px;
+  top: 22px;
+  width: 432px;
+  height: 167px;
+  z-index: 4;
+  transform: rotate(-4deg);
+}
+.fz--delo .fz-deska {
+  display: block;
+  position: absolute;
+  left: 600px;
+  top: 628px;
+  width: 200px;
+  height: 109px;
+  z-index: 1;
+}
+.fz-deska img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.fz-iskra {
+  position: absolute;
+  left: 78px;
+  top: -34px;
+  width: 44px;
+  height: 44px;
+  opacity: 0;
+  background: radial-gradient(closest-side, #fff7cc, #facc15 55%, transparent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+.fz--delo .fz-iskra {
+  animation: fzk-iskra 0.8s linear infinite;
+}
+.fz--delo .fz-roka-d {
+  z-index: 4;
+  animation: fzk-kladivo 0.8s ease-in infinite;
+}
+.fz--delo .fz-del .fz-kladivo {
+  display: block;
+  position: absolute;
+  left: 146px;
+  top: -16px;
+  width: 170px;
+  height: 102px;
+}
+
+@keyframes fzk-kladivo {
+  0%,
+  45% {
+    transform: rotate(-35deg);
+  }
+  70% {
+    transform: rotate(62deg);
+  }
+  78% {
+    transform: rotate(58deg);
+  }
+  100% {
+    transform: rotate(-35deg);
+  }
+}
+@keyframes fzk-iskra {
+  0%,
+  68% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  90%,
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
 @keyframes fzk-pojav {
   from {
     opacity: 0;

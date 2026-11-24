@@ -162,10 +162,66 @@ body {
 .sporocilo {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1.2vw;
+  max-width: 100%;
+  padding: 0 2vmin;
   font-size: 3.6vmin;
   font-weight: 700;
   color: var(--ink-200);
+  white-space: nowrap; /* vedno ena vrsta - dolgo besedilo pomanjša krmilnik.js (prilagodiSporocilo) */
+  overflow: hidden;
+}
+.sporocilo .kartica {
+  flex: none;
+}
+/* izbrana tipka: odštevanje 5 -> 1 levo spodaj na zaslonu z uro */
+.odstevanje {
+  position: absolute;
+  left: 2vmin;
+  bottom: 2vmin;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 9vmin;
+  height: 9vmin;
+}
+.odstevanje[hidden] {
+  display: none;
+}
+.odstevanje svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.odstevanje circle {
+  fill: none;
+  stroke-width: 3.5;
+}
+.odstevanje-ozadje {
+  stroke: rgb(255 255 255 / 0.1);
+}
+.odstevanje-obroc {
+  stroke: var(--fines-400);
+  stroke-linecap: round;
+  stroke-dasharray: 106.8;
+  stroke-dashoffset: 0;
+}
+.odstevanje-obroc.tece {
+  animation: odstej linear forwards;
+}
+@keyframes odstej {
+  to {
+    stroke-dashoffset: 106.8;
+  }
+}
+.odstevanje span {
+  font-family: "DejaVu Sans Mono", monospace;
+  font-size: 4.4vmin;
+  font-weight: 800;
+  color: #ffb27d;
 }
 .sporocilo.izbrana {
   color: #ffb27d;
@@ -333,6 +389,16 @@ body {
     font-size: 5.2vmin;
     gap: 2vmin;
   }
+  /* pokončno je zaslon z uro nizek - spodaj je besedilo, odštevanje gre levo zgoraj (ob datumu je prazno) */
+  .odstevanje {
+    top: 2.4vmin;
+    bottom: auto;
+    width: 11vmin;
+    height: 11vmin;
+  }
+  .odstevanje span {
+    font-size: 6vmin;
+  }
   .kartica svg {
     width: 7vmin;
     height: 7vmin;
@@ -379,4 +445,143 @@ body {
 }
 .potrdilo-kartica.s-fineskom {
   padding-left: calc(4vw + var(--fz-w, 0px));
+}
+/* pokončen zaslon: Finesek na sredini nad besedilom (ob njem bi bilo besedilo preozko), brez kljukice */
+@media (orientation: portrait) {
+  .potrdilo-kartica.s-fineskom {
+    padding-left: 5vmin;
+    padding-top: calc(var(--fz-h, 0px) + 4vmin);
+  }
+  .potrdilo-kartica.s-fineskom .fz {
+    left: calc(50% - var(--fz-w, 0px) / 2);
+    top: 3vmin;
+    bottom: auto;
+  }
+  .potrdilo-kartica.s-fineskom .potrdilo-ikona {
+    display: none;
+  }
+}
+
+/* Info: znak i v krogu + INFO, ime, veliko stanje, tabela današnjih žigov (krmilnik.js prikaziInfo) */
+.info[hidden] {
+  display: none;
+}
+.potrdilo-kartica.je-info {
+  text-align: left;
+  width: min(88vw, 150vmin);
+}
+.je-info .potrdilo-ikona,
+.je-info .potrdilo-naslov,
+.je-info .potrdilo-opis,
+.je-info .potrdilo-seznam {
+  display: none;
+}
+.info-glava {
+  display: flex;
+  align-items: center;
+  gap: 1.4vmin;
+}
+.info-znak {
+  display: grid;
+  place-items: center;
+  width: 4.6vmin;
+  height: 4.6vmin;
+  border-radius: 50%;
+  border: 2px solid var(--ink-400);
+  color: var(--ink-200);
+  font: italic 700 3vmin Georgia, "Times New Roman", serif;
+}
+.info-napis {
+  font-size: 2.4vmin;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+.info-ime {
+  margin-left: auto;
+  font-size: 3.4vmin;
+  font-weight: 700;
+}
+.info-stanje {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 2.2vmin;
+  margin-top: 2.2vmin;
+}
+.info-pika {
+  width: 2.8vmin;
+  height: 2.8vmin;
+  border-radius: 50%;
+  background: var(--barva, var(--ok));
+  box-shadow: 0 0 16px var(--barva, var(--ok));
+}
+.info-stanje-naslov {
+  font-size: 8.4vmin;
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--barva, var(--ok));
+}
+.info-stanje-od {
+  font-size: 4.4vmin;
+  font-weight: 600;
+  color: var(--ink-200);
+}
+.info-tabela-naslov {
+  margin-top: 2.4vmin;
+  padding-bottom: 0.8vmin;
+  border-bottom: 2px solid rgb(238 122 58 / 0.5);
+  font-size: 2.2vmin;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fines-400);
+}
+.info-tabela {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  font-size: 3.3vmin;
+}
+.info-tabela > span {
+  padding: 0.9vmin 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+.info-cas {
+  padding-right: 3vmin !important;
+  font-family: ui-monospace, "DejaVu Sans Mono", monospace;
+  font-weight: 700;
+  color: #ffb27d;
+}
+.info-oznaka {
+  display: flex;
+  align-items: center;
+  gap: 1.4vmin;
+  font-weight: 600;
+}
+.info-oznaka i {
+  width: 1.8vmin;
+  height: 1.8vmin;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ink-400);
+}
+.info-oznaka[data-vloga="prihod"] i {
+  background: var(--ok);
+}
+.info-oznaka[data-vloga="konec"] i {
+  background: #2dd4bf;
+}
+.info-oznaka[data-vloga="zacetek"] i {
+  background: var(--warn);
+}
+.info-trajanje {
+  padding-left: 3vmin !important;
+  text-align: right;
+  color: var(--ink-400);
+}
+.info-prazno {
+  grid-column: 1 / -1;
+  color: var(--ink-400);
 }

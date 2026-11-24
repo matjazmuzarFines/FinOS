@@ -6,7 +6,9 @@ import { cezPolnoc, PRAVILA_DEJANSKO, type CasNastavitve, type Interval, type Pr
  * žiga; tu se izračuna, kaj se knjiži. Čista funkcija nad TRENUTNIMI nastavitvami - koledar, FIN:ME in Preizkus pravil
  * računajo enako.
  *
- * - Smer žiga je samodejna: odsoten -> prihod, prisoten -> izhod (žigi se izmenjujejo).
+ * - Smer žiga je samodejna PO STANJU: odsoten -> prihod, prisoten -> izhod, na odsotnosti s tipko (malica, privatni,
+ *   službeni ...) -> povratek (prisloni kartico brez tipke ali ista tipka še enkrat). Izredno = prihod / izhod s tipko
+ *   (kot delo od doma). Tipka odsotnosti samo ob prisotnosti - odsoten = prihod + NAPAKA (najprej prihod, nato tipka).
  * - Izmena = prihod brez tipke do izhoda brez tipke. Interval prihoda = prvi interval vrste Prihod (vrstni red seznama),
  *   ki velja na dan in v okno katerega pade prihod; sicer najbližje okno + NAPAKA (izmena se šteje normalno, dejanski čas).
  *   Pravila začetka (ne prej kot, zaokroževanje) so na intervalu prihoda.
@@ -92,7 +94,7 @@ function najblizji(intervali: Interval[], t: number) {
  * Napaka knjiženja (Dovolilnice jih kasneje izničijo):
  * prihod / izhod izven okna, prihod na dan brez intervala prihoda, žig tipke izven okna, tipka brez intervala v urniku.
  */
-export type NapakaKnjizenja = { tip: "prihod" | "izhod" | "brez_intervala" | "tipka_okno" | "tipka_brez_intervala"; cas: number; interval: Interval | null; tipka?: number };
+export type NapakaKnjizenja = { tip: "prihod" | "izhod" | "brez_intervala" | "tipka_okno" | "tipka_brez_intervala" | "tipka_brez_prisotnosti"; cas: number; interval: Interval | null; tipka?: number };
 
 export type ZigKnjizen = Zig & {
   smer: "prihod" | "odhod";
@@ -153,8 +155,8 @@ export function knjizi(vhod: Zig[], o: Vhod): Knjizenje {
   // interval žiga s tipko: prihod / izhod s to tipko (po smeri, npr. Izredno), sicer odsotnost (vrsta Tipka);
   // najprej intervali dne (in v oknu), nato ostali iz urnika
   const sTipko = (seznam: Interval[], v: VrstaIntervala, idTipke: number) => seznam.filter((x) => x.vrsta === v && x.id_tipke === idTipke);
-  const intervalTipke = (idTipke: number, smer: "prihod" | "odhod", t: number) => {
-    for (const v of [smer === "prihod" ? "prihod" : "izhod", "tipka"] as const) {
+  const intervalTipke = (idTipke: number, vrsteIv: VrstaIntervala[], t: number) => {
+    for (const v of vrsteIv) {
       const kandidati = sTipko(dne, v, idTipke);
       const iv = kandidati.find((x) => vOknu(t, x)) ?? kandidati[0] ?? sTipko(vsiUrnika, v, idTipke)[0];
       if (iv) return iv;
@@ -162,13 +164,38 @@ export function knjizi(vhod: Zig[], o: Vhod): Knjizenje {
     return null;
   };
 
-  // smer: žigi se izmenjujejo (odsoten -> prihod, prisoten -> izhod)
+  // smer po STANJU (ne po parnosti - en odvečen žig sicer obrne cel dan), enako kot vlogeDneva v krmilnikStanje.ts:
+  // odsoten: brez tipke = prihod, s tipko = prihod s tipko (Izredno, delo od doma - interval Prihod s to tipko);
+  //   tipka odsotnosti (malica, poslovni, privatni) je dovoljena SAMO ob prisotnosti - odsoten = prihod + NAPAKA;
+  // prisoten: brez tipke = izhod, s tipko = izhod s tipko (Izredno) ali začetek odsotnosti (malica, privatni, službeni ...);
+  // na odsotnosti: brez tipke ali ista tipka še enkrat = povratek, druga tipka odsotnosti = nova odsotnost,
+  // tipka z intervalom Izhod = izhod
+  let stanje: "odsoten" | "prisoten" | "odsotnost" = "odsoten";
+  let tipkaOdsotnosti: number | null = null;
+  const brezPrisotnosti = new Set<string>(); // žigi s tipko odsotnosti, ko oseba ni bila prisotna (štejejo kot prihod)
   const zigi: ZigKnjizen[] = [...vhod]
     .sort((a, b) => a.cas - b.cas)
-    .map((z, i) => {
-      const smer = i % 2 === 0 ? "prihod" : "odhod";
-      const iv = z.id_tipke != null ? intervalTipke(z.id_tipke, smer, z.cas) : null;
-      const vloga = iv?.vrsta === "prihod" ? "prihod" : iv?.vrsta === "izhod" ? "izhod" : z.id_tipke != null ? "tipka" : smer === "prihod" ? "prihod" : "izhod";
+    .map((z) => {
+      const t = z.id_tipke;
+      let smer: ZigKnjizen["smer"];
+      let vloga: ZigKnjizen["vloga"];
+      let iv: Interval | null = null;
+      if (stanje === "odsoten") {
+        smer = "prihod";
+        vloga = "prihod";
+        iv = t != null ? intervalTipke(t, ["prihod"], z.cas) : null;
+        if (t != null && !iv) brezPrisotnosti.add(z.id);
+      } else if (stanje === "prisoten" || (t != null && t !== tipkaOdsotnosti)) {
+        iv = t != null ? intervalTipke(t, ["izhod", "tipka"], z.cas) : null;
+        vloga = t == null || iv?.vrsta === "izhod" ? "izhod" : iv || stanje === "prisoten" ? "tipka" : "prihod";
+        smer = vloga === "prihod" ? "prihod" : "odhod";
+        if (vloga === "prihod") iv = null; // na odsotnosti tipka brez intervala odhoda = povratek
+      } else {
+        smer = "prihod"; // povratek z odsotnosti (brez tipke ali ista tipka še enkrat)
+        vloga = "prihod";
+      }
+      stanje = vloga === "tipka" ? "odsotnost" : vloga === "izhod" ? "odsoten" : "prisoten";
+      tipkaOdsotnosti = vloga === "tipka" ? t : null;
       return { ...z, smer, knjizen: z.cas, id_statistike: vloga === "tipka" ? (iv?.id_statistike ?? null) : null, vloga, interval: iv, odsek: null };
     });
 
@@ -189,16 +216,17 @@ export function knjizi(vhod: Zig[], o: Vhod): Knjizenje {
     if (zacetek) stIzmene++;
     if (zacetek && z.vloga === "prihod") {
       // prihod s tipko (npr. Izredno) = njegov interval, brez tipke = samodejni prihod
-      const kandidati = z.id_tipke != null ? [z.interval!] : prihodiDne;
+      const sTipkoPrihod = z.id_tipke != null && !!z.interval;
+      if (brezPrisotnosti.has(z.id)) napake.push({ tip: "tipka_brez_prisotnosti", cas: z.cas, interval: null, tipka: stTipke(z.id_tipke!) });
+      const kandidati = sTipkoPrihod ? [z.interval!] : prihodiDne;
       const najden = kandidati.find((x) => vOknu(z.cas, x)) ?? null;
-      izmena = najden ?? (z.id_tipke != null ? z.interval : najblizji(prihodiDne.length ? prihodiDne : vrste(vsiUrnika, "prihod").filter((x) => x.id_tipke == null), z.cas));
+      izmena = najden ?? (sTipkoPrihod ? z.interval : najblizji(prihodiDne.length ? prihodiDne : vrste(vsiUrnika, "prihod").filter((x) => x.id_tipke == null), z.cas));
       prvi ??= izmena;
       z.interval = izmena;
       if (najden) z.knjizen = knjiziZacetek(z.cas, najden);
       else if (o.urnik) napake.push({ tip: kandidati.length ? "prihod" : "brez_intervala", cas: z.cas, interval: izmena });
       prihodIzmene = z.knjizen;
-    } else if (zacetek) prihodIzmene = z.cas; // prihod s tipko odsotnosti (npr. delo od doma) začne izmeno v statistiki tipke
-    else if (z.smer === "prihod") {
+    } else if (z.smer === "prihod") {
       z.vloga = "povratek";
       z.interval = prej.interval;
     } else if (z.vloga === "izhod") {

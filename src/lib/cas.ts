@@ -207,6 +207,7 @@ export const opisNapake = ({ tip, cas, interval: iv, tipka }: NapakaKnjizenja) =
     brez_intervala: `Napaka: prihod ob ${fmtCas(cas)} na dan, ko urnik nima intervala prihoda - knjižen je dejanski čas.`,
     tipka_okno: `Napaka: žig ob ${fmtCas(cas)} (tipka ${tipka}) je izven okna ${iv?.cas_od}-${iv?.cas_do} (${iv?.ime}) - oba žiga morata biti v oknu.`,
     tipka_brez_intervala: `Napaka: tipka ${tipka ?? "?"} ob ${fmtCas(cas)} - urnik nima intervala s to tipko (čas ni razvrščen).`,
+    tipka_brez_prisotnosti: `Napaka: tipka ${tipka ?? "?"} ob ${fmtCas(cas)} brez prisotnosti - odsotnost (malica, poslovni, privatni) je mogoča samo po prihodu; žig je štet kot prihod.`,
   })[tip];
 
 const stanjeStatistike = (s: Statistika): StanjeDneva => ({ koda: `stat:${s.koda}`, ime: s.ime, ikona: ikonaStatistike(s.ikona), barva: s.barva, opis: s.opis });

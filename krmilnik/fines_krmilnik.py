@@ -34,7 +34,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERZIJA = "1.3.0"
+VERZIJA = "1.4.2"
 MAPA = os.path.dirname(os.path.abspath(__file__))
 UI = os.path.join(MAPA, "ui")
 
@@ -270,8 +270,12 @@ def opis_odgovora(r):
     ime = " ".join(x for x in (r.get("ime"), r.get("priimek")) if x)
     if r.get("akcija") == "zig" and r.get("znana") is False:
         return "Kartica ni dodeljena"
+    if r.get("akcija") == "zig" and r.get("oznaka"):
+        return f"{ime} · {r['oznaka']}"  # FIN:OS pove vlogo: Prihod, Odmor, Konec odmora, Odhod ...
     if r.get("akcija") == "zig":
         return f"{ime} · {r.get('smer') or ''}{' · ' + r['tipka'] if r.get('tipka') else ''}"
+    if r.get("akcija") == "info" and r.get("stanje"):
+        return f"info · {ime} · {r['stanje'].get('naslov')} {r['stanje'].get('od') or ''}".strip()
     return f"{r.get('akcija')} · {ime}"
 
 
